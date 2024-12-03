@@ -1,0 +1,12 @@
+prefect
+boto3
+requests
+snowflake-connector-python
+dbt-core
+mlflow
+fastapi
+uvicorn
+docker
+kubernetes
+streamlit
+prometheus_client
