@@ -2,3 +2,5 @@
 venv/
 
 .env
+
+nba_games.csv
