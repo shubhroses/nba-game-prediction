@@ -8,5 +8,7 @@ fastapi
 uvicorn
 docker
 kubernetes
+seaborn
+shap
 streamlit
 prometheus_client
