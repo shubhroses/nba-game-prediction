@@ -9,6 +9,7 @@ import json
 from dotenv import load_dotenv
 import logging
 import sys
+from botocore.exceptions import NoCredentialsError, ClientError
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,7 +24,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-@task(retries=3, retry_delay_seconds=300)  # 5 minutes = 300 seconds
+@task(retries=3, retry_delay_seconds=300, name="Fetch Live Scoreboard")
 def fetch_live_scoreboard():
     """
     Fetches the live scoreboard data from the NBA API.
@@ -37,7 +38,7 @@ def fetch_live_scoreboard():
         logger.error(f"Error fetching data from NBA API: {e}")
         raise
 
-@task
+@task(name="Print Data")
 def print_data(data):
     """
     Logs the fetched NBA scoreboard data in a readable JSON format.
@@ -51,7 +52,7 @@ def print_data(data):
         logger.error(f"Error logging data: {e}")
         raise
 
-@task(retries=3, retry_delay_seconds=300)  # 5 minutes = 300 seconds
+@task(retries=3, retry_delay_seconds=300, name="Save Data to S3")
 def save_to_s3(data):
     """
     Saves the fetched data to AWS S3 in JSON format.
@@ -80,12 +81,21 @@ def save_to_s3(data):
         
         logger.info(f"Data successfully saved to s3://{bucket_name}/raw/{file_name}")
         return file_name
+    except NoCredentialsError:
+        logger.error("AWS credentials not available.")
+        raise
+    except ClientError as e:
+        logger.error(f"Client error while saving data to S3: {e}")
+        raise
     except Exception as e:
-        logger.error(f"Error saving data to S3: {e}")
+        logger.error(f"Unexpected error while saving data to S3: {e}")
         raise
 
 @flow(name="Fetch NBA Live Scoreboard, Print, and Save to S3")
 def nba_data_flow():
+    """
+    Prefect flow to fetch NBA live scoreboard data, print it, and save it to AWS S3.
+    """
     games_data = fetch_live_scoreboard()
     printed_data = print_data(games_data)
     file_name = save_to_s3(printed_data)
