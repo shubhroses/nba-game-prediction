@@ -26,3 +26,33 @@ Happy modeling!
 [0m09:16:31.697967 [debug] [MainThread]: Command `dbt init` succeeded at 09:16:31.697591 after 20.48 seconds
 [0m09:16:31.699395 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x104c012e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x106706a30>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x1066b9df0>]}
 [0m09:16:31.700581 [debug] [MainThread]: Flushing usage events
+[0m09:27:02.718352 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x1065f12e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10809f100>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10809f430>]}
+
+
+============================== 09:27:02.721410 | 3833b8b9-a36a-4b4d-a2ea-4a9b7186a9a9 ==============================
+[0m09:27:02.721410 [info ] [MainThread]: Running with dbt=1.8.9
+[0m09:27:02.721806 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'profiles_dir': '/Users/shubhrosesingh/.dbt', 'log_path': 'logs', 'debug': 'False', 'fail_fast': 'False', 'use_colors': 'True', 'use_experimental_parser': 'False', 'empty': 'False', 'quiet': 'False', 'no_print': 'None', 'log_format': 'default', 'invocation_command': 'dbt run --select my_first_dbt_model.sql', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'target_path': 'None', 'introspect': 'True', 'send_anonymous_usage_stats': 'True'}
+[0m09:27:02.722190 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /Users/shubhrosesingh/codebase/nba-game-prediction/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m09:27:02.723558 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 0.056388874, "process_in_blocks": "0", "process_kernel_time": 0.134986, "process_mem_max_rss": "91488256", "process_out_blocks": "0", "process_user_time": 0.772863}
+[0m09:27:02.723915 [debug] [MainThread]: Command `dbt run` failed at 09:27:02.723856 after 0.06 seconds
+[0m09:27:02.724131 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x1065f12e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x108099a90>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x1080998b0>]}
+[0m09:27:02.724332 [debug] [MainThread]: Flushing usage events
+[0m09:27:25.739759 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10487d2e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10632b100>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10632b430>]}
+
+
+============================== 09:27:25.743024 | ca1d1eb3-900f-4d4a-87dd-b7860d74242b ==============================
+[0m09:27:25.743024 [info ] [MainThread]: Running with dbt=1.8.9
+[0m09:27:25.743418 [debug] [MainThread]: running dbt with arguments {'printer_width': '80', 'indirect_selection': 'eager', 'write_json': 'True', 'log_cache_events': 'False', 'partial_parse': 'True', 'cache_selected_only': 'False', 'warn_error': 'None', 'version_check': 'True', 'debug': 'False', 'log_path': 'logs', 'fail_fast': 'False', 'profiles_dir': '/Users/shubhrosesingh/.dbt', 'use_colors': 'True', 'use_experimental_parser': 'False', 'no_print': 'None', 'quiet': 'False', 'empty': 'False', 'warn_error_options': 'WarnErrorOptions(include=[], exclude=[])', 'static_parser': 'True', 'log_format': 'default', 'introspect': 'True', 'target_path': 'None', 'invocation_command': 'dbt run --select nba_dbt/my_first_dbt_model.sql', 'send_anonymous_usage_stats': 'True'}
+[0m09:27:25.743814 [error] [MainThread]: Encountered an error:
+Runtime Error
+  No dbt_project.yml found at expected path /Users/shubhrosesingh/codebase/nba-game-prediction/dbt_project.yml
+  Verify that each entry within packages.yml (and their transitive dependencies) contains a file named dbt_project.yml
+  
+[0m09:27:25.744816 [debug] [MainThread]: Resource report: {"command_name": "run", "command_success": false, "command_wall_clock_time": 0.05026225, "process_in_blocks": "0", "process_kernel_time": 0.095326, "process_mem_max_rss": "91799552", "process_out_blocks": "0", "process_user_time": 0.761047}
+[0m09:27:25.745212 [debug] [MainThread]: Command `dbt run` failed at 09:27:25.745152 after 0.05 seconds
+[0m09:27:25.745446 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10487d2e0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x106324550>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x106324bb0>]}
+[0m09:27:25.745654 [debug] [MainThread]: Flushing usage events

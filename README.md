@@ -1,13 +1,5 @@
-CREATE TABLE IF NOT EXISTS "SHUBHROSE_PRACTICE"."DBT_SHUBHROSES"."raw_nba_scoreboard" (
-    game_data VARIANT
-);
+/Users/shubhrosesingh/codebase/nba-game-prediction/venv/bin/python /Users/shubhrosesingh/codebase/nba-game-prediction/data_ingestion/move_nba_data_to_sf.py
 
-CREATE OR REPLACE STAGE "SHUBHROSE_PRACTICE"."DBT_SHUBHROSES"."nba_stage"
-URL='s3://nba-prediction-data/raw/'
-CREDENTIALS=( AWS_KEY_ID='...' AWS_SECRET_KEY='...' )
-FILE_FORMAT=(TYPE=JSON);
+/Users/shubhrosesingh/codebase/nba-game-prediction/venv/bin/python /Users/shubhrosesingh/codebase/nba-game-prediction/data_ingestion/fetch_nba_data.py
 
-COPY INTO "SHUBHROSE_PRACTICE"."DBT_SHUBHROSES"."raw_nba_scoreboard"
-FROM @"SHUBHROSE_PRACTICE"."DBT_SHUBHROSES"."nba_stage"/nba_scoreboard_20241230_194424.json
-FILE_FORMAT=(TYPE=JSON)
-ON_ERROR='CONTINUE';
+dbt run --select my_first_dbt_model.sql
