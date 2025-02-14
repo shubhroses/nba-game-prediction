@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 import snowflake.connector
 
 # -----------------------------------------------------------------------------
-# Configure Logging
+# Configure Logging 
 # -----------------------------------------------------------------------------
 logging.basicConfig(
     level=logging.INFO,
