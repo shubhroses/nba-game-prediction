@@ -7,7 +7,7 @@ import subprocess
 from dotenv import load_dotenv
 from prefect import task, flow
 
-# Configure Logging
+# Configure Logging 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
