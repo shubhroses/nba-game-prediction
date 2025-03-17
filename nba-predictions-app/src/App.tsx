@@ -5,7 +5,7 @@ import PredictionsList from './components/PredictionsList';
 import { usePredictions } from './hooks/usePredictions';
 
 function App() {
-  const { predictions, loading, error } = usePredictions();
+  const { predictions, loading, error, isUsingFallback } = usePredictions();
 
   return (
     <Layout>
@@ -14,6 +14,12 @@ function App() {
         <p className="text-gray-600">
           Our predictions are based on advanced statistical analysis.
         </p>
+        
+        {isUsingFallback && (
+          <div className="mt-3 bg-blue-50 text-blue-700 px-4 py-2 rounded-md text-sm">
+            Note: Currently displaying sample prediction data for demonstration purposes.
+          </div>
+        )}
       </div>
       
       {loading ? (
