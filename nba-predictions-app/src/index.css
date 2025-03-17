@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles that complement Tailwind */
+body {
+  margin: 0;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Add better placeholder styling for team logos */
+.team-logo-placeholder {
+  @apply bg-blue-100 flex items-center justify-center text-blue-800 font-bold;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+
+/* Remove all default Vite styles below this line */
