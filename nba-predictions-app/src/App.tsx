@@ -24,6 +24,11 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // Log initial data mode on component mount
+  useEffect(() => {
+    console.log(`App initialized in ${isRealDataMode ? 'REAL' : 'SAMPLE'} data mode`);
+  }, []);
+
   // Troubleshooting panel for developers
   const DevPanel = () => {
     if (!showDevInfo) return null;
@@ -82,7 +87,7 @@ function App() {
         </div>
         
         <p className="text-gray-600">
-          Our predictions are based on advanced statistical analysis.
+          Our predictions are based on advanced statistical analysis of real-time odds.
         </p>
         
         {isDevelopment && (

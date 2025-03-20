@@ -10,9 +10,8 @@ const CONFIG = {
   // Set to true to allow automatic fallback to sample data if API fails
   ALLOW_AUTO_FALLBACK: true,
   
-  // Default to fallback mode in production - more reliable for demo purposes
-  DEFAULT_TO_FALLBACK_IN_PRODUCTION: typeof window !== 'undefined' && 
-                                    window.location.hostname !== 'localhost',
+  // Default to real data mode in production - set to false to use real data by default
+  DEFAULT_TO_FALLBACK_IN_PRODUCTION: false,
   
   // How long to wait before timing out API requests (in milliseconds)
   REQUEST_TIMEOUT: 25000, // Increased timeout for production environments
@@ -31,9 +30,9 @@ export function usePredictions() {
   const [useFallback, setUseFallback] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
   
-  // Initialize with fallback mode if in production
+  // Initialize with real data mode by default
   const [forceFallback, setForceFallback] = useState(
-    CONFIG.USE_FALLBACK_MODE || CONFIG.DEFAULT_TO_FALLBACK_IN_PRODUCTION
+    CONFIG.USE_FALLBACK_MODE
   );
 
   // Function to reset and try again - useful for retry button
