@@ -3,6 +3,7 @@ import { Game, ProcessedGame } from '../types';
 
 interface ImportMetaEnv {
   readonly VITE_SPORTS_API_KEY: string;
+  readonly VITE_ODDS_API_KEY: string;
   // Add other env variables as needed
 }
 
@@ -11,12 +12,17 @@ interface ImportMeta {
 }
 
 // For development testing, you can provide a fallback API key if needed
-const API_KEY = import.meta.env.VITE_SPORTS_API_KEY || '';
+const API_KEY = import.meta.env.VITE_SPORTS_API_KEY || 
+               import.meta.env.VITE_ODDS_API_KEY || 
+               '';
 
+// For debugging - log environment info without exposing the key
 console.log("API environment check:", {
   envExists: typeof import.meta.env !== 'undefined',
-  apiKeyExists: !!import.meta.env.VITE_SPORTS_API_KEY,
-  apiKeyLength: import.meta.env.VITE_SPORTS_API_KEY ? import.meta.env.VITE_SPORTS_API_KEY.length : 0
+  apiKeyExists: !!(import.meta.env.VITE_SPORTS_API_KEY || import.meta.env.VITE_ODDS_API_KEY),
+  apiKeyLength: (import.meta.env.VITE_SPORTS_API_KEY || import.meta.env.VITE_ODDS_API_KEY || '').length,
+  environment: import.meta.env.MODE || 'unknown',
+  isProduction: import.meta.env.PROD || false
 });
 
 if (!API_KEY) {
@@ -39,8 +45,8 @@ const CORS_PROXIES = [
 // Pick a default proxy
 const DEFAULT_CORS_PROXY = CORS_PROXIES[0];
 
-// Generic API endpoint
-const BASE_URL = 'https://sports-predictions-api.com/v4/sports';
+// Generic API endpoint - fixing to use the correct domain
+const BASE_URL = 'https://api.the-odds-api.com/v4/sports';
 
 // Fallback data for when the API is unavailable
 const FALLBACK_GAMES: ProcessedGame[] = [
@@ -151,6 +157,8 @@ export async function fetchOdds(): Promise<ProcessedGame[]> {
     if (!isDevelopment) {
       try {
         console.log("Production environment detected, trying direct API request first...");
+        console.log("Fetch URL:", apiUrl.replace(API_KEY, "API_KEY_HIDDEN"));
+        
         const response = await fetch(apiUrl, {
           headers: {
             'Accept': 'application/json',
@@ -159,13 +167,20 @@ export async function fetchOdds(): Promise<ProcessedGame[]> {
           signal: AbortSignal.timeout(15000)
         });
         
+        console.log("Direct fetch response status:", response.status);
+        
         if (response.ok) {
           console.log("Direct API request successful in production");
           const data: Game[] = await response.json();
           console.log(`Successfully fetched data for ${data.length} games`);
           return processGames(data);
+        } else {
+          // Log error details
+          const errorText = await response.text();
+          console.error("Direct API error response:", errorText.substring(0, 200));
         }
       } catch (error) {
+        console.error("Direct API request error details:", error);
         console.log("Direct API request failed in production, trying proxies next");
         // Continue to proxy attempts
       }
@@ -219,7 +234,8 @@ export async function fetchOdds(): Promise<ProcessedGame[]> {
     // Check if network connectivity issues
     if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
       console.error('Network connection issue detected');
-      throw new Error("Network error: Please check your internet connection");
+      // Include more helpful information in the error message
+      throw new Error(`Network error: ${error.message}. This might be due to CORS issues or API connectivity problems.`);
     }
     
     if (error instanceof Error) {
