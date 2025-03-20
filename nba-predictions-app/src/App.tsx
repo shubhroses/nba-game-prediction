@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 import PredictionsList from './components/PredictionsList';
@@ -9,6 +9,58 @@ const isDevelopment = import.meta.env.DEV;
 
 function App() {
   const { predictions, loading, error, isUsingFallback, retry, toggleDataMode, isRealDataMode } = usePredictions();
+  const [showDevInfo, setShowDevInfo] = useState(false);
+  
+  // Add debugging tool that can be toggled with a secret key combination (Ctrl+Shift+D)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+        e.preventDefault();
+        setShowDevInfo(prev => !prev);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Troubleshooting panel for developers
+  const DevPanel = () => {
+    if (!showDevInfo) return null;
+    
+    const envInfo = {
+      hostname: window.location.hostname,
+      pathname: window.location.pathname,
+      origin: window.location.origin,
+      envMode: import.meta.env?.MODE || 'unknown',
+      isDev: import.meta.env?.DEV || false,
+      isProd: import.meta.env?.PROD || false,
+      hasApiKey: !!(import.meta.env?.VITE_SPORTS_API_KEY || import.meta.env?.VITE_ODDS_API_KEY),
+      apiKeyLength: (import.meta.env?.VITE_SPORTS_API_KEY || import.meta.env?.VITE_ODDS_API_KEY || '').length,
+      build: import.meta.env?.VITE_APP_BUILD_DATE || 'unknown',
+      timestamp: new Date().toISOString()
+    };
+    
+    return (
+      <div style={{
+        position: 'fixed',
+        bottom: '10px',
+        right: '10px',
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        color: 'white',
+        padding: '15px',
+        borderRadius: '5px',
+        fontSize: '12px',
+        zIndex: 9999,
+        maxWidth: '400px',
+        maxHeight: '80vh',
+        overflow: 'auto'
+      }}>
+        <h3>Dev Info (Ctrl+Shift+D to hide)</h3>
+        <pre>{JSON.stringify(envInfo, null, 2)}</pre>
+      </div>
+    );
+  };
 
   return (
     <Layout>
@@ -98,6 +150,7 @@ function App() {
       ) : (
         <PredictionsList predictions={predictions} />
       )}
+      <DevPanel />
     </Layout>
   );
 }

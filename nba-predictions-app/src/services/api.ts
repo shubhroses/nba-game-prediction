@@ -12,26 +12,36 @@ interface ImportMeta {
 }
 
 // For development testing, you can provide a fallback API key if needed
-const API_KEY = import.meta.env.VITE_SPORTS_API_KEY || 
-               import.meta.env.VITE_ODDS_API_KEY || 
+const API_KEY = import.meta.env?.VITE_SPORTS_API_KEY || 
+               import.meta.env?.VITE_ODDS_API_KEY || 
                '';
 
 // For debugging - log environment info without exposing the key
-console.log("API environment check:", {
-  envExists: typeof import.meta.env !== 'undefined',
-  apiKeyExists: !!(import.meta.env.VITE_SPORTS_API_KEY || import.meta.env.VITE_ODDS_API_KEY),
-  apiKeyLength: (import.meta.env.VITE_SPORTS_API_KEY || import.meta.env.VITE_ODDS_API_KEY || '').length,
-  environment: import.meta.env.MODE || 'unknown',
-  isProduction: import.meta.env.PROD || false
-});
-
-if (!API_KEY) {
-  console.error("API key is not configured in environment variables");
-  throw new Error('API key is not configured. Please check your environment variables.');
+try {
+  console.log("API environment check:", {
+    envExists: typeof import.meta.env !== 'undefined',
+    apiKeyExists: !!(import.meta.env?.VITE_SPORTS_API_KEY || import.meta.env?.VITE_ODDS_API_KEY),
+    apiKeyLength: (import.meta.env?.VITE_SPORTS_API_KEY || import.meta.env?.VITE_ODDS_API_KEY || '').length,
+    environment: import.meta.env?.MODE || 'unknown',
+    isProduction: import.meta.env?.PROD || false
+  });
+} catch (error) {
+  console.error("Error checking environment:", error);
 }
 
-// Check if we're in development mode
-const isDevelopment = import.meta.env.DEV;
+// Check if we have an API key, with more forgiving error handling in production
+if (!API_KEY) {
+  console.error("API key is not configured in environment variables");
+  // In production, don't throw, just log the error
+  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
+    console.error('API key missing but continuing with fallback data');
+  } else {
+    throw new Error('API key is not configured. Please check your environment variables.');
+  }
+}
+
+// Check if we're in development mode with safer access pattern
+const isDevelopment = import.meta.env?.DEV || false;
 
 // CORS proxy for development
 // Try different proxies in order of reliability
