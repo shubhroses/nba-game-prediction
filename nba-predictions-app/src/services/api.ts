@@ -28,15 +28,19 @@ if (!API_KEY) {
 const isDevelopment = import.meta.env.DEV;
 
 // CORS proxy for development
-// Using a modern proxy that doesn't require special headers
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// Try different proxies in order of reliability
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://cors-anywhere.herokuapp.com/',
+  'https://crossorigin.me/'
+];
 
-// Alternative proxies if needed:
-// const CORS_PROXY = 'https://corsproxy.io/?';
-// const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+// Pick a default proxy
+const DEFAULT_CORS_PROXY = CORS_PROXIES[0];
 
 // Generic API endpoint
-const BASE_URL = 'https://api.the-odds-api.com/v4/sports';
+const BASE_URL = 'https://sports-predictions-api.com/v4/sports';
 
 // Fallback data for when the API is unavailable
 const FALLBACK_GAMES: ProcessedGame[] = [
@@ -140,57 +144,80 @@ export async function fetchOdds(): Promise<ProcessedGame[]> {
     const apiUrl = `${BASE_URL}/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=h2h&oddsFormat=decimal`;
     console.log("Base API URL (without key):", BASE_URL + "/basketball_nba/odds/");
     
-    // ALWAYS use the CORS proxy that we've confirmed works
-    try {
-      console.log("Attempting request with CORS proxy...");
-      
-      // Use the CORS proxy with proper encoding (this approach worked in our test)
-      const requestUrl = `${CORS_PROXY}${encodeURIComponent(apiUrl)}`;
-      
-      console.log("CORS Proxy being used:", CORS_PROXY);
-      console.log("Sending full request to:", requestUrl.replace(API_KEY, "API_KEY_HIDDEN"));
-      
-      const response = await fetch(requestUrl, {
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        },
-        signal: AbortSignal.timeout(20000), // Increase timeout slightly
-        credentials: 'omit'
-      });
-      
-      console.log("Response received, status:", response.status, response.statusText);
-      
-      if (response.ok) {
-        console.log("CORS proxy request successful");
-        const data: Game[] = await response.json();
-        console.log(`Successfully fetched data for ${data.length} games`);
-        return processGames(data);
-      } else {
-        // Handle specific error codes
-        if (response.status === 401) {
-          throw new Error("API key unauthorized. Please check your API key.");
-        } else if (response.status === 429) {
-          throw new Error("API rate limit exceeded. Please try again later.");
-        } else {
-          const errorText = await response.text();
-          console.error("API error response:", errorText);
-          throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
+    // Try fetching with different CORS proxies
+    let lastError: Error | null = null;
+    
+    // First try direct fetch in production (might work without CORS issues)
+    if (!isDevelopment) {
+      try {
+        console.log("Production environment detected, trying direct API request first...");
+        const response = await fetch(apiUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          },
+          signal: AbortSignal.timeout(15000)
+        });
+        
+        if (response.ok) {
+          console.log("Direct API request successful in production");
+          const data: Game[] = await response.json();
+          console.log(`Successfully fetched data for ${data.length} games`);
+          return processGames(data);
         }
+      } catch (error) {
+        console.log("Direct API request failed in production, trying proxies next");
+        // Continue to proxy attempts
       }
-    } catch (error) {
-      console.error("Error during API request:", error);
-      // Rethrow the error with more context
-      if (error instanceof Error) {
-        throw new Error(`API request failed: ${error.message}`);
-      }
-      throw error;
     }
+    
+    // Try each CORS proxy in sequence
+    for (const proxy of CORS_PROXIES) {
+      try {
+        console.log(`Attempting request with CORS proxy: ${proxy}`);
+        
+        // Use the CORS proxy with proper encoding
+        const requestUrl = `${proxy}${encodeURIComponent(apiUrl)}`;
+        
+        console.log("Sending full request to:", requestUrl.replace(API_KEY, "API_KEY_HIDDEN"));
+        
+        const response = await fetch(requestUrl, {
+          headers: {
+            'Accept': 'application/json',
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          },
+          signal: AbortSignal.timeout(20000),
+          credentials: 'omit'
+        });
+        
+        console.log("Response received, status:", response.status, response.statusText);
+        
+        if (response.ok) {
+          console.log(`CORS proxy request successful with ${proxy}`);
+          const data: Game[] = await response.json();
+          console.log(`Successfully fetched data for ${data.length} games`);
+          return processGames(data);
+        } else {
+          console.log(`CORS proxy ${proxy} returned status ${response.status}`);
+          const errorText = await response.text();
+          lastError = new Error(`API request failed with status ${response.status}: ${errorText.substring(0, 100)}`);
+          // Continue to next proxy
+        }
+      } catch (error) {
+        console.error(`Error with CORS proxy ${proxy}:`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
+        // Continue to next proxy
+      }
+    }
+    
+    // If we get here, all proxies failed
+    throw lastError || new Error("All API request methods failed");
+    
   } catch (error) {
     console.error('Error fetching odds:', error);
     
     // Check if network connectivity issues
-    if (error instanceof TypeError && error.message.includes('fetch')) {
+    if (error instanceof TypeError && (error.message.includes('fetch') || error.message.includes('network'))) {
       console.error('Network connection issue detected');
       throw new Error("Network error: Please check your internet connection");
     }
@@ -198,7 +225,7 @@ export async function fetchOdds(): Promise<ProcessedGame[]> {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch predictions: ${error.message}`);
     }
-    throw new Error('Failed to fetch predictions. Please check your API configuration.');
+    throw new Error('Failed to fetch predictions. Please check your network connection.');
   }
 }
 

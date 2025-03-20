@@ -5,19 +5,19 @@ import { fetchOdds, getFallbackGames } from '../services/api';
 // Configuration options for development and testing
 const CONFIG = {
   // Set this to true to always use fallback data (for development or when API is down)
-  USE_FALLBACK_MODE: false, // Changed from true to false to prioritize real data
+  USE_FALLBACK_MODE: false,
   
   // Set to true to allow automatic fallback to sample data if API fails
   ALLOW_AUTO_FALLBACK: true,
   
   // How long to wait before timing out API requests (in milliseconds)
-  REQUEST_TIMEOUT: 20000,
+  REQUEST_TIMEOUT: 25000, // Increased timeout for production environments
   
   // Number of retries before giving up
-  MAX_RETRIES: 2,
+  MAX_RETRIES: 3, // Increased number of retries
   
   // Delay between retries (in milliseconds)
-  RETRY_DELAY: 3000
+  RETRY_DELAY: 2000
 };
 
 export function usePredictions() {
@@ -42,10 +42,19 @@ export function usePredictions() {
     const newMode = !forceFallback;
     console.log(`Switching to ${newMode ? 'sample' : 'real'} data mode`);
     setForceFallback(newMode);
+    
+    // Clear previous state
     setLoading(true);
     setError(null);
-    setUseFallback(false); // Reset the automatic fallback flag
+    setUseFallback(false);
     setRetryCount(0);
+    
+    // If switching to real data mode, force a delayed reload to ensure clean state
+    if (!newMode) {
+      setTimeout(() => {
+        retryLoading();
+      }, 300);
+    }
   };
 
   useEffect(() => {
