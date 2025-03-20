@@ -24,6 +24,17 @@ if (!API_KEY) {
   throw new Error('API key is not configured. Please check your environment variables.');
 }
 
+// Check if we're in development mode
+const isDevelopment = import.meta.env.DEV;
+
+// CORS proxy for development
+// Using a modern proxy that doesn't require special headers
+const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+
+// Alternative proxies if needed:
+// const CORS_PROXY = 'https://corsproxy.io/?';
+// const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+
 // Generic API endpoint
 const BASE_URL = 'https://api.the-odds-api.com/v4/sports';
 
@@ -68,13 +79,56 @@ const FALLBACK_GAMES: ProcessedGame[] = [
     confidence: 65,
     homeOdds: 1.90,
     awayOdds: 1.95
+  },
+  {
+    id: 'fallback-5',
+    homeTeam: 'Milwaukee Bucks',
+    awayTeam: 'Chicago Bulls',
+    startTime: new Date(new Date().setHours(new Date().getHours() + 5)),
+    prediction: 'Milwaukee Bucks',
+    confidence: 81,
+    homeOdds: 1.40,
+    awayOdds: 2.90
+  },
+  {
+    id: 'fallback-6',
+    homeTeam: 'Dallas Mavericks',
+    awayTeam: 'Houston Rockets',
+    startTime: new Date(new Date().setHours(new Date().getHours() + 7)),
+    prediction: 'Dallas Mavericks',
+    confidence: 74,
+    homeOdds: 1.55,
+    awayOdds: 2.45
+  },
+  {
+    id: 'fallback-7',
+    homeTeam: 'Toronto Raptors',
+    awayTeam: 'Cleveland Cavaliers',
+    startTime: new Date(new Date().setHours(new Date().getHours() + 1)),
+    prediction: 'Cleveland Cavaliers',
+    confidence: 59,
+    homeOdds: 2.20,
+    awayOdds: 1.68
+  },
+  {
+    id: 'fallback-8',
+    homeTeam: 'New York Knicks',
+    awayTeam: 'Atlanta Hawks',
+    startTime: new Date(new Date().setHours(new Date().getHours() + 8)),
+    prediction: 'New York Knicks',
+    confidence: 63,
+    homeOdds: 1.85,
+    awayOdds: 2.00
   }
 ];
 
 export async function fetchOdds(): Promise<ProcessedGame[]> { 
   try {
+    console.log("====== API REQUEST DETAILS ======");
     console.log("Fetching data from prediction API...");
-    console.log(`API URL: ${BASE_URL}/basketball_nba/odds/`);
+    console.log("API Key length:", API_KEY.length);
+    console.log("API Key format valid:", API_KEY.length >= 10);
+    console.log("Environment:", isDevelopment ? "Development" : "Production");
     
     // Test if API key is properly loaded
     if (!API_KEY || API_KEY.length < 10) {
@@ -82,45 +136,55 @@ export async function fetchOdds(): Promise<ProcessedGame[]> {
       throw new Error("API key is invalid or missing");
     }
     
+    // Prepare the base API URL
+    const apiUrl = `${BASE_URL}/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=h2h&oddsFormat=decimal`;
+    console.log("Base API URL (without key):", BASE_URL + "/basketball_nba/odds/");
+    
+    // ALWAYS use the CORS proxy that we've confirmed works
     try {
-      const response = await fetch(
-        `${BASE_URL}/basketball_nba/odds/?apiKey=${API_KEY}&regions=us&markets=h2h&oddsFormat=decimal`,
-        {
-          headers: {
-            'Accept': 'application/json',
-          },
-          // Add timeout to prevent long hanging requests
-          signal: AbortSignal.timeout(15000)
+      console.log("Attempting request with CORS proxy...");
+      
+      // Use the CORS proxy with proper encoding (this approach worked in our test)
+      const requestUrl = `${CORS_PROXY}${encodeURIComponent(apiUrl)}`;
+      
+      console.log("CORS Proxy being used:", CORS_PROXY);
+      console.log("Sending full request to:", requestUrl.replace(API_KEY, "API_KEY_HIDDEN"));
+      
+      const response = await fetch(requestUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        },
+        signal: AbortSignal.timeout(20000), // Increase timeout slightly
+        credentials: 'omit'
+      });
+      
+      console.log("Response received, status:", response.status, response.statusText);
+      
+      if (response.ok) {
+        console.log("CORS proxy request successful");
+        const data: Game[] = await response.json();
+        console.log(`Successfully fetched data for ${data.length} games`);
+        return processGames(data);
+      } else {
+        // Handle specific error codes
+        if (response.status === 401) {
+          throw new Error("API key unauthorized. Please check your API key.");
+        } else if (response.status === 429) {
+          throw new Error("API rate limit exceeded. Please try again later.");
+        } else {
+          const errorText = await response.text();
+          console.error("API error response:", errorText);
+          throw new Error(`API request failed with status ${response.status}: ${response.statusText}`);
         }
-      );
-      
-      console.log("Response status:", response.status);
-      
-      if (!response.ok) {
-        // Try to get error details
-        let errorDetails = "Unknown error";
-        try {
-          const errorData = await response.json();
-          errorDetails = JSON.stringify(errorData);
-          console.error("API error response:", errorData);
-        } catch (parseError) {
-          console.error("Could not parse error response:", parseError);
-          // Try to get text instead
-          errorDetails = await response.text();
-        }
-        
-        throw new Error(`API request failed with status ${response.status}: ${errorDetails}`);
       }
-      
-      const data: Game[] = await response.json();
-      console.log(`Successfully fetched data for ${data.length} games`);
-      return processGames(data);
-    } catch (fetchError) {
-      if (fetchError.name === 'AbortError') {
-        console.error("Request timed out after 15 seconds");
-        throw new Error("API request timed out. Please try again later.");
+    } catch (error) {
+      console.error("Error during API request:", error);
+      // Rethrow the error with more context
+      if (error instanceof Error) {
+        throw new Error(`API request failed: ${error.message}`);
       }
-      throw fetchError;
+      throw error;
     }
   } catch (error) {
     console.error('Error fetching odds:', error);
