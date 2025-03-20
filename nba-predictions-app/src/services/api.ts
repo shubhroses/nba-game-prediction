@@ -23,7 +23,8 @@ try {
     apiKeyExists: !!(import.meta.env?.VITE_SPORTS_API_KEY || import.meta.env?.VITE_ODDS_API_KEY),
     apiKeyLength: (import.meta.env?.VITE_SPORTS_API_KEY || import.meta.env?.VITE_ODDS_API_KEY || '').length,
     environment: import.meta.env?.MODE || 'unknown',
-    isProduction: import.meta.env?.PROD || false
+    isProduction: import.meta.env?.PROD || false,
+    timestamp: new Date().toISOString()
   });
 } catch (error) {
   console.error("Error checking environment:", error);
@@ -32,12 +33,8 @@ try {
 // Check if we have an API key, with more forgiving error handling in production
 if (!API_KEY) {
   console.error("API key is not configured in environment variables");
-  // In production, don't throw, just log the error
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-    console.error('API key missing but continuing with fallback data');
-  } else {
-    throw new Error('API key is not configured. Please check your environment variables.');
-  }
+  // Always throw an error now as we're prioritizing real data
+  throw new Error('API key is not configured. Please check your environment variables.');
 }
 
 // Check if we're in development mode with safer access pattern
