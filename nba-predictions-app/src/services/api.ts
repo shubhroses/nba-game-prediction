@@ -142,7 +142,7 @@ const FALLBACK_GAMES: ProcessedGame[] = [
 export async function fetchOdds(): Promise<ProcessedGame[]> { 
   try {
     console.log("====== API REQUEST DETAILS ======");
-    console.log("Fetching data from prediction API...");
+    console.log("Fetching odds from The Odds API...");
     console.log("API Key length:", API_KEY.length);
     console.log("API Key format valid:", API_KEY.length >= 10);
     console.log("Environment:", isDevelopment ? "Development" : "Production");

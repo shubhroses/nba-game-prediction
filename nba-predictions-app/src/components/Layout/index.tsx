@@ -13,7 +13,7 @@ export default function Layout({ children }: LayoutProps) {
           <h1 className="text-3xl font-bold">NBA Game Predictions</h1>
           <div className="flex items-center mt-2">
             <div className="h-1 w-10 bg-blue-400 rounded mr-2"></div>
-            <p className="text-blue-100">AI-Powered Basketball Insights</p>
+            <p className="text-blue-100">Bookmaker favourites from betting odds</p>
           </div>
         </div>
       </header>
@@ -26,7 +26,7 @@ export default function Layout({ children }: LayoutProps) {
         <div className="container mx-auto py-6 px-4">
           <div className="text-center mb-4">
             <p className="text-sm bg-gray-700 inline-block px-4 py-2 rounded-full">
-              Disclaimer: These predictions are based on statistical analysis and are for entertainment purposes only.
+              Disclaimer: These predictions are bookmaker favourites from betting odds, for entertainment purposes only.
             </p>
           </div>
           <div className="flex justify-between items-center border-t border-gray-700 pt-4">

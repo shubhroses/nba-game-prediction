@@ -87,7 +87,7 @@ function App() {
         </div>
         
         <p className="text-gray-600">
-          Our predictions are based on advanced statistical analysis of real-time odds.
+          Predictions here are bookmaker favourites, not model output. For each game the app takes one bookmaker's head-to-head odds from The Odds API, converts them to implied win probabilities, and shows the more likely team. The confidence figure is that team's implied probability.
         </p>
         
         {isDevelopment && (
@@ -105,7 +105,7 @@ function App() {
               <h3 className="text-md font-semibold text-blue-700">Sample Data Mode</h3>
             </div>
             <p className="text-blue-600">
-              Currently displaying sample prediction data for demonstration purposes.
+              Currently displaying hard-coded sample games for demonstration purposes; their odds and confidence figures are not real.
               Click the "Using Sample Data" button above to try fetching real API data.
             </p>
           </div>
@@ -120,7 +120,7 @@ function App() {
               <h3 className="text-md font-semibold text-green-700">Live Data Mode</h3>
             </div>
             <p className="text-green-600">
-              Displaying real-time prediction data. Predictions are updated regularly based on the latest statistics.
+              Displaying bookmaker favourites computed from current odds. The data is refreshed every 15 minutes.
             </p>
           </div>
         )}
