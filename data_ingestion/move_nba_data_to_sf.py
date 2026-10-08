@@ -256,7 +256,7 @@ def load_json_data_from_s3_to_snowflake():
                 return
 
             # 3) Create or replace the stage
-            create_stage_sql = f"""
+            create_stage_template = """
                 CREATE OR REPLACE STAGE nba_stage
                 URL='s3://{bucket_name}/raw/'
                 CREDENTIALS=(
@@ -265,7 +265,15 @@ def load_json_data_from_s3_to_snowflake():
                 )
                 FILE_FORMAT=(TYPE=JSON)
             """
-            logger.info(f"Executing SQL:\n{create_stage_sql}")
+            create_stage_sql = create_stage_template.format(
+                bucket_name=bucket_name, aws_key=aws_key, aws_secret=aws_secret
+            )
+            # Log the statement with the AWS key pair masked. The real values
+            # are sent to Snowflake only and must not reach the log.
+            redacted_stage_sql = create_stage_template.format(
+                bucket_name=bucket_name, aws_key="****", aws_secret="****"
+            )
+            logger.info(f"Executing SQL:\n{redacted_stage_sql}")
             cs.execute(create_stage_sql)
             logger.info("Stage 'nba_stage' created or replaced.")
 
