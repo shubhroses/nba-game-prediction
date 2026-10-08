@@ -14,9 +14,9 @@ Web app demo: https://nba-predictions-app.vercel.app
 
 | Path | What it is |
 | --- | --- |
-| `data_ingestion/fetch_nba_data.py` | Prefect flow. Fetches today's live scoreboard with `nba_api`, logs it, and writes it to `s3://$S3_BUCKET_NAME/raw/nba_scoreboard_<YYYYMMDD_HHMMSS>.json`. The fetch and upload tasks retry three times, five minutes apart. |
-| `data_ingestion/move_nba_data_to_sf.py` | Plain Python script. Finds the most recently modified object under `raw/` in the bucket, creates the table `RAW_NBA_SCOREBOARD (game_data VARIANT)` if it does not exist, creates or replaces an external stage `nba_stage` on `s3://$S3_BUCKET_NAME/raw/` with the AWS key pair from `.env`, and runs `COPY INTO` for that one file. The stage statement is logged with the key pair masked. |
-| `data_transformation/transform_data.py` | Prefect flow that shells out to `dbt run --select my_first_dbt_model --project-dir $DBT_PROJECT_DIR`, logs dbt's output, and exits with status 1 if dbt fails. |
+| `data_ingestion/fetch_nba_data.py` | Prefect flow. Fetches today's live scoreboard with `nba_api`, logs it at INFO level, and writes it to `s3://$S3_BUCKET_NAME/raw/nba_scoreboard_<YYYYMMDD_HHMMSS>.json`. The fetch and upload tasks retry three times, five minutes apart. |
+| `data_ingestion/move_nba_data_to_sf.py` | Plain Python script. Creates the table `RAW_NBA_SCOREBOARD (game_data VARIANT)` if it does not exist, finds the most recently modified object under `raw/` in the bucket, creates or replaces an external stage `nba_stage` on `s3://$S3_BUCKET_NAME/raw/` with the AWS key pair from `.env`, and runs `COPY INTO` for that one file. The stage statement is logged with the key pair masked. |
+| `data_transformation/transform_data.py` | Prefect flow that shells out to `dbt run --select my_first_dbt_model --project-dir $DBT_PROJECT_DIR`, logs dbt's output (at INFO level when dbt succeeds, at ERROR level when it fails), and exits with status 1 if dbt fails. |
 | `nba_dbt/` | dbt project created with `dbt init`. It still contains only dbt's starter example models. |
 | `notebooks/predict_past.ipynb` | Season-by-season backtest of a ridge classifier on historical team box scores. |
 | `notebooks/predict_live.ipynb` | Exploratory notebook: random forest on game logs pulled from `nba_api`, then predictions for today's and tomorrow's schedule. |
@@ -120,6 +120,8 @@ python data_transformation/transform_data.py
 ```
 
 With no Prefect API configured, Prefect 3 starts a temporary local server for the duration of each flow run.
+
+The two flows write most of their own messages at INFO level through Python's `logging` module: the scoreboard JSON in the ingestion flow, and the dbt command and its output when dbt succeeds. Importing Prefect puts its own handler on the root logger at WARNING level, which turns the scripts' later `logging.basicConfig(level=logging.INFO, ...)` call into a no-op. By default, then, those lines are not printed; only Prefect's own lines and the scripts' ERROR lines are. Set `PREFECT_LOGGING_ROOT_LEVEL=INFO` to see them (other libraries' INFO lines are printed too). This was checked with Prefect 3.8.8. `move_nba_data_to_sf.py` does not import Prefect, so its INFO lines are always printed.
 
 The dbt step additionally needs things that are not in this repository: a dbt adapter for your warehouse (`requirements.txt` lists only `dbt-core`; for Snowflake that means `pip install dbt-snowflake`) and a profile named `nba_dbt` in `~/.dbt/profiles.yml`.
 
