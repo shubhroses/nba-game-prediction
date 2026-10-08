@@ -1,15 +1,13 @@
 boto3
 dbt-core
-docker
-fastapi
-kubernetes
-mlflow
+matplotlib
+nba_api
+numpy
+# notebooks/predict_past.ipynb relies on pandas 2 behaviour and fails on pandas 3
+pandas<3
 prefect
-prometheus_client
 python-dotenv
-requests
+scikit-learn
 seaborn
 shap
 snowflake-connector-python
-streamlit
-uvicorn
