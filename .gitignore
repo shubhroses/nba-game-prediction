@@ -1,6 +1,30 @@
-# ignore environment files
-venv/*
-
+# Environment files hold credentials (AWS, Snowflake, The Odds API)
 .env
+.env.*
+!.env.example
 
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Input data for notebooks/predict_past.ipynb, not kept in the repository
 nba_games.csv
+
+# Node
+node_modules/
+dist/
+
+# dbt
+target/
+dbt_packages/
+logs/
+
+# OS and editor files (nba-predictions-app/.gitignore has its own .vscode rule)
+.DS_Store
+.idea/
+/.vscode/
