@@ -253,7 +253,7 @@ def messages(caplog, level=None):
     ]
 
 
-def test_statements_are_issued_in_order(s3, snowflake_account):
+def test_statements_are_issued_in_order(snowflake_account):
     loader.main()
 
     assert [normalise(sql) for sql in snowflake_account.statements] == [
@@ -364,8 +364,10 @@ def test_logs_rows_loaded(caplog, snowflake_account):
 
     loaded = [message for message in messages(caplog) if message.startswith("Loaded ")]
     assert loaded == [
-        f"Loaded 1 row(s) from {STAGED_FILE} into RAW_NBA_SCOREBOARD "
-        "(status LOADED, 1 parsed, 0 error(s))."
+        (
+            f"Loaded 1 row(s) from {STAGED_FILE} into RAW_NBA_SCOREBOARD "
+            "(status LOADED, 1 parsed, 0 error(s))."
+        )
     ]
     assert messages(caplog, logging.WARNING) == []
     assert messages(caplog, logging.ERROR) == []
@@ -373,7 +375,7 @@ def test_logs_rows_loaded(caplog, snowflake_account):
 
 
 @pytest.mark.parametrize(
-    "copy_result, reported",
+    ("copy_result", "reported"),
     [
         (COPY_NO_FILES, "Copy executed with 0 files processed."),
         (COPY_LOAD_SKIPPED, "LOAD_SKIPPED, File was loaded before."),
@@ -393,8 +395,10 @@ def test_logs_already_loaded_when_copy_skips_the_file(
 
     already_loaded = [message for message in messages(caplog) if "already loaded" in message]
     assert already_loaded == [
-        f"'{NEWEST_FILE}' was already loaded, so COPY INTO skipped it. "
-        f"Snowflake reported: {reported}"
+        (
+            f"'{NEWEST_FILE}' was already loaded, so COPY INTO skipped it. "
+            f"Snowflake reported: {reported}"
+        )
     ]
     assert not any(message.startswith("Loaded ") for message in messages(caplog))
     assert messages(caplog, logging.WARNING) == []
@@ -407,8 +411,10 @@ def test_warns_when_copy_reports_errors(caplog, snowflake_account):
     loader.main()
 
     assert messages(caplog, logging.WARNING) == [
-        f"COPY INTO did not fully load {STAGED_FILE}: status LOAD_FAILED, "
-        "1 parsed, 0 loaded, 1 error(s). First error: Error parsing JSON: unknown keyword"
+        (
+            f"COPY INTO did not fully load {STAGED_FILE}: status LOAD_FAILED, "
+            "1 parsed, 0 loaded, 1 error(s). First error: Error parsing JSON: unknown keyword"
+        )
     ]
     assert not any(message.startswith("Loaded ") for message in messages(caplog))
 
