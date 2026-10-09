@@ -131,8 +131,9 @@ def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) ->
 def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
     """
     Sorts the selected sports into those whose slot is recorded, those it is
-    too late for and those that are due, and takes the last. Raises _Stop
-    only for what concerns the run as a whole: the arguments and the key.
+    too late for and those that are due, and takes the ones that are due.
+    Raises _Stop only for what concerns the run as a whole: the arguments
+    and the key.
     """
     data_dir = args.data_dir
     sports = _selected(args, slot)
