@@ -35,6 +35,8 @@ Unpacks the `games` array of every response and keeps one snapshot per game id.
 
 `nba_api` does not document the `gameStatus` values. Its sample response has 3 with the status text `Final`, the response saved in `notebooks/predict_past.ipynb` has 1 with a tip-off time, and other clients of the same feed read 2 as in progress.
 
+Those two responses are the only real ones the models were written from. A postponed, suspended or cancelled game has not been seen, and the models do not treat one specially.
+
 Which snapshot is kept: the one with the highest `game_status_id`, and among those the one with the latest `snapshot_at`. The status is compared first because `meta.time` carries no time zone and may be missing.
 
 ### `fct_team_games`
