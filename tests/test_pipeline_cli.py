@@ -632,6 +632,14 @@ def test_without_a_key_no_request_is_made(run, data_dir, monkeypatch):
     assert not data_dir.exists()
 
 
+def test_white_space_around_the_key_is_not_sent(run, api, monkeypatch):
+    # A secret that was pasted with a line break after it is still the key.
+    monkeypatch.setenv("ODDS_API_KEY", f"  {KEY}\n")
+
+    assert run("--all").status == 0
+    assert api.requests[0].query["apiKey"] == KEY
+
+
 def test_an_address_that_is_not_on_this_machine_is_refused(run, data_dir, monkeypatch):
     monkeypatch.setenv("ODDS_API_BASE_URL", "https://example.com")
 
