@@ -200,7 +200,13 @@ def _start(value: object) -> datetime | None:
 def _show(value: object) -> str:
     """
     A value from the response, made safe to print: JSON-escaped, so it stays
-    on one line and in ASCII, and cut to 80 characters.
+    on one line and in ASCII, and cut to 80 characters. A value that is
+    nested too deep to be written out is described instead.
     """
-    text = json.dumps(value)
+    try:
+        text = json.dumps(value)
+    except RecursionError:
+        # On Python 3.14 json.loads accepts a body that is nested a little
+        # deeper than json.dumps can write out again.
+        return f"a {type(value).__name__} nested too deep to show"
     return text if len(text) <= 80 else text[:77] + "..."

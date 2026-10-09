@@ -369,6 +369,26 @@ def test_text_from_the_response_is_reported_on_one_line():
     assert len(reason) < 140
 
 
+def test_a_value_nested_too_deep_to_print_is_described_and_the_rest_is_kept():
+    # json.dumps gives up on a value like this one with RecursionError. Most
+    # such bodies never get past json.loads, but on Python 3.14 the parser
+    # accepts a body that is nested a little deeper than json.dumps can write
+    # out again, so the builder can be handed one.
+    deep = []
+    for _ in range(200_000):
+        deep = [deep]
+    without_an_id = event("c" * 32, "Boston Celtics", "New York Knicks", "2026-10-20T23:00:00Z", {})
+    without_an_id["id"] = deep
+
+    built = build([deep, without_an_id, LATE_GAME])
+
+    assert built.dropped == [
+        "an entry that is not an event: a list nested too deep to show",
+        "an event without a usable id: a list nested too deep to show",
+    ]
+    assert [game["id"] for game in built.slate["games"]] == [LATE]
+
+
 def test_an_event_listed_twice_is_recorded_once():
     again = event(
         EARLY, "Boston Celtics", "New York Knicks", "2026-10-20T23:00:00Z", {"Book A": (1.10, 7.00)}
