@@ -128,6 +128,45 @@ def test_a_late_trigger_still_takes_the_slot_once():
     assert not schedule.is_due(slot_again, slot)
 
 
+def test_a_slot_may_be_asked_for_until_75_minutes_after_its_start():
+    assert schedule.ATTEMPT_WINDOW == timedelta(minutes=75)
+    start = utc("2026-10-31 22:10")
+
+    assert schedule.in_time(start, start)
+    assert schedule.in_time(start, start + timedelta(minutes=74, seconds=59))
+    assert not schedule.in_time(start, start + timedelta(minutes=75))
+    assert not schedule.in_time(start, start + timedelta(hours=7, minutes=59))
+
+
+def test_three_triggers_of_every_slot_start_in_time_and_no_more():
+    # The same walk as above, this time noting how long after the start of
+    # its slot each trigger comes that may still ask for it.
+    trigger = utc("2026-10-31 09:10")
+    in_time = {slot: [] for slot, _ in SLOTS}
+    while trigger < utc("2026-11-03 09:10"):
+        current, _ = schedule.current_and_next(trigger)
+        if schedule.in_time(current, trigger):
+            in_time[schedule.slot_id(current)].append(trigger - current)
+        trigger += timedelta(minutes=30)
+
+    on_the_slot_and_30_and_60_minutes_later = [timedelta(minutes=late) for late in (0, 30, 60)]
+    assert in_time == {slot: on_the_slot_and_30_and_60_minutes_later for slot, _ in SLOTS}
+
+
+def test_the_second_trigger_of_a_slot_is_in_time_when_it_starts_up_to_45_minutes_late():
+    # GitHub starts scheduled runs late. That is why the window is 75 minutes
+    # and not 60: the trigger half an hour after the slot's start must still
+    # be able to take it.
+    start = utc("2026-10-31 22:10")
+    second_trigger = start + timedelta(minutes=30)
+
+    for minutes_late in (0, 13, 21, 44):
+        assert schedule.in_time(start, second_trigger + timedelta(minutes=minutes_late))
+    assert not schedule.in_time(start, second_trigger + timedelta(minutes=45))
+    # The fourth trigger never is, however punctual.
+    assert not schedule.in_time(start, start + timedelta(minutes=90))
+
+
 def test_the_first_run_is_due():
     assert schedule.is_due("2026-10-31T18:10-04:00", None)
 

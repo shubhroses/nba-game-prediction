@@ -3,8 +3,9 @@ When snapshots are taken: six slots a day, in New York time.
 
 The job is triggered far more often than six times a day. Each trigger works
 out which slot it is in and compares that slot's id with the last one recorded
-in the state file. Only the first trigger of a slot makes a request, so a
-trigger that comes late, twice or by hand costs nothing.
+in the state file. Once a slot is recorded, no later trigger asks for it. As
+long as it is not, a trigger may ask for it only if it starts within
+ATTEMPT_WINDOW of the slot's start. After that the slot is given up.
 """
 
 from datetime import datetime, time, timedelta, timezone
@@ -15,6 +16,22 @@ ZONE = ZoneInfo("America/New_York")
 # Wall-clock times in ZONE. None of them lies between 01:00 and 03:00, the
 # hours that a change to or from daylight saving time repeats or skips.
 SLOT_TIMES = (time(5, 10), time(9, 10), time(12, 10), time(15, 10), time(18, 10), time(21, 10))
+
+# A slot may be attempted only by a run that starts less than this long after
+# the slot's start. This is what bounds the cost of a failure that does not
+# pass. A run makes one request for a sport, and the workflow's triggers are
+# 30 minutes apart, so three of them fall in the 75 minutes: at the slot's
+# start, and 30 and 60 minutes after it. A slot therefore costs at most three
+# requests for a sport. The count is of runs, however they were started: one
+# that is started by hand inside the 75 minutes asks as well.
+#
+# Why not less: GitHub starts scheduled runs late. In a measurement of four
+# public repositories the median delay was 13 to 21 minutes, and the first two
+# triggers of a slot must still fit. With 75 minutes the second one fits when
+# it starts up to 45 minutes late. Why not more: every run that fits is one
+# more request while a failure lasts, and beyond 90 minutes a fourth trigger
+# would fit as well.
+ATTEMPT_WINDOW = timedelta(minutes=75)
 
 
 def current_and_next(now: datetime) -> tuple[datetime, datetime]:
@@ -50,3 +67,12 @@ def is_due(slot: str, last_slot: str | None) -> bool:
     state file already records. With no state file yet, last_slot is None.
     """
     return slot != last_slot
+
+
+def in_time(slot_start: datetime, run_start: datetime) -> bool:
+    """
+    Whether a run that started at run_start may still ask for the slot that
+    started at slot_start: it must have started less than ATTEMPT_WINDOW
+    after the slot did.
+    """
+    return run_start - slot_start < ATTEMPT_WINDOW

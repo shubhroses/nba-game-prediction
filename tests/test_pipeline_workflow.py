@@ -6,7 +6,7 @@ the few things that other files, or the safety of the key, depend on.
 """
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from pipeline import schedule
@@ -28,6 +28,19 @@ def test_every_slot_starts_on_a_trigger():
     for month in (1, 7):
         offset = datetime(2026, month, 15, tzinfo=schedule.ZONE).utcoffset()
         assert offset.total_seconds() % 3600 == 0
+
+
+def test_wherever_the_workflow_gives_a_number_of_minutes_it_is_the_window_of_the_schedule():
+    # The comment on the cron line and the descriptions of the two inputs say
+    # for how long a slot may be asked for. schedule.py is where that is set.
+    window = str(int(schedule.ATTEMPT_WINDOW.total_seconds() // 60))
+    mentions = re.findall(r"(\d+) minutes", PIPELINE)
+
+    assert len(mentions) == 3
+    assert set(mentions) == {window}
+    # Three triggers fit in the window, as the comment says.
+    assert schedule.ATTEMPT_WINDOW // timedelta(minutes=30) + 1 == 3
+    assert "which three of these triggers can" in PIPELINE
 
 
 def test_the_actions_are_the_ones_ci_uses_pinned_to_the_same_commits():

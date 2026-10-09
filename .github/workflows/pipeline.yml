@@ -9,15 +9,18 @@ on:
     # and a run that finds its slot already recorded stops before it makes a
     # request, so the other triggers cost no API credits. They are there
     # because GitHub starts scheduled runs late and sometimes skips one.
+    # A slot that is not recorded is asked for again by the next trigger, but
+    # only by a run that starts less than 75 minutes after the slot's start,
+    # which three of these triggers can.
     - cron: "10,40 * * * *"
   workflow_dispatch:
     inputs:
       force:
-        description: Take a snapshot even if the current slot is already recorded
+        description: Take a snapshot even if the current slot is already recorded or started 75 minutes ago or more
         type: boolean
         default: false
       dry_run:
-        description: Fetch and validate, but write and push nothing (needs force too if the slot is recorded)
+        description: Fetch and validate, but write and push nothing (needs force too if the slot is recorded or started 75 minutes ago or more)
         type: boolean
         default: false
 
@@ -138,6 +141,7 @@ jobs:
           PUSH: ${{ steps.push.outcome }}
           COMMIT: ${{ steps.push.outputs.commit }}
           SLOT: ${{ steps.snapshot.outputs.slot }}
+          GIVEN_UP: ${{ steps.snapshot.outputs.given_up }}
           GAMES: ${{ steps.snapshot.outputs.games }}
           WITH_LINE: ${{ steps.snapshot.outputs.with_line }}
           DROPPED: ${{ steps.snapshot.outputs.dropped }}
@@ -152,6 +156,8 @@ jobs:
               echo "The snapshot for slot \`${SLOT:-unknown}\` failed and nothing was written. The log of the step says why."
             elif [ "$SNAPSHOT" != "success" ]; then
               echo "The snapshot step did not run."
+            elif [ -n "$GIVEN_UP" ]; then
+              echo "Slot \`$SLOT\` was not recorded in time for $GIVEN_UP and is given up. No request was made."
             elif [ -z "$GAMES" ]; then
               echo "Not due: slot \`$SLOT\` is already recorded. No request was made."
             else
@@ -161,7 +167,7 @@ jobs:
               if [ "$PUSH" = "success" ]; then
                 echo "- Pushed to the data branch as commit \`$COMMIT\`."
               elif [ "$PUSH" = "failure" ]; then
-                echo "- The push to the data branch failed, so this snapshot is not recorded. The next run takes it again."
+                echo "- The push to the data branch failed, so this snapshot is not recorded. The next run takes it again, unless the slot is too old by then."
               else
                 echo "- Dry run: nothing was written or pushed."
               fi

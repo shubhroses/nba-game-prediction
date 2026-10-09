@@ -5,7 +5,7 @@ The command line.
 
 Exit status:
 
-    0  a snapshot was taken, or none was due
+    0  a snapshot was taken, or none was due, or the slot was given up
     1  bad arguments or settings, for example ODDS_API_KEY is not set
     2  validation failed
     3  the provider refused the request (401, 429)
@@ -46,6 +46,7 @@ class _Slot:
 
     id: str
     next_due: str  # the id of the slot after it
+    in_time: bool  # whether a run that starts now may still ask for this slot
     run_started: datetime
 
 
@@ -75,7 +76,10 @@ def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
     now = clock()
     current, following = schedule.current_and_next(now)
     slot = _Slot(
-        id=schedule.slot_id(current), next_due=schedule.slot_id(following), run_started=now
+        id=schedule.slot_id(current),
+        next_due=schedule.slot_id(following),
+        in_time=schedule.in_time(current, now),
+        run_started=now,
     )
     try:
         outputs = _snapshot(args, slot, clock)
@@ -98,10 +102,27 @@ def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock) -> dict:
     data_dir = args.data_dir
     sports = _selected(args, slot)
     previous = {sport: _state_on_disk(data_dir, sport) for sport in sports}
-    due = [sport for sport in sports if args.force or _is_due(slot, previous[sport])]
+    unrecorded = [sport for sport in sports if _is_due(slot, previous[sport])]
+    if args.force:
+        due, given_up = sports, []
+    elif slot.in_time:
+        due, given_up = unrecorded, []
+    else:
+        # The slot is not recorded and it is too late to ask for it. This is
+        # what keeps a failure that lasts from being paid for at every
+        # trigger: see ATTEMPT_WINDOW in schedule.py.
+        due, given_up = [], unrecorded
     if not due:
-        names = ", ".join(sport.key for sport in sports)
-        _say(f"Not due: slot {slot.id} is already recorded for {names}.", _next(slot))
+        recorded = [sport for sport in sports if sport not in given_up]
+        if recorded:
+            already = f"Not due: slot {slot.id} is already recorded for {_names(recorded)}."
+            _say(already, *([] if given_up else [_next(slot)]))
+        if given_up:
+            _say(
+                f"Slot {slot.id} for {_names(given_up)} was not recorded in time; "
+                f"the next slot starts at {slot.next_due}."
+            )
+            return {"changed": "false", "slot": slot.id, "given_up": _names(given_up)}
         return {"changed": "false", "slot": slot.id}
 
     # Whatever can be checked without the provider is checked before the
@@ -286,6 +307,10 @@ def _say(*sentences: str) -> None:
     print(*sentences, flush=True)
 
 
+def _names(sports: list[config.Sport]) -> str:
+    return ", ".join(sport.key for sport in sports)
+
+
 def _next(slot: _Slot) -> str:
     return f"The next slot starts at {slot.next_due}."
 
@@ -350,7 +375,10 @@ def _parser() -> argparse.ArgumentParser:
     command.add_argument(
         "--force",
         action="store_true",
-        help="take a snapshot even if the current slot is already recorded",
+        help=(
+            "take a snapshot even if the current slot is already recorded, "
+            "or is too old to be asked for"
+        ),
     )
     command.add_argument(
         "--dry-run", action="store_true", help="fetch and validate, but write nothing"

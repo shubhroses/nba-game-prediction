@@ -39,6 +39,11 @@ AFTERNOON_SLOT, EVENING_SLOT, NIGHT_SLOT = (
     "2026-10-20T21:10-04:00",
 )
 
+# The 18:10 slot starts at 22:10:00 UTC. A run may ask for it if it starts
+# less than 75 minutes after that.
+JUST_IN_TIME = datetime(2026, 10, 20, 23, 24, 59, tzinfo=timezone.utc)
+TOO_LATE = datetime(2026, 10, 20, 23, 25, 0, tzinfo=timezone.utc)
+
 EARLY, LATE, UNPRICED = "e" * 32, "f" * 32, "a" * 32
 
 
@@ -466,6 +471,77 @@ def test_force_takes_another_snapshot_in_a_slot_that_is_already_recorded(run, da
     assert read(data_dir, "v1/state.json")["games"][EARLY]["first"]["at"] == "2026-10-20T22:10:41Z"
 
 
+def test_a_run_that_starts_just_inside_75_minutes_takes_the_slot(run, data_dir):
+    result = run("--all", now=JUST_IN_TIME)
+
+    assert (result.status, result.requests, result.outputs["changed"]) == (0, 1, "true")
+    assert read(data_dir, "v1/state.json")["last_slot"] == EVENING_SLOT
+
+
+def test_a_run_that_starts_75_minutes_after_the_slot_gives_it_up(run, data_dir):
+    result = run("--all", now=TOO_LATE)
+
+    assert result.status == 0
+    assert result.requests == 0
+    assert result.out == (
+        f"Slot {EVENING_SLOT} for basketball_nba was not recorded in time; "
+        f"the next slot starts at {NIGHT_SLOT}.\n"
+    )
+    assert result.err == ""
+    assert result.outputs == {
+        "changed": "false",
+        "slot": EVENING_SLOT,
+        "given_up": "basketball_nba",
+    }
+    assert not data_dir.exists()
+
+
+def test_a_slot_that_is_given_up_leaves_the_files_of_the_slot_before_untouched(run, data_dir):
+    run("--all", now=AFTERNOON)
+    after_the_afternoon = tree(data_dir)
+
+    result = run("--all", now=TOO_LATE)
+
+    assert (result.status, result.requests) == (0, 0)
+    assert "was not recorded in time" in result.out
+    assert tree(data_dir) == after_the_afternoon
+
+
+def test_force_takes_a_slot_that_is_too_old_to_be_asked_for(run, data_dir):
+    result = run("--all", "--force", now=TOO_LATE)
+
+    assert (result.status, result.requests, result.outputs["changed"]) == (0, 1, "true")
+    assert read(data_dir, "v1/state.json")["last_slot"] == EVENING_SLOT
+    assert "given_up" not in result.outputs
+
+
+def test_a_dry_run_in_a_slot_that_is_too_old_makes_no_request_unless_it_is_forced(run, data_dir):
+    unforced = run("--all", "--dry-run", now=TOO_LATE)
+    assert (unforced.status, unforced.requests) == (0, 0)
+    assert "was not recorded in time" in unforced.out
+
+    forced = run("--all", "--dry-run", "--force", now=TOO_LATE)
+    assert (forced.status, forced.requests, forced.outputs["changed"]) == (0, 1, "false")
+    assert not data_dir.exists()
+
+
+def test_a_failure_that_lasts_is_asked_three_times_for_a_slot_and_then_left_alone(
+    run, api, data_dir
+):
+    # The triggers of one slot, half an hour apart, while the provider is
+    # down, and then the first trigger of the next slot three hours on.
+    api.status = 503
+    slot_start = datetime(2026, 10, 20, 22, 10, 0, tzinfo=timezone.utc)
+
+    results = [run("--all", now=slot_start + timedelta(minutes=30 * n)) for n in range(7)]
+
+    assert [result.requests for result in results] == [1, 1, 1, 0, 0, 0, 1]
+    assert [result.status for result in results] == [4, 4, 4, 0, 0, 0, 4]
+    assert [result.outputs["slot"] for result in results] == [EVENING_SLOT] * 6 + [NIGHT_SLOT]
+    assert all("was not recorded in time" in result.out for result in results[3:6])
+    assert not data_dir.exists()
+
+
 class TestAll:
     """--all with a second sport that has a last day, as the preseason rehearsal has."""
 
@@ -520,8 +596,8 @@ class TestAll:
         }
 
     def test_the_last_day_is_a_new_york_calendar_day(self, run, api):
-        # 03:00 UTC on the 18th is 23:00 on the 17th in New York.
-        run("--all", now=datetime(2026, 10, 18, 3, 0, 0, tzinfo=timezone.utc))
+        # 02:00 UTC on the 18th is 22:00 on the 17th in New York.
+        run("--all", now=datetime(2026, 10, 18, 2, 0, 0, tzinfo=timezone.utc))
         assert [received.sport for received in api.requests] == [
             "basketball_nba",
             "basketball_test",
@@ -547,6 +623,32 @@ class TestAll:
             "Nothing was written.",
         ]
         assert result.outputs == {"changed": "false", "slot": "2026-10-17T18:10-04:00"}
+        assert not data_dir.exists()
+
+    def test_too_late_for_one_sport_while_the_other_is_recorded(self, run, api):
+        saturday = datetime(2026, 10, 17, 22, 10, 41, tzinfo=timezone.utc)
+        run("--sport", "basketball_nba", now=saturday)
+        slot, next_slot = "2026-10-17T18:10-04:00", "2026-10-17T21:10-04:00"
+
+        result = run("--all", now=saturday + timedelta(minutes=75))
+
+        assert (result.status, result.requests) == (0, 0)
+        assert result.out.splitlines() == [
+            f"Not due: slot {slot} is already recorded for basketball_nba.",
+            f"Slot {slot} for basketball_test was not recorded in time; "
+            f"the next slot starts at {next_slot}.",
+        ]
+        assert result.outputs == {"changed": "false", "slot": slot, "given_up": "basketball_test"}
+
+    def test_too_late_for_both_sports(self, run, api, data_dir):
+        result = run("--all", now=datetime(2026, 10, 17, 23, 25, 0, tzinfo=timezone.utc))
+
+        assert (result.status, result.requests) == (0, 0)
+        assert result.out == (
+            "Slot 2026-10-17T18:10-04:00 for basketball_nba, basketball_test "
+            "was not recorded in time; the next slot starts at 2026-10-17T21:10-04:00.\n"
+        )
+        assert result.outputs["given_up"] == "basketball_nba, basketball_test"
         assert not data_dir.exists()
 
     def test_only_the_sport_that_is_due_is_requested(self, run, api):
@@ -675,8 +777,9 @@ def test_a_python_older_than_3_11_is_refused(monkeypatch):
 
 def test_the_module_runs_as_a_program_with_the_real_clock(tmp_path):
     # Everything above calls main() with a clock of its own. This starts the
-    # program the way the workflow does. With the real clock only the first
-    # run can be checked: it is due at any time of day.
+    # program the way the workflow does, except that it is forced: with the
+    # real clock, whether a run may still ask for its slot depends on the
+    # time of day the test is run at.
     in_two_days = (datetime.now(timezone.utc) + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     upcoming = [
         event(EARLY, "Boston Celtics", "New York Knicks", in_two_days, {"Book A": (1.50, 2.70)})
@@ -691,6 +794,7 @@ def test_the_module_runs_as_a_program_with_the_real_clock(tmp_path):
                 "pipeline",
                 "snapshot",
                 "--all",
+                "--force",
                 "--data-dir",
                 str(tmp_path / "data"),
             ],
