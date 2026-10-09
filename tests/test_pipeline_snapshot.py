@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from fake_odds_api import event
-from pipeline import snapshot
+from pipeline import snapshot, validate
 
 SLOT, NEXT_DUE = "2026-10-20T18:10-04:00", "2026-10-20T21:10-04:00"
 NOW = datetime(2026, 10, 20, 22, 10, 41, tzinfo=timezone.utc)
@@ -277,6 +277,22 @@ def test_a_start_time_with_an_offset_is_written_in_utc():
     )
 
     assert build([in_new_york_time]).slate["games"][0]["commence_time"] == "2026-10-20T23:00:00Z"
+
+
+def test_a_fraction_of_a_second_in_a_start_time_is_dropped_before_it_is_compared():
+    # NOW is 22:10:41. The files carry whole seconds, so the first game is
+    # written as starting at 22:10:41, which is not after the snapshot.
+    at_once = event(EARLY, "Boston Celtics", "New York Knicks", "2026-10-20T22:10:41.900Z", {})
+    a_second_on = event(
+        LATE, "Los Angeles Lakers", "Golden State Warriors", "2026-10-20T22:10:42.900Z", {}
+    )
+
+    built = build([at_once, a_second_on])
+
+    assert [(game["id"], game["commence_time"]) for game in built.slate["games"]] == [
+        (LATE, "2026-10-20T22:10:42Z")
+    ]
+    assert validate.slate_problems(built.slate) == []
 
 
 def test_an_unknown_team_is_dropped_and_reported_and_the_rest_is_kept():

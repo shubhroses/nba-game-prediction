@@ -178,12 +178,21 @@ def _team_codes(event: dict, game_id: str) -> tuple[str, str]:
 
 
 def _start(value: object) -> datetime | None:
-    """The provider's commence_time in UTC. None when it is not an ISO 8601 time with an offset."""
+    """
+    The provider's commence_time in UTC, to the second. None when it is not
+    an ISO 8601 time with an offset.
+    """
     if not isinstance(value, str):
         return None
     try:
         moment = datetime.fromisoformat(value)
-        return moment.astimezone(timezone.utc) if moment.tzinfo is not None else None
+        if moment.tzinfo is None:
+            return None
+        # A fraction of a second is dropped here, before the time is compared
+        # with anything, because it is dropped when the time is written. Left
+        # on, it could put a game on the board that the validator, reading
+        # the written time, finds has already started.
+        return moment.astimezone(timezone.utc).replace(microsecond=0)
     except (ValueError, OverflowError):
         return None
 
