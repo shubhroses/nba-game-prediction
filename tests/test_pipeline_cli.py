@@ -440,6 +440,18 @@ def test_a_dry_run_fetches_and_validates_but_writes_nothing(run, data_dir):
     assert run("--all").requests == 1
 
 
+def test_a_dry_run_in_a_recorded_slot_makes_no_request_unless_it_is_forced(run, data_dir):
+    run("--all")
+    after_first_run = tree(data_dir)
+    a_little_later = EVENING + timedelta(minutes=5)
+
+    assert run("--all", "--dry-run", now=a_little_later).requests == 0
+
+    forced = run("--all", "--dry-run", "--force", now=a_little_later)
+    assert (forced.status, forced.requests, forced.outputs["changed"]) == (0, 1, "false")
+    assert tree(data_dir) == after_first_run
+
+
 def test_force_takes_another_snapshot_in_a_slot_that_is_already_recorded(run, data_dir):
     run("--all")
 

@@ -310,7 +310,7 @@ The preseason entry is a rehearsal. The regular season starts on 20 October 2026
 
 ## The workflow
 
-`.github/workflows/pipeline.yml`, named `Odds snapshot`, runs on the schedule above and by hand (`workflow_dispatch`, with the inputs `force` and `dry_run`).
+`.github/workflows/pipeline.yml`, named `Odds snapshot`, runs on the schedule above and by hand (`workflow_dispatch`, with the inputs `force` and `dry_run`). The inputs are the command's `--force` and `--dry-run`. A dry run in a slot that is already recorded makes no request unless `force` is set as well.
 
 - **One run at a time.** The runs share a concurrency group, and a run in progress is not cancelled.
 - **Permissions.** The workflow's token can only read the repository. The one job is given `contents: write`, because it pushes to the `data` branch. The two actions it uses are the ones the CI workflow uses, pinned to the same commits.

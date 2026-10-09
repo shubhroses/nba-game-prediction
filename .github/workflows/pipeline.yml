@@ -17,7 +17,7 @@ on:
         type: boolean
         default: false
       dry_run:
-        description: Fetch and validate, but write and push nothing
+        description: Fetch and validate, but write and push nothing (needs force too if the slot is recorded)
         type: boolean
         default: false
 
