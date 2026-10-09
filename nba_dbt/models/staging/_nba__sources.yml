@@ -1,0 +1,23 @@
+version: 2
+
+sources:
+  - name: nba
+    description: >
+      Raw NBA data that data_ingestion/move_nba_data_to_sf.py copies from S3
+      into Snowflake.
+    # The load script creates its table in the database and schema named by
+    # SNOWFLAKE_DATABASE and SNOWFLAKE_SCHEMA. Read the same two variables when
+    # they are set, and fall back to the dbt target's database and schema.
+    database: "{{ env_var('SNOWFLAKE_DATABASE', target.database) }}"
+    schema: "{{ env_var('SNOWFLAKE_SCHEMA', target.schema) }}"
+    tables:
+      - name: raw_nba_scoreboard
+        description: >
+          One row per scoreboard file loaded from S3. A file holds one response
+          of the NBA live scoreboard as returned by nba_api's ScoreBoard
+          endpoint: a "meta" object and a "scoreboard" object with the game
+          date and a "games" array. The same game appears in every file
+          fetched on its game day.
+        columns:
+          - name: game_data
+            description: The whole response, stored as a VARIANT.

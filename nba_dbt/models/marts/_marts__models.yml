@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: fct_team_games
+    description: >
+      One row per team per game. Each game in stg_nba__games gives two rows,
+      one for the home team and one for the away team.
+    columns:
+      - name: team_game_id
+        description: Key of the row, the game id and the team id joined with a hyphen.
+        data_tests:
+          - unique
+          - not_null
+      - name: game_id
+        description: The NBA's game id.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_nba__games')
+                field: game_id
+      - name: game_date
+        description: The day the game is listed under on the scoreboard.
+      - name: team_id
+        description: The NBA's team id of the team this row is about.
+        data_tests:
+          - not_null
+      - name: team_tricode
+        description: The team's three-letter code.
+      - name: opponent_team_id
+        description: The NBA's team id of the other team in the game.
+      - name: opponent_team_tricode
+        description: The other team's three-letter code.
+      - name: home_away
+        description: Whether the team played at home or away.
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['home', 'away']
+      - name: game_status_id
+        description: The feed's gameStatus number (see stg_nba__games).
+      - name: game_status_text
+        description: The feed's display text for the status.
+      - name: is_final
+        description: True when the game is finished.
+      - name: points_for
+        description: >
+          Points scored by the team. 0 before tip-off and the running score
+          while the game is in progress.
+      - name: points_against
+        description: >
+          Points scored by the opponent. 0 before tip-off and the running
+          score while the game is in progress.
+      - name: won
+        description: >
+          True if the team won, false if it lost. Null unless the game is
+          finished.

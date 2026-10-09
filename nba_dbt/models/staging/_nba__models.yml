@@ -1,0 +1,58 @@
+version: 2
+
+models:
+  - name: stg_nba__games
+    description: >
+      One row per game, flattened from the "games" array of the scoreboard
+      responses in RAW_NBA_SCOREBOARD. When a game is in several responses the
+      one with the furthest game status is kept, and the newest of those.
+    columns:
+      - name: game_id
+        description: The NBA's ten-character game id, for example 0022401205.
+        data_tests:
+          - unique
+          - not_null
+      - name: game_date
+        description: The scoreboard's game date, the day the game is listed under.
+        data_tests:
+          - not_null
+      - name: game_status_id
+        description: >
+          The feed's gameStatus number: 1 before tip-off, 2 in progress,
+          3 final. nba_api does not document the values. Its sample response
+          has 3 with the status text "Final", the response saved in
+          notebooks/predict_past.ipynb has 1 with a tip-off time, and other
+          clients of the feed read 2 as in progress.
+        data_tests:
+          - not_null
+      - name: game_status_text
+        description: >
+          The feed's display text for the status, for example "7:30 pm ET"
+          before tip-off or "Final" afterwards.
+      - name: is_final
+        description: True when game_status_id is 3.
+      - name: home_team_id
+        description: The NBA's team id of the home team.
+        data_tests:
+          - not_null
+      - name: home_team_tricode
+        description: The home team's three-letter code, for example BOS.
+      - name: home_score
+        description: >
+          The home team's points in the kept snapshot. 0 before tip-off and
+          the running score while the game is in progress.
+      - name: away_team_id
+        description: The NBA's team id of the away team.
+        data_tests:
+          - not_null
+      - name: away_team_tricode
+        description: The away team's three-letter code, for example DET.
+      - name: away_score
+        description: >
+          The away team's points in the kept snapshot. 0 before tip-off and
+          the running score while the game is in progress.
+      - name: snapshot_at
+        description: >
+          The meta.time of the response the row was taken from, without a
+          time zone because the feed gives none. Null if it could not be
+          parsed.

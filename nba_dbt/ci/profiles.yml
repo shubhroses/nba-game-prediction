@@ -1,0 +1,21 @@
+# Placeholder profile for the checks that never connect to Snowflake:
+#
+#   dbt parse   --project-dir nba_dbt --profiles-dir nba_dbt/ci
+#   dbt compile --project-dir nba_dbt --profiles-dir nba_dbt/ci --no-populate-cache --no-introspect
+#
+# dbt needs a profile to know which adapter to load. None of the values below
+# is real, and nothing can be run against a warehouse with them. To run the
+# models, use a profile of your own (see nba_dbt/README.md).
+nba_dbt:
+  target: ci
+  outputs:
+    ci:
+      type: snowflake
+      account: placeholder
+      user: placeholder
+      password: placeholder
+      role: PLACEHOLDER
+      warehouse: PLACEHOLDER
+      database: NBA
+      schema: ANALYTICS
+      threads: 1
