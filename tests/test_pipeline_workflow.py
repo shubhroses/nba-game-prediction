@@ -55,6 +55,12 @@ def test_the_api_key_is_given_to_one_step():
     assert "github.token" not in step
 
 
+def test_runs_wait_for_each_other_and_none_is_cancelled():
+    # A run that is cancelled after its request has spent a credit and
+    # recorded nothing, and the next run would ask again.
+    assert "\nconcurrency:\n  group: odds-snapshot\n  cancel-in-progress: false\n" in PIPELINE
+
+
 def test_the_only_push_goes_to_the_data_branch_and_is_not_forced():
     assert re.findall(r"git push.*", PIPELINE) == ["git push --quiet origin HEAD:refs/heads/data"]
 

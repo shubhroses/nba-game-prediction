@@ -339,7 +339,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | `tests/test_pipeline_store.py` | The file formats on disk, and that a failed write leaves the data directory as it was. |
 | `tests/test_pipeline_oddsapi.py` | The request against the fake server: its parameters, the retries and their waits, the refusals, a redirect, and that no error message or traceback holds the key or the URL. |
 | `tests/test_pipeline_cli.py` | The command from end to end: a first run, a second run in the same slot, three slots of one evening, 401, 429 and 503, a validation failure, `--dry-run`, `--force`, `--all` with two sports. After every run it looks for the dummy key in the output and in the files. |
-| `tests/test_pipeline_workflow.py` | The workflow file, read as text: every slot starts on a cron trigger, the actions are pinned to the commits CI uses, the token is read-only outside the job that pushes, the key goes to one step, and the only push is an unforced one to `data`. |
+| `tests/test_pipeline_workflow.py` | The workflow file, read as text: every slot starts on a cron trigger, the actions are pinned to the commits CI uses, the token is read-only outside the job that pushes, the key goes to one step, runs wait for each other and none is cancelled, and the only push is an unforced one to `data`. |
 
 ## What has been checked, and what has not
 
