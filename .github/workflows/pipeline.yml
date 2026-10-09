@@ -127,13 +127,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SLOT: ${{ steps.snapshot.outputs.slot }}
-          GAMES: ${{ steps.snapshot.outputs.games }}
+          WRITTEN: ${{ steps.snapshot.outputs.written }}
         run: |
           cd "$DATA_DIR"
           git add --all
-          noun=games
-          if [ "$GAMES" = "1" ]; then noun=game; fi
-          git commit --quiet -m "Snapshot $SLOT: $GAMES $noun"
+          # The message gives the count for each prefix that was written:
+          # "Snapshot 2026-10-20T18:10-04:00: v1 12 games, v1-dryrun 3 games".
+          git commit --quiet -m "Snapshot $SLOT: $WRITTEN"
           # Never forced, and never to main. The push is refused if the data
           # branch on GitHub has moved since this run fetched it.
           git push --quiet origin HEAD:refs/heads/data

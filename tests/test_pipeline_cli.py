@@ -150,6 +150,7 @@ def test_the_first_run_writes_the_three_files_and_reports_a_change(run, data_dir
         "credits_remaining": "499",
         "credits_used": "1",
         "credits_spent": "1",
+        "written": "v1 3 games",
     }
     assert sorted(tree(data_dir)) == [
         "v1/history/2026-10-20.ndjson",
@@ -474,6 +475,8 @@ def test_a_dry_run_fetches_and_validates_but_writes_nothing(run, data_dir):
     assert result.out.splitlines()[-1] == "Dry run: nothing was written."
     assert result.outputs["changed"] == "false"
     assert (result.outputs["games"], result.outputs["with_line"]) == ("3", "2")
+    # Nothing was written, so there is nothing to name in a commit message.
+    assert "written" not in result.outputs
     assert not data_dir.exists()
 
     # Nothing was recorded, so the slot is still due.
@@ -635,7 +638,8 @@ class TestAll:
             "v1/state.json",
         ]
         assert read(data_dir, "v1-test/slate.json")["sport"] == "basketball_test"
-        # The counts are totals. The credits are those of the last response.
+        # The counts are totals, and `written` has one count for each prefix.
+        # The credits are those of the last response.
         assert result.outputs == {
             "changed": "true",
             "slot": self.SLOT,
@@ -645,6 +649,7 @@ class TestAll:
             "credits_remaining": "498",
             "credits_used": "2",
             "credits_spent": "2",
+            "written": "v1 3 games, v1-test 1 game",
         }
 
     def test_the_last_day_is_a_new_york_calendar_day(self, run, api):
@@ -693,6 +698,7 @@ class TestAll:
             "credits_remaining": "499",
             "credits_used": "1",
             "credits_spent": "1",
+            "written": "v1 3 games",
             "failed": "basketball_test",
         }
         assert sorted(tree(data_dir)) == self.FILES_OF_NBA
@@ -764,7 +770,10 @@ class TestAll:
             "Nothing was written for basketball_nba.",
         ]
         assert (result.outputs["changed"], result.outputs["games"]) == ("true", "1")
-        assert result.outputs["failed"] == "basketball_nba"
+        assert (result.outputs["written"], result.outputs["failed"]) == (
+            "v1-test 1 game",
+            "basketball_nba",
+        )
         assert sorted(tree(data_dir)) == self.FILES_OF_TEST
 
     def test_files_that_validation_refuses_for_one_sport_leave_the_other_written(

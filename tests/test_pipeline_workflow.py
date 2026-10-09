@@ -98,6 +98,15 @@ def test_what_was_written_is_pushed_although_the_snapshot_step_failed():
     assert "\n        if:" not in step_named("Take the snapshot")
 
 
+def test_the_commit_message_gives_the_count_for_each_prefix():
+    # The pipeline puts the counts together ("v1 12 games, v1-dryrun 3 games")
+    # and the step puts the slot in front of them.
+    push = step_named("Commit the snapshot and push it to the data branch")
+
+    assert "          WRITTEN: ${{ steps.snapshot.outputs.written }}\n" in push
+    assert re.findall(r"git commit.*", push) == ['git commit --quiet -m "Snapshot $SLOT: $WRITTEN"']
+
+
 def test_a_step_that_fails_fails_the_job():
     # That is what tells the owner. Nothing lets a failed step pass.
     assert "continue-on-error" not in PIPELINE

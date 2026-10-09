@@ -335,10 +335,9 @@ def _api_key() -> str:
 
 
 def _summary(capture: _Capture) -> str:
-    games, response = len(capture.built.slate["games"]), capture.response
+    response = capture.response
     return (
-        f"{capture.sport.key} -> {capture.sport.prefix}/: "
-        f"{games} {'game' if games == 1 else 'games'}, "
+        f"{capture.sport.key} -> {capture.sport.prefix}/: {_games(capture)}, "
         f"{len(capture.built.history)} with a line, {len(capture.built.dropped)} dropped. "
         f"Credits: {_known(response.remaining)} remaining, {_known(response.used)} used, "
         f"{_known(response.last)} spent on this call."
@@ -347,10 +346,12 @@ def _summary(capture: _Capture) -> str:
 
 def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
     """
-    The step outputs. `changed` says whether anything was written. The counts
-    are totals over the sports taken in this run, and the credits remaining
-    and used are those of the last response. `failed` and `given_up` name
-    sports, and are left out when there is none to name.
+    The step outputs. `changed` says whether anything was written, and
+    `written` gives the count for each prefix that was, for the message of
+    the commit: "v1 12 games, v1-dryrun 3 games". The other counts are totals
+    over the sports taken in this run, and the credits remaining and used are
+    those of the last response. `failed` and `given_up` name sports, and are
+    left out when there is none to name.
     """
     captures = run.captures
     outputs = {"changed": "true" if captures and not dry_run else "false", "slot": slot.id}
@@ -365,6 +366,10 @@ def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
             "credits_used": _known(last.used, otherwise=""),
             "credits_spent": sum(costs) if costs else "",
         }
+        if not dry_run:
+            outputs["written"] = ", ".join(
+                f"{capture.sport.prefix} {_games(capture)}" for capture in captures
+            )
     if run.failed:
         outputs["failed"] = _names(run.failed)
     if run.given_up:
@@ -394,6 +399,12 @@ def _complain(*lines: str) -> None:
 
 def _names(sports: list[config.Sport]) -> str:
     return ", ".join(sport.key for sport in sports)
+
+
+def _games(capture: _Capture) -> str:
+    """The number of games on a sport's board, in words: "1 game", "12 games"."""
+    count = len(capture.built.slate["games"])
+    return f"{count} {'game' if count == 1 else 'games'}"
 
 
 def _next(slot: _Slot) -> str:
