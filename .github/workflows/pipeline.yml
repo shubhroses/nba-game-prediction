@@ -116,9 +116,14 @@ jobs:
           if [ "$DRY_RUN" = "true" ]; then options+=(--dry-run); fi
           python -m pipeline snapshot --all --data-dir "$DATA_DIR" "${options[@]}"
 
+      # This step also runs when the step before it failed, as long as that
+      # step wrote something. The pipeline takes each sport on its own, and a
+      # sport that was written is pushed although another one failed, so that
+      # the next run does not ask for it again. The failed step still fails
+      # the job.
       - name: Commit the snapshot and push it to the data branch
         id: push
-        if: ${{ steps.snapshot.outputs.changed == 'true' && !inputs.dry_run }}
+        if: ${{ !cancelled() && steps.snapshot.outputs.changed == 'true' && !inputs.dry_run }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
           SLOT: ${{ steps.snapshot.outputs.slot }}
@@ -141,6 +146,7 @@ jobs:
           PUSH: ${{ steps.push.outcome }}
           COMMIT: ${{ steps.push.outputs.commit }}
           SLOT: ${{ steps.snapshot.outputs.slot }}
+          FAILED: ${{ steps.snapshot.outputs.failed }}
           GIVEN_UP: ${{ steps.snapshot.outputs.given_up }}
           GAMES: ${{ steps.snapshot.outputs.games }}
           WITH_LINE: ${{ steps.snapshot.outputs.with_line }}
@@ -152,18 +158,15 @@ jobs:
           {
             echo "### Odds snapshot"
             echo
-            if [ "$SNAPSHOT" = "failure" ]; then
-              echo "The snapshot for slot \`${SLOT:-unknown}\` failed and nothing was written. The log of the step says why."
-            elif [ "$SNAPSHOT" != "success" ]; then
+            if [ "$SNAPSHOT" != "success" ] && [ "$SNAPSHOT" != "failure" ]; then
               echo "The snapshot step did not run."
-            elif [ -n "$GIVEN_UP" ]; then
-              echo "Slot \`$SLOT\` was not recorded in time for $GIVEN_UP and is given up. No request was made."
-            elif [ -z "$GAMES" ]; then
-              echo "Not due: slot \`$SLOT\` is already recorded. No request was made."
-            else
+            elif [ -n "$GAMES" ]; then
               echo "- Slot: \`$SLOT\`"
               echo "- Games: $GAMES, of which $WITH_LINE with a line. Dropped: $DROPPED."
               echo "- API credits: ${CREDITS_SPENT:-unknown} spent, ${CREDITS_REMAINING:-unknown} remaining, ${CREDITS_USED:-unknown} used."
+              if [ "$SNAPSHOT" = "failure" ]; then
+                echo "- The step failed${FAILED:+ for $FAILED}, so the figures above are not complete. The log of the step says why."
+              fi
               if [ "$PUSH" = "success" ]; then
                 echo "- Pushed to the data branch as commit \`$COMMIT\`."
               elif [ "$PUSH" = "failure" ]; then
@@ -171,5 +174,11 @@ jobs:
               else
                 echo "- Dry run: nothing was written or pushed."
               fi
+            elif [ "$SNAPSHOT" = "failure" ]; then
+              echo "The snapshot for slot \`${SLOT:-unknown}\` failed${FAILED:+ for $FAILED} and nothing was written. The log of the step says why."
+            elif [ -n "$GIVEN_UP" ]; then
+              echo "Slot \`$SLOT\` was not recorded in time for $GIVEN_UP and is given up. No request was made."
+            else
+              echo "Not due: slot \`$SLOT\` is already recorded. No request was made."
             fi
           } >> "$GITHUB_STEP_SUMMARY"

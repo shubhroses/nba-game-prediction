@@ -74,6 +74,36 @@ def test_runs_wait_for_each_other_and_none_is_cancelled():
     assert "\nconcurrency:\n  group: odds-snapshot\n  cancel-in-progress: false\n" in PIPELINE
 
 
+def step_named(name):
+    """The text of one step of the job, from its name to the next step."""
+    _, *steps = re.split(r"\n      - name: ", PIPELINE)
+    (found,) = [text for text in steps if text.splitlines()[0] == name]
+    return found
+
+
+def test_what_was_written_is_pushed_although_the_snapshot_step_failed():
+    # The pipeline writes each sport on its own and ends with a failure when
+    # one of them failed. Without a status function in its condition, a step
+    # is skipped as soon as an earlier one has failed.
+    push = step_named("Commit the snapshot and push it to the data branch")
+    (condition,) = re.findall(r"^        if: \$\{\{ (.*) \}\}$", push, flags=re.MULTILINE)
+
+    assert condition.split(" && ") == [
+        "!cancelled()",
+        "steps.snapshot.outputs.changed == 'true'",
+        "!inputs.dry_run",
+    ]
+    # The step that takes the snapshot has no condition of its own: it runs
+    # only when the data branch was checked out.
+    assert "\n        if:" not in step_named("Take the snapshot")
+
+
+def test_a_step_that_fails_fails_the_job():
+    # That is what tells the owner. Nothing lets a failed step pass.
+    assert "continue-on-error" not in PIPELINE
+    assert "|| true" not in PIPELINE
+
+
 def test_the_only_push_goes_to_the_data_branch_and_is_not_forced():
     assert re.findall(r"git push.*", PIPELINE) == ["git push --quiet origin HEAD:refs/heads/data"]
 
