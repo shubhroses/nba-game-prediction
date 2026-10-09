@@ -256,7 +256,7 @@ An event in the response that cannot be used is a different matter. It is left o
 | 1 | Bad arguments or settings: for example `ODDS_API_KEY` is not set. |
 | 2 | Validation failed. |
 | 3 | The provider refused the request. HTTP 401 and 429 are final and are not retried, and neither is any other 4xx. |
-| 4 | The provider could not be reached: a network error, a timeout or a 5xx on each of three attempts (the second after 5 seconds, the third after another 20), or a response that was not a list of events. |
+| 4 | The provider gave no usable answer: a network error, a timeout or a 5xx on each of three attempts (the second after 5 seconds, the third after another 20), or a response that was not a list of events. |
 
 On any failure nothing is written. With `--all`, that holds for the run as a whole: if the second sport fails, the first is not written either.
 

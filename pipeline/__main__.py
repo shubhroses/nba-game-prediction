@@ -9,7 +9,7 @@ Exit status:
     1  bad arguments or settings, for example ODDS_API_KEY is not set
     2  validation failed
     3  the provider refused the request (401, 429)
-    4  the provider could not be reached
+    4  the provider could not be reached, or its answer could not be read
 
 On any failure nothing is written.
 """
@@ -147,7 +147,7 @@ def _capture(
         ) from None
     except oddsapi.Unreachable as error:
         raise _Stop(
-            UNREACHABLE, f"The provider could not be reached for {sport.key}: {error}."
+            UNREACHABLE, f"The provider gave no usable answer for {sport.key}: {error}."
         ) from None
 
     # Read the clock again now that the response is here. A game is recorded

@@ -302,10 +302,27 @@ def test_a_503_is_asked_three_times_and_ends_with_status_4(run, api, waits, data
     assert result.requests == 3
     assert waits == [5, 20]
     assert result.err.splitlines() == [
-        "The provider could not be reached for basketball_nba: HTTP 503, after 3 attempts.",
+        "The provider gave no usable answer for basketball_nba: HTTP 503, after 3 attempts.",
         "Nothing was written.",
     ]
     assert result.outputs == {"changed": "false", "slot": EVENING_SLOT}
+    assert not data_dir.exists()
+
+
+def test_an_answer_that_cannot_be_read_ends_with_status_4_after_one_request(
+    run, api, waits, data_dir
+):
+    api.raw_body = b"<html>Service temporarily unavailable</html>"
+
+    result = run("--all")
+
+    assert result.status == 4
+    assert result.requests == 1
+    assert waits == []
+    assert result.err.splitlines() == [
+        "The provider gave no usable answer for basketball_nba: the response was not JSON.",
+        "Nothing was written.",
+    ]
     assert not data_dir.exists()
 
 
