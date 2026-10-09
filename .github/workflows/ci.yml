@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install the requirements and the test dependencies
+        run: python -m pip install -r requirements.txt -r requirements-dev.txt
+
+      # -ra lists any skipped test with its reason at the end of the log.
+      - name: Run the tests
+        run: python -m pytest -ra
+
+  dbt:
+    name: dbt parse and compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DBT_SEND_ANONYMOUS_USAGE_STATS: "false"
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install dbt with the Snowflake adapter
+        run: python -m pip install dbt-snowflake
+
+      # nba_dbt/ci/profiles.yml holds placeholder values only. Neither command
+      # connects to a warehouse.
+      - name: Parse the project
+        run: dbt parse --project-dir nba_dbt --profiles-dir nba_dbt/ci
+
+      - name: Compile the models and tests
+        run: dbt compile --project-dir nba_dbt --profiles-dir nba_dbt/ci --no-populate-cache --no-introspect
+
+  web:
+    name: Web app lint and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: nba-predictions-app
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Install the dependencies from the lock file
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      # The app reads its API key at build time. Any value will do here.
+      - name: Build
+        run: npm run build
+        env:
+          VITE_SPORTS_API_KEY: dummy-key-for-ci
