@@ -114,6 +114,8 @@ dbt compile --project-dir nba_dbt --profiles-dir nba_dbt/ci --no-populate-cache 
 
 - One response in which no game has started gives one row per game, and two rows per game in the mart with `won` null.
 - More responses are then added out of order: the newest first, one of them twice, the first one again, and one for a day without games. Each game still has one row, taken from the response in which it is furthest along. Of the two finished games one is won at home and one away, and `won` is true for the winner and false for the loser. It stays null for the game still in progress.
+- Two responses in which every game has the same status, the older one loaded both before and after the newer one: the rows of both models are taken from the newer response.
+- A response in which a game is final, and one with a later `meta.time` in which that game is still in progress: that game's rows are taken from the final response.
 - A response containing a game without an id makes the `not_null` test on `game_id` fail. The task exits with status 1 and the mart is not built.
 
 The first response is real. It is the one saved in the output of `notebooks/predict_past.ipynb` (12 December 2024, three games, none started) and is kept in `tests/fixtures/scoreboard_20241212.json`. The later ones are copies of it with made-up statuses and scores.

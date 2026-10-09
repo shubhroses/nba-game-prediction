@@ -233,6 +233,69 @@ def test_models_follow_the_games_through_the_day(warehouse):
     ]
 
 
+def test_newest_snapshot_is_kept_when_the_status_is_the_same(warehouse):
+    # Two responses in which every game has the same status: the first two
+    # games are being played and the third has not started.
+    earlier = later_snapshot(
+        "2024-12-12 20:05:11.0511",
+        {BOS_DET: (2, "Q1 5:00", 20, 18), MIA_TOR: (2, "Q1 4:10", 15, 21)},
+    )
+    # The second status text ends in a space, which the model trims.
+    later = later_snapshot(
+        "2024-12-12 21:40:09.4009",
+        {BOS_DET: (2, "Q4 6:30", 98, 90), MIA_TOR: (2, "Q4 5:55 ", 88, 97)},
+    )
+    later_at = datetime(2024, 12, 12, 21, 40, 9)
+    # The earlier response is loaded both before and after the later one, so
+    # the later one is neither the first nor the last row of the raw table.
+    warehouse.load(earlier, later, earlier)
+    build_models()
+
+    assert warehouse.games() == [
+        (BOS_DET, GAME_DATE, 2, "Q4 6:30", False, BOS, "BOS", 98, DET, "DET", 90, later_at),
+        (MIA_TOR, GAME_DATE, 2, "Q4 5:55", False, MIA, "MIA", 88, TOR, "TOR", 97, later_at),
+        (NOP_SAC, GAME_DATE, 1, "8:00 pm ET", False, NOP, "NOP", 0, SAC, "SAC", 0, later_at),
+    ]
+    # The mart has the later scores, and no winner because nothing is finished.
+    assert warehouse.team_games() == [
+        (f"{BOS_DET}-{BOS}", BOS_DET, GAME_DATE, BOS, "BOS", DET, "DET", "home", False, 98, 90, None),
+        (f"{BOS_DET}-{DET}", BOS_DET, GAME_DATE, DET, "DET", BOS, "BOS", "away", False, 90, 98, None),
+        (f"{MIA_TOR}-{MIA}", MIA_TOR, GAME_DATE, MIA, "MIA", TOR, "TOR", "home", False, 88, 97, None),
+        (f"{MIA_TOR}-{TOR}", MIA_TOR, GAME_DATE, TOR, "TOR", MIA, "MIA", "away", False, 97, 88, None),
+        (f"{NOP_SAC}-{NOP}", NOP_SAC, GAME_DATE, NOP, "NOP", SAC, "SAC", "home", False, 0, 0, None),
+        (f"{NOP_SAC}-{SAC}", NOP_SAC, GAME_DATE, SAC, "SAC", NOP, "NOP", "away", False, 0, 0, None),
+    ]
+
+
+def test_status_is_compared_before_the_snapshot_time(warehouse):
+    # meta.time has no time zone, so the model does not rely on it to order
+    # two responses. Here the response in which the first game is final has
+    # an earlier time than the one in which that game is still being played.
+    final = later_snapshot("2024-12-12 22:10:44.1044", {BOS_DET: (3, "Final", 123, 99)})
+    in_progress = later_snapshot("2024-12-12 23:15:20.1520", {BOS_DET: (2, "Q4 0:41", 119, 99)})
+    final_at = datetime(2024, 12, 12, 22, 10, 44)
+    in_progress_at = datetime(2024, 12, 12, 23, 15, 20)
+    warehouse.load(final, in_progress)
+    build_models()
+
+    assert warehouse.games() == [
+        # Kept from the final response although its time is the earlier one.
+        (BOS_DET, GAME_DATE, 3, "Final", True, BOS, "BOS", 123, DET, "DET", 99, final_at),
+        # Status 1 in both responses, so the later time decides.
+        (MIA_TOR, GAME_DATE, 1, "7:30 pm ET", False, MIA, "MIA", 0, TOR, "TOR", 0, in_progress_at),
+        (NOP_SAC, GAME_DATE, 1, "8:00 pm ET", False, NOP, "NOP", 0, SAC, "SAC", 0, in_progress_at),
+    ]
+    # The mart has the final score of the first game, and its winner.
+    assert warehouse.team_games() == [
+        (f"{BOS_DET}-{BOS}", BOS_DET, GAME_DATE, BOS, "BOS", DET, "DET", "home", True, 123, 99, True),
+        (f"{BOS_DET}-{DET}", BOS_DET, GAME_DATE, DET, "DET", BOS, "BOS", "away", True, 99, 123, False),
+        (f"{MIA_TOR}-{MIA}", MIA_TOR, GAME_DATE, MIA, "MIA", TOR, "TOR", "home", False, 0, 0, None),
+        (f"{MIA_TOR}-{TOR}", MIA_TOR, GAME_DATE, TOR, "TOR", MIA, "MIA", "away", False, 0, 0, None),
+        (f"{NOP_SAC}-{NOP}", NOP_SAC, GAME_DATE, NOP, "NOP", SAC, "SAC", "home", False, 0, 0, None),
+        (f"{NOP_SAC}-{SAC}", NOP_SAC, GAME_DATE, SAC, "SAC", NOP, "NOP", "away", False, 0, 0, None),
+    ]
+
+
 def test_a_failing_schema_test_stops_the_flow_before_the_mart(warehouse):
     # A game without an id breaks the not_null test on stg_nba__games.game_id.
     broken = copy.deepcopy(MORNING)
