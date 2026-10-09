@@ -7,6 +7,7 @@ The Odds API. After every run the tests look for the dummy key in what was
 printed, in the GITHUB_OUTPUT file and in the data directory.
 """
 
+import errno
 import importlib
 import json
 import os
@@ -21,7 +22,7 @@ import pytest
 
 import pipeline
 from fake_odds_api import FakeOddsApi, event
-from pipeline import config, snapshot
+from pipeline import config, snapshot, store
 from pipeline.__main__ import main
 
 REPOSITORY = Path(__file__).resolve().parent.parent
@@ -368,6 +369,38 @@ def test_validation_refuses_a_bad_file_and_nothing_is_written(run, data_dir, mon
     assert result.err.splitlines()[-1] == "Nothing was written."
     assert result.outputs == {"changed": "false", "slot": EVENING_SLOT, "failed": "basketball_nba"}
     assert tree(data_dir) == after_first_run
+
+
+def no_space_left(monkeypatch, only_under=""):
+    """Makes the move of a file into place fail, for every file or for those under one prefix."""
+    replace = os.replace
+
+    def failing_replace(source, destination):
+        if not only_under or only_under in Path(destination).parts:
+            raise OSError(errno.ENOSPC, "No space left on device")
+        replace(source, destination)
+
+    monkeypatch.setattr(store.os, "replace", failing_replace)
+
+
+def test_files_that_cannot_be_written_end_the_run_with_status_1_and_a_message(
+    run, data_dir, monkeypatch
+):
+    run("--all", now=AFTERNOON)
+    after_first_run = tree(data_dir)
+    no_space_left(monkeypatch)
+
+    result = run("--all", now=EVENING)
+
+    assert result.status == 1
+    assert result.requests == 1
+    assert result.err.splitlines() == [
+        "The files for basketball_nba could not be written: OSError: No space left on device.",
+        "Nothing was written.",
+    ]
+    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT, "failed": "basketball_nba"}
+    assert tree(data_dir) == after_first_run
+    assert not list(data_dir.glob(".staging-*"))
 
 
 @pytest.mark.parametrize(
@@ -755,6 +788,23 @@ class TestAll:
         assert result.err.splitlines()[-1] == "Nothing was written for basketball_test."
         assert (result.outputs["changed"], result.outputs["failed"]) == ("true", "basketball_test")
         assert sorted(tree(data_dir)) == self.FILES_OF_NBA
+
+    def test_files_that_cannot_be_written_for_one_sport_leave_the_other_written(
+        self, run, data_dir, monkeypatch
+    ):
+        no_space_left(monkeypatch, only_under="v1")
+
+        result = run("--all", now=self.SATURDAY)
+
+        assert result.status == 1
+        assert result.requests == 2
+        assert result.err.splitlines() == [
+            "The files for basketball_nba could not be written: "
+            "OSError: No space left on device.",
+            "Nothing was written for basketball_nba.",
+        ]
+        assert (result.outputs["changed"], result.outputs["failed"]) == ("true", "basketball_nba")
+        assert sorted(tree(data_dir)) == self.FILES_OF_TEST
 
     def test_a_state_file_that_cannot_be_continued_from_stops_its_own_sport_only(
         self, run, api, data_dir

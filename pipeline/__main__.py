@@ -6,7 +6,8 @@ The command line.
 Exit status:
 
     0  a snapshot was taken, or none was due, or the slot was given up
-    1  bad arguments or settings, for example ODDS_API_KEY is not set
+    1  bad arguments or settings, for example ODDS_API_KEY is not set, or
+       the files could not be written
     2  validation failed
     3  the provider refused the request (401, 429)
     4  the provider could not be reached, or its answer could not be read
@@ -201,7 +202,14 @@ def _take(
     for reason in capture.built.dropped:
         _say(f"  dropped {reason}")
     if not dry_run:
-        store.write(data_dir, capture.files)
+        try:
+            store.write(data_dir, capture.files)
+        except OSError as error:
+            # The status of a setting that cannot be used, which is the
+            # likeliest cause: a data directory that cannot be written to.
+            raise _Stop(
+                USAGE, f"The files for {sport.key} could not be written: {_os_error(error)}."
+            ) from None
         _say(f"Wrote {', '.join(capture.files)}.")
     return capture
 
@@ -394,6 +402,12 @@ def _next(slot: _Slot) -> str:
 
 def _indented(lines: list[str]) -> list[str]:
     return [f"  {line}" for line in lines]
+
+
+def _os_error(error: OSError) -> str:
+    """The class of the error with the operating system's own description, as in oddsapi._kind."""
+    name = type(error).__name__
+    return f"{name}: {error.strerror}" if error.strerror else name
 
 
 def _known(value: int | None, otherwise: str = "unknown") -> int | str:
