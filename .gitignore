@@ -23,6 +23,8 @@ dist/
 target/
 dbt_packages/
 logs/
+# Written by dbt into the profiles directory it was given (its usage-statistics id)
+.user.yml
 
 # OS and editor files (nba-predictions-app/.gitignore has its own .vscode rule)
 .DS_Store
