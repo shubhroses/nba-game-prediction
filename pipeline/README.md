@@ -363,3 +363,4 @@ Not checked:
 - A snapshot is only as punctual as GitHub's scheduler. A game that starts between a slot's start and a late run is missing from that snapshot.
 - GitHub [disables scheduled workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#schedule) in a public repository after 60 days without repository activity.
 - A game is identified by the provider's event id. If the provider gave a rescheduled game a new id, it would be recorded as a new game.
+- An event that cannot be used is left out and reported, and the run succeeds. If the provider changed the shape of every event, the runs would go on succeeding with empty boards. The number of dropped events in the log and in the job summary is where that would show.
