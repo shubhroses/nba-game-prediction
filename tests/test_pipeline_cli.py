@@ -7,10 +7,12 @@ The Odds API. After every run the tests look for the dummy key in what was
 printed, in the GITHUB_OUTPUT file and in the data directory.
 """
 
+import importlib
 import json
 import os
 import subprocess
 import sys
+from collections import namedtuple
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -18,6 +20,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import pipeline
 from fake_odds_api import FakeOddsApi, event
 from pipeline import config, oddsapi, snapshot
 from pipeline.__main__ import main
@@ -636,6 +639,16 @@ def test_outside_github_actions_no_output_file_is_needed(run, data_dir, monkeypa
     assert result.status == 0
     assert result.outputs == {}
     assert (data_dir / "v1/state.json").exists()
+
+
+def test_a_python_older_than_3_11_is_refused(monkeypatch):
+    # On 3.10 the package would import and run, and then drop every game,
+    # because fromisoformat there does not accept the provider's times.
+    version = namedtuple("version_info", "major minor micro releaselevel serial")
+    monkeypatch.setattr(sys, "version_info", version(3, 10, 18, "final", 0))
+
+    with pytest.raises(RuntimeError, match="needs Python 3.11 or newer"):
+        importlib.reload(pipeline)
 
 
 def test_the_module_runs_as_a_program_with_the_real_clock(tmp_path):
