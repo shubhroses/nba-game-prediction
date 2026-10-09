@@ -104,6 +104,7 @@ dbt compile --project-dir nba_dbt --profiles-dir nba_dbt/ci --no-populate-cache 
 - `dbt parse` succeeds, also with `--warn-error`, so the project, the source, both models and the 13 tests are valid dbt and raise no deprecation warnings.
 - `dbt compile` renders every model and test to SQL. `--no-populate-cache` skips the catalog query that a plain `dbt compile` starts with (without it the command tries to connect and fails), and `--no-introspect` makes dbt stop rather than query the warehouse while rendering. In the compiled SQL the source resolves to the target's database and schema, or to `SNOWFLAKE_DATABASE` and `SNOWFLAKE_SCHEMA` when those are set.
 - dbt accepts the example profile above: the same `dbt compile` succeeds with it when the seven variables hold placeholder values.
+- The compiled SQL of both models and of the 13 tests also parses under the Snowflake grammar of sqlfluff 4.4.0 with no unparsable section (`sqlfluff parse --dialect snowflake <file>` on the files under `nba_dbt/target/compiled/`). This was checked once by hand and is not part of CI.
 
 ### The models on an emulator
 
