@@ -10,7 +10,7 @@ The package uses the Python standard library only and needs Python 3.11 or newer
 
 1. It reads the clock and works out which [slot](#schedule) it is in.
 2. It reads the state file of the last run from the data directory and checks it. If the slot is already recorded there, it prints one line and stops. No request is made.
-3. Otherwise it sends one request per sport: `GET https://api.the-odds-api.com/v4/sports/{sport}/odds` with `regions=us`, `markets=h2h`, `oddsFormat=decimal` and `commenceTimeFrom` set to the current time, so that games in play are left out. The timeout is 20 seconds.
+3. Otherwise it sends one request per sport: `GET https://api.the-odds-api.com/v4/sports/{sport}/odds` with `regions=us`, `markets=h2h`, `oddsFormat=decimal` and `commenceTimeFrom` set to the current time, so that games in play are left out. The timeout is 20 seconds for connecting and for each wait for data. It is not a limit on the whole request: a response that arrives a little at a time can take longer, and what limits that is the job's 10 minutes.
 4. For every game that has not started it computes the [consensus](#the-consensus) of the sportsbooks.
 5. It builds the [three files](#the-files), [checks them](#checks-before-anything-is-written), writes them to a temporary directory and moves them into place.
 6. The workflow commits them to the `data` branch.
