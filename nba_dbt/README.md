@@ -90,7 +90,7 @@ dbt build --project-dir nba_dbt
 
 ## What has and has not been verified
 
-Nothing in this project has been run against a Snowflake account. This is what has been checked, with dbt-core 1.12.5 and dbt-snowflake 1.12.1 on Python 3.12.
+The models and tests in this project have not been run against a Snowflake account. This is what has been checked instead, with dbt-core 1.12.5 and dbt-snowflake 1.12.1 on Python 3.12.
 
 ### dbt parse and dbt compile, offline
 
