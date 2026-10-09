@@ -74,7 +74,7 @@ The free plan allows 500 credits a month. The provider's [guide](https://the-odd
 
 Every response reports the credits left, and the job writes them to `state.json`, prints them and puts them in the job summary.
 
-What a failure costs. A run that fails before its request costs nothing, which is why the state file and the day's history file are checked first. A run that fails after a successful request has spent its credit and has recorded nothing, so the next trigger asks again. That is right for a failure that passes. A failure that does not pass, such as a bug that makes validation refuse the files, would cost up to 48 requests a day for each sport until someone steps in. The workflow run fails visibly each time.
+What a failure costs. A run that fails before its request costs nothing, which is why the state file and the day's history file are checked first. A run that fails after a successful request has spent its credit and has recorded nothing, so the next trigger asks again. With two sports that includes the sport that was fetched before the other one failed, because nothing is written unless every sport succeeds. All of this is right for a failure that passes. A failure that does not pass, such as a bug that makes validation refuse the files, would cost up to 48 requests a day for each sport until someone steps in. The workflow run fails visibly each time.
 
 ## The files
 
@@ -142,7 +142,7 @@ The board: the upcoming games as of the latest snapshot. Replaced by every snaps
 | `generated_at` | When the response was received. |
 | `slot` | The id of the slot this snapshot belongs to. |
 | `next_due` | The id of the next slot. |
-| `games` | The games in the response that had not started at `generated_at`, sorted by start time and then by id. |
+| `games` | The games in the response that had not started at `generated_at`, sorted by start time and then by id. An event that [cannot be used](#checks-before-anything-is-written) is not listed. |
 | `games[].id` | The provider's id for the game. |
 | `games[].commence_time` | The scheduled start. |
 | `games[].home`, `games[].away` | Team codes. |
@@ -229,7 +229,7 @@ Each line is one JSON object without spaces, with its fields in this order. Line
 
 ### What is not published
 
-The provider's [terms](https://the-odds-api.com/terms-and-conditions.html) do not allow its data to be redistributed as a data product, downloadable files included. They do allow values derived from the data to be published. So the files hold derived values only: no response, no price and no figure for a single named sportsbook. The names in `books` say which sportsbooks went into a consensus, not what any of them quoted. When only one sportsbook quotes a game, the consensus is that sportsbook's margin-free probability. The two prices behind it are not published and cannot be worked out from it.
+The provider's [terms](https://the-odds-api.com/terms-and-conditions.html) do not allow its data to be redistributed as a data product, downloadable files included. They do allow values derived from the data to be calculated and displayed. So the files hold derived values only. There is no response and no price in them, and no list of what each sportsbook quoted: the names in `books` say which sportsbooks went into a consensus and nothing more. When only one sportsbook quotes a game, the consensus is that one sportsbook's probability with its margin removed. The two prices behind it are not published and cannot be worked out from it.
 
 No real odds are in this repository either. The tests and the fake server use invented prices.
 
@@ -317,7 +317,7 @@ The preseason entry is a rehearsal. The regular season starts on 20 October 2026
 - **The API key** is the repository secret `ODDS_API_KEY`. It is in the environment of the step that runs the pipeline and of no other step. The pipeline never prints it, and the workflow does not turn on shell tracing.
 - **The data branch** is checked out into a second working tree, `data-branch/`, with plain git commands. Fetching needs no credentials. For the push, git is given a credential helper that reads the workflow's token from the environment, so the token is not written to disk.
 - **The first run.** If there is no `data` branch yet, the job starts one that shares no history with `main`. Its first commit holds the two files in `.github/data-branch/`: a README for the branch, and `nba-predictions-app/vercel.json` with `{"git": {"deploymentEnabled": false}}`. Vercel builds the `nba-predictions-app` folder of every branch that is pushed to this repository, and that [setting](https://vercel.com/docs/project-configuration/git-configuration#git.deploymentenabled) tells it not to deploy this one.
-- **The commit.** When the pipeline reports `changed=true` and the run is not a dry run, the job commits everything in the data tree as `github-actions[bot]`, with a message such as `Snapshot 2026-10-20T18:10-04:00: 12 games`, and pushes to `data`. It never pushes to `main` and never forces. If the branch has moved in the meantime the push is refused and the run fails.
+- **The commit.** When the pipeline reports `changed=true` and the run is not a dry run, the job commits everything in the data tree as `github-actions[bot]`, with a message such as `Snapshot 2026-10-20T18:10-04:00: 12 games`, and pushes to `data`. It never pushes to `main` and never forces. If the branch has moved in the meantime the push is refused and the run fails. The push is made with the workflow's own token, and GitHub [does not start workflow runs](https://docs.github.com/en/actions/concepts/security/github_token) for events caused by that token, so CI does not run on the snapshot commits.
 - **The summary** of each run says whether a snapshot was taken, how many games it has and how many credits are left.
 
 ## Tests
@@ -345,8 +345,8 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 
 Checked, as of 9 October 2026:
 
-- The tests above pass on Python 3.11, 3.12 and 3.13.
-- The shell steps of the workflow were run on a developer machine against a temporary bare git repository standing in for `origin` and against the fake server: the first run that starts the `data` branch, a second trigger in the same slot, a dry run, a forced second snapshot that adds to the history, a refusal by the provider, a push after the branch had moved, and a remote that could not be reached. The same steps were run against a local git server over HTTP that asks for a password on a push, to check the credential helper.
+- The tests above pass on Python 3.11, 3.12, 3.13 and 3.14. The whole test suite, with the repository's requirements installed, passes on Python 3.12 on Linux, which is what CI runs.
+- The shell steps of the workflow were run on a developer machine and in a Linux container, against a temporary bare git repository standing in for `origin` and against the fake server: the first run that starts the `data` branch, a second trigger in the same slot, a dry run, a forced second snapshot that adds to the history, a refusal by the provider, a push after the branch had moved, and a remote that could not be reached. The same steps were run against a local git server over HTTP that asks for a password on a push, to check the credential helper.
 - The builder, the validator and the command were run on one real response of the `basketball_nba` endpoint, captured that day and served by the fake server. Every game in it was recorded and none was dropped. That response is not kept in the repository.
 - `actionlint` reports nothing for the workflow file.
 
