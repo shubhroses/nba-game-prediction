@@ -78,7 +78,7 @@ class FakeOddsApi:
 
     `events` maps a sport key to its events, or is a function that returns
     such a mapping when a request comes in. A sport that is not in the
-    mapping gets a 404, as an unknown sport does from the real API.
+    mapping gets a 404 with UNKNOWN_SPORT, one of the provider's error codes.
     """
 
     def __init__(self, events=None, *, port=0, verbose=False):
