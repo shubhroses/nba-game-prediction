@@ -138,14 +138,14 @@ With no Prefect API configured, Prefect 3 starts a temporary local server for th
 
 The two flows write most of their own messages at INFO level through Python's `logging` module: the scoreboard JSON in the ingestion flow, and the dbt command and its output when dbt succeeds. Importing Prefect puts its own handler on the root logger at WARNING level, which turns the scripts' later `logging.basicConfig(level=logging.INFO, ...)` call into a no-op. By default, then, those lines are not printed; only Prefect's own lines and the scripts' ERROR lines are. Set `PREFECT_LOGGING_ROOT_LEVEL=INFO` to see them (other libraries' INFO lines are printed too). This was checked with Prefect 3.8.8. `move_nba_data_to_sf.py` does not import Prefect, so its INFO lines are always printed.
 
-The second step ends by logging what `COPY INTO` did with the file. The line has one of these two forms, the second when the file is already in the table and Snowflake skips it:
+The second step ends by logging what `COPY INTO` did with the file. Normally the line has one of these two forms, the second when the file is already in the table and Snowflake skips it:
 
 ```
 Loaded 1 row(s) from s3://<bucket>/raw/nba_scoreboard_<timestamp>.json into RAW_NBA_SCOREBOARD (status LOADED, 1 parsed, 0 error(s)).
 'nba_scoreboard_<timestamp>.json' was already loaded, so COPY INTO skipped it. Snowflake reported: Copy executed with 0 files processed.
 ```
 
-Both lines are taken from the unit tests, which use a fake connection. The script has not been run against Snowflake since this logging was added (see [Known gaps](#known-gaps)).
+Both lines are taken from the unit tests, which use a fake connection. Any other status in the result, such as a failed or partial load, is logged as a WARNING with the first error instead. The script has not been run against Snowflake since this logging was added (see [Known gaps](#known-gaps)).
 
 The dbt step additionally needs one thing that is not in this repository: a dbt profile named `nba_dbt`, for example in `~/.dbt/profiles.yml`. [`nba_dbt/README.md`](nba_dbt/README.md#running) shows a profile that reads the `SNOWFLAKE_*` variables above. The flow loads `.env` before it starts dbt, so the variables are set when dbt reads the profile. `dbt build` then creates `stg_nba__games` and `fct_team_games` in the profile's database and schema and runs their schema tests.
 
