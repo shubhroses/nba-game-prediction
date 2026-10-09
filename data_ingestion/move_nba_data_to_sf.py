@@ -166,35 +166,57 @@ def create_table_if_not_exists():
     except snowflake.connector.errors.Error as e:
         logger.error(f"Snowflake error in create_table_if_not_exists: {e}")
 
-def file_already_loaded(cs, file_name: str) -> bool:
+def log_copy_result(cs, file_name: str) -> None:
     """
-    Attempts to run SHOW COPY HISTORY on RAW_NBA_SCOREBOARD
-    to see if 'file_name' was loaded. If it fails (syntax error),
-    log and skip returning False.
-    """
-    show_copy_sql = "SHOW COPY HISTORY ON TABLE RAW_NBA_SCOREBOARD LIMIT 100"
-    logger.info(f"Executing:\n{show_copy_sql}")
-    try:
-        cs.execute(show_copy_sql)
-    except snowflake.connector.errors.Error as ex:
-        logger.error(f"Error with SHOW COPY HISTORY: {ex}")
-        logger.error("Skipping check for already-loaded file.")
-        return False
+    Logs what the COPY INTO statement that 'cs' has just executed did with
+    'file_name': how many rows it loaded, or that the file was already loaded.
 
-    rows = cs.fetchall()
-    logger.info(f"Returned {len(rows)} row(s) from SHOW COPY HISTORY.")
-    for row in rows:
-        existing_file_name = row[0]
-        logger.info(f"Load History FILE_NAME: {existing_file_name}")
-        if file_name in existing_file_name:
-            logger.info(f"Found matching file in load history: {existing_file_name}")
-            return True
-    return False
+    For each file it handles, COPY INTO returns a row with the columns FILE,
+    STATUS, ROWS_PARSED, ROWS_LOADED, ERROR_LIMIT, ERRORS_SEEN and FIRST_ERROR,
+    plus three columns that locate the first error. When it loads nothing it
+    returns a single row that holds only a status message ("Copy executed with
+    0 files processed."). A file that is already in the table's load metadata
+    is not loaded again and comes back in that form, or as a file row with the
+    status LOAD_SKIPPED.
+
+    Snowflake keeps load metadata for 64 days. It also skips a file older than
+    that when it can no longer tell whether the file was loaded, and reports
+    it the same way.
+    """
+    columns = [column[0].lower() for column in cs.description or []]
+    results = [dict(zip(columns, row)) for row in cs.fetchall()]
+    if not results:
+        logger.warning(f"COPY INTO returned no result rows for '{file_name}'.")
+
+    for result in results:
+        status = str(result.get("status"))
+        # A row without ROWS_LOADED is the status message on its own.
+        if "rows_loaded" not in result or status.upper() == "LOAD_SKIPPED":
+            reported = ", ".join(
+                str(part) for part in (result.get("status"), result.get("first_error")) if part
+            )
+            logger.info(
+                f"'{file_name}' was already loaded, so COPY INTO skipped it. "
+                f"Snowflake reported: {reported}"
+            )
+        elif status.upper() == "LOADED":
+            logger.info(
+                f"Loaded {result.get('rows_loaded')} row(s) from {result.get('file')} "
+                f"into RAW_NBA_SCOREBOARD (status {status}, "
+                f"{result.get('rows_parsed')} parsed, {result.get('errors_seen')} error(s))."
+            )
+        else:
+            logger.warning(
+                f"COPY INTO did not fully load {result.get('file')}: status {status}, "
+                f"{result.get('rows_parsed')} parsed, {result.get('rows_loaded')} loaded, "
+                f"{result.get('errors_seen')} error(s). First error: {result.get('first_error')}"
+            )
 
 def load_json_data_from_s3_to_snowflake():
     """
-    Finds the most recent file in s3://{bucket_name}/raw/ and loads it into RAW_NBA_SCOREBOARD,
-    skipping if that file was previously loaded.
+    Finds the most recent file in s3://{bucket_name}/raw/ and runs COPY INTO
+    RAW_NBA_SCOREBOARD for it. Snowflake skips the file if it has already
+    loaded it into the table.
     """
     user = os.getenv("SNOWFLAKE_USER")
     password = os.getenv("SNOWFLAKE_PASSWORD")
@@ -250,12 +272,7 @@ def load_json_data_from_s3_to_snowflake():
             # Log current session context
             debug_log_current_context(cs)
 
-            # 2) Try checking if file is already loaded
-            if file_already_loaded(cs, file_name):
-                logger.info(f"File '{file_name}' already loaded. Skipping COPY.")
-                return
-
-            # 3) Create or replace the stage
+            # 2) Create or replace the stage
             create_stage_template = """
                 CREATE OR REPLACE STAGE nba_stage
                 URL='s3://{bucket_name}/raw/'
@@ -277,7 +294,10 @@ def load_json_data_from_s3_to_snowflake():
             cs.execute(create_stage_sql)
             logger.info("Stage 'nba_stage' created or replaced.")
 
-            # 4) COPY INTO
+            # 3) COPY INTO. Whether the file is already in the table is left to
+            # Snowflake: unless FORCE = TRUE is given, COPY INTO skips a staged
+            # file it has already loaded into the table, going by the load
+            # metadata it keeps on the table for 64 days.
             copy_sql = f"""
                 COPY INTO RAW_NBA_SCOREBOARD
                 FROM @nba_stage/{file_name}
@@ -286,7 +306,7 @@ def load_json_data_from_s3_to_snowflake():
             """
             logger.info(f"Executing SQL:\n{copy_sql}")
             cs.execute(copy_sql)
-            logger.info(f"Successfully copied '{file_name}' from S3 into RAW_NBA_SCOREBOARD.")
+            log_copy_result(cs, file_name)
 
         finally:
             cs.close()
