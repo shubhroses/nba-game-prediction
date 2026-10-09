@@ -84,7 +84,7 @@ The free plan allows 500 credits a month. The provider's [guide](https://the-odd
 The plan is one request for each sport in each slot:
 
 - The regular season: 6 requests a day. In a 31-day month that is 186 credits.
-- The [preseason rehearsal](#configuration): 6 more a day while it lasts. It ends on 17 October 2026, so it adds 48 credits if the job starts on 10 October and fewer if it starts later.
+- The [preseason rehearsal](#configuration): 6 more a day while it lasts. It ends on 17 October 2026, so it adds at most 48 credits if the job starts on 10 October, and fewer if it starts later.
 - A run started by hand costs one request per sport when it asks: in the first 75 minutes of a slot that is not recorded, or with `force`. That holds for a dry run too.
 
 Every response reports the credits left, and the job writes them to `state.json`, prints them and puts them in the job summary.
@@ -96,7 +96,7 @@ A run that fails before its request costs nothing, which is why the state file, 
 - A run sends one request for a sport and does not repeat it, whatever comes of it. The next trigger, half an hour later, is the retry.
 - Only a run that starts in the first [75 minutes](#the-75-minutes) of a slot asks for it, and three scheduled runs do.
 
-So a slot costs at most 3 requests for each sport, and a day at most 18, whatever goes wrong and for as long as it goes wrong:
+So a slot costs at most 3 requests for each sport, and the six slots of a day at most 18, whatever goes wrong and for as long as it goes wrong:
 
 | What happens at every trigger | Requests for a slot, for each sport | Requests a day, for each sport |
 | --- | --- | --- |
