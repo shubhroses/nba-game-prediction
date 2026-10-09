@@ -285,7 +285,7 @@ def test_a_refusal_is_asked_once_and_ends_with_status_3(
         f"The provider refused the request for basketball_nba: {shown}.",
         "Nothing was written.",
     ]
-    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT}
+    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT, "failed": "basketball_nba"}
     assert not data_dir.exists()
 
 
@@ -300,7 +300,7 @@ def test_a_503_is_asked_once_and_ends_with_status_4(run, api, data_dir):
         "The provider gave no usable answer for basketball_nba: HTTP 503.",
         "Nothing was written.",
     ]
-    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT}
+    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT, "failed": "basketball_nba"}
     assert not data_dir.exists()
 
 
@@ -366,7 +366,7 @@ def test_validation_refuses_a_bad_file_and_nothing_is_written(run, data_dir, mon
         "got 1.0, 1.0, 1.0"
     ) in result.err.splitlines()
     assert result.err.splitlines()[-1] == "Nothing was written."
-    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT}
+    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT, "failed": "basketball_nba"}
     assert tree(data_dir) == after_first_run
 
 
@@ -565,14 +565,33 @@ class TestAll:
             )
         ]
 
+    # 17 October, 18:10 in New York: the last day of the second sport.
+    SATURDAY = datetime(2026, 10, 17, 22, 10, 41, tzinfo=timezone.utc)
+    SLOT, NEXT_SLOT = "2026-10-17T18:10-04:00", "2026-10-17T21:10-04:00"
+    FILES_OF_NBA = ["v1/history/2026-10-17.ndjson", "v1/slate.json", "v1/state.json"]
+    FILES_OF_TEST = [
+        "v1-test/history/2026-10-17.ndjson",
+        "v1-test/slate.json",
+        "v1-test/state.json",
+    ]
+
     def test_both_sports_are_captured_each_under_its_own_prefix(self, run, api, data_dir):
-        # 17 October, 18:10 in New York: the last day of the second sport.
-        result = run("--all", now=datetime(2026, 10, 17, 22, 10, 41, tzinfo=timezone.utc))
+        result = run("--all", now=self.SATURDAY)
 
         assert result.status == 0
         assert [received.sport for received in api.requests] == [
             "basketball_nba",
             "basketball_test",
+        ]
+        # One sport is written before the next one is asked for.
+        assert result.out.splitlines() == [
+            f"Slot {self.SLOT}. The next slot starts at {self.NEXT_SLOT}.",
+            "basketball_nba -> v1/: 3 games, 2 with a line, 0 dropped. "
+            "Credits: 499 remaining, 1 used, 1 spent on this call.",
+            "Wrote v1/history/2026-10-17.ndjson, v1/slate.json, v1/state.json.",
+            "basketball_test -> v1-test/: 1 game, 1 with a line, 0 dropped. "
+            "Credits: 498 remaining, 2 used, 1 spent on this call.",
+            "Wrote v1-test/history/2026-10-17.ndjson, v1-test/slate.json, v1-test/state.json.",
         ]
         assert sorted(tree(data_dir)) == [
             "v1-test/history/2026-10-17.ndjson",
@@ -586,7 +605,7 @@ class TestAll:
         # The counts are totals. The credits are those of the last response.
         assert result.outputs == {
             "changed": "true",
-            "slot": "2026-10-17T18:10-04:00",
+            "slot": self.SLOT,
             "games": "4",
             "with_line": "3",
             "dropped": "0",
@@ -608,10 +627,99 @@ class TestAll:
         run("--all", now=datetime(2026, 10, 18, 9, 10, 0, tzinfo=timezone.utc))
         assert [received.sport for received in api.requests] == ["basketball_nba"]
 
-    def test_a_failure_for_one_sport_leaves_nothing_written_for_any(self, run, api, data_dir):
+    def test_a_sport_that_was_written_stays_written_when_a_later_one_fails(
+        self, run, api, data_dir
+    ):
         del api.events["basketball_test"]  # the fake server now answers 404 for it
 
-        result = run("--all", now=datetime(2026, 10, 17, 22, 10, 41, tzinfo=timezone.utc))
+        result = run("--all", now=self.SATURDAY)
+
+        assert result.status == 3
+        assert [received.sport for received in api.requests] == [
+            "basketball_nba",
+            "basketball_test",
+        ]
+        assert result.out.splitlines() == [
+            f"Slot {self.SLOT}. The next slot starts at {self.NEXT_SLOT}.",
+            "basketball_nba -> v1/: 3 games, 2 with a line, 0 dropped. "
+            "Credits: 499 remaining, 1 used, 1 spent on this call.",
+            "Wrote v1/history/2026-10-17.ndjson, v1/slate.json, v1/state.json.",
+        ]
+        assert result.err.splitlines() == [
+            "The provider refused the request for basketball_test: HTTP 404 (UNKNOWN_SPORT).",
+            "Nothing was written for basketball_test.",
+        ]
+        # Something was written, so the workflow has something to push. The
+        # counts are those of the sport that was taken.
+        assert result.outputs == {
+            "changed": "true",
+            "slot": self.SLOT,
+            "games": "3",
+            "with_line": "2",
+            "dropped": "0",
+            "credits_remaining": "499",
+            "credits_used": "1",
+            "credits_spent": "1",
+            "failed": "basketball_test",
+        }
+        assert sorted(tree(data_dir)) == self.FILES_OF_NBA
+        assert read(data_dir, "v1/state.json")["last_slot"] == self.SLOT
+
+    def test_the_sport_that_failed_is_asked_again_in_time_and_the_one_written_is_not(
+        self, run, api, data_dir
+    ):
+        del api.events["basketball_test"]
+        slot_start = datetime(2026, 10, 17, 22, 10, 0, tzinfo=timezone.utc)
+
+        # The four triggers of the slot's first hour and a half.
+        results = [run("--all", now=slot_start + timedelta(minutes=30 * n)) for n in range(4)]
+
+        assert [received.sport for received in api.requests] == [
+            "basketball_nba",
+            "basketball_test",
+            "basketball_test",
+            "basketball_test",
+        ]
+        assert [result.requests for result in results] == [2, 1, 1, 0]
+        assert [result.status for result in results] == [3, 3, 3, 0]
+        assert [result.outputs["changed"] for result in results] == [
+            "true",
+            "false",
+            "false",
+            "false",
+        ]
+        assert results[3].out.splitlines() == [
+            f"Not due: slot {self.SLOT} is already recorded for basketball_nba.",
+            f"Slot {self.SLOT} for basketball_test was not recorded in time; "
+            f"the next slot starts at {self.NEXT_SLOT}.",
+        ]
+        assert sorted(tree(data_dir)) == self.FILES_OF_NBA
+
+    def test_the_sport_that_failed_is_taken_by_the_next_trigger_if_it_answers_then(
+        self, run, api, data_dir
+    ):
+        events_of_the_second_sport = api.events.pop("basketball_test")
+        assert run("--all", now=self.SATURDAY).status == 3
+        after_the_first_run = tree(data_dir)
+
+        api.events["basketball_test"] = events_of_the_second_sport
+        api.requests.clear()
+        result = run("--all", now=self.SATURDAY + timedelta(minutes=30))
+
+        assert result.status == 0
+        assert [received.sport for received in api.requests] == ["basketball_test"]
+        assert (result.outputs["changed"], result.outputs["games"]) == ("true", "1")
+        assert "failed" not in result.outputs
+        assert sorted(tree(data_dir)) == sorted(self.FILES_OF_TEST + self.FILES_OF_NBA)
+        # The files of the first sport are as the first run left them.
+        assert {path: tree(data_dir)[path] for path in self.FILES_OF_NBA} == after_the_first_run
+
+    def test_a_sport_that_fails_does_not_keep_the_next_one_from_being_taken(
+        self, run, api, data_dir
+    ):
+        del api.events["basketball_nba"]
+
+        result = run("--all", now=self.SATURDAY)
 
         assert result.status == 3
         assert [received.sport for received in api.requests] == [
@@ -619,44 +727,144 @@ class TestAll:
             "basketball_test",
         ]
         assert result.err.splitlines() == [
+            "The provider refused the request for basketball_nba: HTTP 404 (UNKNOWN_SPORT).",
+            "Nothing was written for basketball_nba.",
+        ]
+        assert (result.outputs["changed"], result.outputs["games"]) == ("true", "1")
+        assert result.outputs["failed"] == "basketball_nba"
+        assert sorted(tree(data_dir)) == self.FILES_OF_TEST
+
+    def test_files_that_validation_refuses_for_one_sport_leave_the_other_written(
+        self, run, data_dir, monkeypatch
+    ):
+        build = snapshot.build
+
+        def build_with_a_bug_for_one_sport(*args, sport, **kwargs):
+            built = build(*args, sport=sport, **kwargs)
+            if sport == "basketball_test":
+                built.slate["games"][0]["line"]["p_home"] = 1.0
+            return built
+
+        monkeypatch.setattr(snapshot, "build", build_with_a_bug_for_one_sport)
+
+        result = run("--all", now=self.SATURDAY)
+
+        assert result.status == 2
+        assert result.requests == 2
+        assert result.err.splitlines()[0] == "Validation failed for basketball_test:"
+        assert result.err.splitlines()[-1] == "Nothing was written for basketball_test."
+        assert (result.outputs["changed"], result.outputs["failed"]) == ("true", "basketball_test")
+        assert sorted(tree(data_dir)) == self.FILES_OF_NBA
+
+    def test_a_state_file_that_cannot_be_continued_from_stops_its_own_sport_only(
+        self, run, api, data_dir
+    ):
+        (data_dir / "v1").mkdir(parents=True)
+        (data_dir / "v1/state.json").write_text("{not json")
+
+        result = run("--all", now=self.SATURDAY)
+
+        assert result.status == 2
+        # No request is spent on the sport whose state cannot be read.
+        assert [received.sport for received in api.requests] == ["basketball_test"]
+        assert result.err.splitlines() == [
+            "v1/state.json is not JSON.",
+            "Nothing was written for basketball_nba.",
+        ]
+        assert (result.outputs["changed"], result.outputs["failed"]) == ("true", "basketball_nba")
+        assert sorted(tree(data_dir)) == sorted(self.FILES_OF_TEST + ["v1/state.json"])
+        assert (data_dir / "v1/state.json").read_text() == "{not json"
+
+    def test_when_both_sports_fail_the_exit_status_is_that_of_the_first_failure(
+        self, run, api, data_dir
+    ):
+        (data_dir / "v1").mkdir(parents=True)
+        (data_dir / "v1/state.json").write_text("{not json")
+        del api.events["basketball_test"]
+
+        result = run("--all", now=self.SATURDAY)
+
+        assert result.status == 2
+        assert result.err.splitlines() == [
+            "v1/state.json is not JSON.",
             "The provider refused the request for basketball_test: HTTP 404 (UNKNOWN_SPORT).",
             "Nothing was written.",
         ]
-        assert result.outputs == {"changed": "false", "slot": "2026-10-17T18:10-04:00"}
+        assert result.outputs == {
+            "changed": "false",
+            "slot": self.SLOT,
+            "failed": "basketball_nba, basketball_test",
+        }
+        assert tree(data_dir) == {"v1/state.json": "{not json"}
+
+    def test_a_dry_run_in_which_one_sport_fails_writes_nothing_and_fails(self, run, api, data_dir):
+        del api.events["basketball_test"]
+
+        result = run("--all", "--dry-run", now=self.SATURDAY)
+
+        assert result.status == 3
+        assert result.requests == 2
+        assert result.out.splitlines()[-1] == "Dry run: nothing was written."
+        assert result.err.splitlines()[-1] == "Nothing was written."
+        assert (result.outputs["changed"], result.outputs["games"]) == ("false", "3")
+        assert result.outputs["failed"] == "basketball_test"
         assert not data_dir.exists()
 
-    def test_too_late_for_one_sport_while_the_other_is_recorded(self, run, api):
-        saturday = datetime(2026, 10, 17, 22, 10, 41, tzinfo=timezone.utc)
-        run("--sport", "basketball_nba", now=saturday)
-        slot, next_slot = "2026-10-17T18:10-04:00", "2026-10-17T21:10-04:00"
+    def test_an_error_nobody_foresaw_does_not_lose_the_report_of_what_was_written(
+        self, run, data_dir, tmp_path, monkeypatch
+    ):
+        build = snapshot.build
 
-        result = run("--all", now=saturday + timedelta(minutes=75))
+        def build_that_breaks_for_one_sport(*args, sport, **kwargs):
+            if sport == "basketball_test":
+                raise RuntimeError("a bug")
+            return build(*args, sport=sport, **kwargs)
+
+        monkeypatch.setattr(snapshot, "build", build_that_breaks_for_one_sport)
+
+        # The command ends with a traceback, as a program with a bug does.
+        with pytest.raises(RuntimeError, match="a bug"):
+            run("--all", now=self.SATURDAY)
+
+        # The first sport is on disk, and the output file says so. Without
+        # that line the workflow would not push it.
+        assert sorted(tree(data_dir)) == self.FILES_OF_NBA
+        written = (tmp_path / "github_output").read_text().splitlines()
+        assert written[:3] == ["changed=true", f"slot={self.SLOT}", "games=3"]
+
+    def test_too_late_for_one_sport_while_the_other_is_recorded(self, run, api):
+        run("--sport", "basketball_nba", now=self.SATURDAY)
+
+        result = run("--all", now=self.SATURDAY + timedelta(minutes=75))
 
         assert (result.status, result.requests) == (0, 0)
         assert result.out.splitlines() == [
-            f"Not due: slot {slot} is already recorded for basketball_nba.",
-            f"Slot {slot} for basketball_test was not recorded in time; "
-            f"the next slot starts at {next_slot}.",
+            f"Not due: slot {self.SLOT} is already recorded for basketball_nba.",
+            f"Slot {self.SLOT} for basketball_test was not recorded in time; "
+            f"the next slot starts at {self.NEXT_SLOT}.",
         ]
-        assert result.outputs == {"changed": "false", "slot": slot, "given_up": "basketball_test"}
+        assert result.outputs == {
+            "changed": "false",
+            "slot": self.SLOT,
+            "given_up": "basketball_test",
+        }
 
     def test_too_late_for_both_sports(self, run, api, data_dir):
         result = run("--all", now=datetime(2026, 10, 17, 23, 25, 0, tzinfo=timezone.utc))
 
         assert (result.status, result.requests) == (0, 0)
         assert result.out == (
-            "Slot 2026-10-17T18:10-04:00 for basketball_nba, basketball_test "
-            "was not recorded in time; the next slot starts at 2026-10-17T21:10-04:00.\n"
+            f"Slot {self.SLOT} for basketball_nba, basketball_test "
+            f"was not recorded in time; the next slot starts at {self.NEXT_SLOT}.\n"
         )
         assert result.outputs["given_up"] == "basketball_nba, basketball_test"
         assert not data_dir.exists()
 
     def test_only_the_sport_that_is_due_is_requested(self, run, api):
-        saturday = datetime(2026, 10, 17, 22, 10, 41, tzinfo=timezone.utc)
-        run("--sport", "basketball_nba", now=saturday)
+        run("--sport", "basketball_nba", now=self.SATURDAY)
         api.requests.clear()
 
-        result = run("--all", now=saturday + timedelta(minutes=30))
+        result = run("--all", now=self.SATURDAY + timedelta(minutes=30))
 
         assert [received.sport for received in api.requests] == ["basketball_test"]
         assert result.outputs["games"] == "1"
@@ -733,6 +941,8 @@ def test_without_a_key_no_request_is_made(run, data_dir, monkeypatch):
     assert result.status == 1
     assert result.requests == 0
     assert result.err.splitlines() == ["ODDS_API_KEY is not set.", "Nothing was written."]
+    # The run as a whole could not start, so no sport is named as failed.
+    assert result.outputs == {"changed": "false", "slot": EVENING_SLOT}
     assert not data_dir.exists()
 
 

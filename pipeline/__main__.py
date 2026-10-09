@@ -11,7 +11,10 @@ Exit status:
     3  the provider refused the request (401, 429)
     4  the provider could not be reached, or its answer could not be read
 
-On any failure nothing is written.
+Each sport is taken on its own: fetched, built, validated and written before
+the next one is started. For a sport that fails nothing is written, and what
+was written for another sport stays. The exit status is that of the first
+failure.
 """
 
 import argparse
@@ -19,7 +22,7 @@ import os
 import re
 import sys
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -32,7 +35,11 @@ Clock = Callable[[], datetime]
 
 
 class _Stop(Exception):
-    """Ends the run with an exit status and a message. Raised only before anything is written."""
+    """
+    Ends one sport's part in the run, or the run as a whole, with an exit
+    status and a message. Raised only before anything of that sport is
+    written.
+    """
 
     def __init__(self, status: int, *lines: str):
         super().__init__(*lines)
@@ -60,6 +67,16 @@ class _Capture:
     files: dict[str, str]  # path in the data directory -> new content
 
 
+@dataclass
+class _Run:
+    """What a run has done so far. The step outputs and the exit status are made from it."""
+
+    captures: list[_Capture] = field(default_factory=list)  # taken, and written unless a dry run
+    failed: list[config.Sport] = field(default_factory=list)
+    given_up: list[config.Sport] = field(default_factory=list)  # too late to ask for their slot
+    status: int = DONE  # the status of the first failure
+
+
 def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
     """
     Runs the command and returns its exit status.
@@ -81,74 +98,121 @@ def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
         in_time=schedule.in_time(current, now),
         run_started=now,
     )
+    run = _Run()
     try:
-        outputs = _snapshot(args, slot, clock)
-        status = DONE
+        _snapshot(args, slot, clock, run)
+    finally:
+        # Also when the run ends with an error that nobody foresaw. A sport
+        # that was written before it has to be reported all the same, or the
+        # workflow would not push it and the next run would ask for it again.
+        _write_outputs(_outputs(run, slot, dry_run=args.dry_run))
+    return run.status
+
+
+def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
+    """
+    Takes the snapshot of every sport that is due, one sport after the other,
+    and notes in `run` what came of it. A sport that fails does not stop the
+    others.
+    """
+    try:
+        _take_what_is_due(args, slot, clock, run)
     except _Stop as stop:
-        for line in (*stop.lines, "Nothing was written."):
-            print(line, file=sys.stderr, flush=True)
-        outputs = {"changed": "false", "slot": slot.id}
-        status = stop.status
-    _write_outputs(outputs)
-    return status
+        # Bad arguments or settings. Nothing was started for any sport.
+        _fail(run, None, stop)
+    if run.status != DONE:
+        if run.captures and not args.dry_run:
+            _complain(f"Nothing was written for {_names(run.failed)}.")
+        else:
+            _complain("Nothing was written.")
 
 
-def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock) -> dict:
-    """
-    Takes the snapshot of every sport that is due and returns the values for
-    GITHUB_OUTPUT. Raises _Stop on any failure, and writes only when every
-    sport has been fetched and validated.
-    """
+def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
     data_dir = args.data_dir
     sports = _selected(args, slot)
-    previous = {sport: _state_on_disk(data_dir, sport) for sport in sports}
-    unrecorded = [sport for sport in sports if _is_due(slot, previous[sport])]
-    if args.force:
-        due, given_up = sports, []
-    elif slot.in_time:
-        due, given_up = unrecorded, []
-    else:
-        # The slot is not recorded and it is too late to ask for it. This is
-        # what keeps a failure that lasts from being paid for at every
-        # trigger: see ATTEMPT_WINDOW in schedule.py.
-        due, given_up = [], unrecorded
+
+    # First what is on disk, for every sport, before any request is made.
+    previous, recorded, due = {}, [], []
+    for sport in sports:
+        try:
+            previous[sport] = _state_on_disk(data_dir, sport)
+        except _Stop as stop:
+            _fail(run, sport, stop)
+            continue
+        if args.force:
+            due.append(sport)
+        elif not _is_due(slot, previous[sport]):
+            recorded.append(sport)
+        elif slot.in_time:
+            due.append(sport)
+        else:
+            # The slot is not recorded and it is too late to ask for it. This
+            # is what keeps a failure that lasts from being paid for at every
+            # trigger: see ATTEMPT_WINDOW in schedule.py.
+            run.given_up.append(sport)
+
     if not due:
-        recorded = [sport for sport in sports if sport not in given_up]
         if recorded:
             already = f"Not due: slot {slot.id} is already recorded for {_names(recorded)}."
-            _say(already, *([] if given_up else [_next(slot)]))
-        if given_up:
+            _say(already, *([] if run.given_up else [_next(slot)]))
+        if run.given_up:
             _say(
-                f"Slot {slot.id} for {_names(given_up)} was not recorded in time; "
+                f"Slot {slot.id} for {_names(run.given_up)} was not recorded in time; "
                 f"the next slot starts at {slot.next_due}."
             )
-            return {"changed": "false", "slot": slot.id, "given_up": _names(given_up)}
-        return {"changed": "false", "slot": slot.id}
+        return
 
-    # Whatever can be checked without the provider is checked before the
-    # request: the state files above, and here the key and the history files
-    # that will be added to. A request whose result is then refused has spent
-    # its credit for nothing, and the next trigger would spend another.
     api_key = _api_key()
-    for sport in due:
-        _history_on_disk(data_dir, sport, slot.run_started)
-
     _say(f"Slot {slot.id}.", _next(slot))
-    captures = []
     for sport in due:
-        capture = _capture(data_dir, sport, previous[sport], api_key, slot, clock)
-        captures.append(capture)
-        _say(_summary(capture))
-        for reason in capture.built.dropped:
-            _say(f"  dropped {reason}")
-
-    files = {path: content for capture in captures for path, content in capture.files.items()}
-    if args.dry_run:
+        try:
+            capture = _take(
+                data_dir, sport, previous[sport], api_key, slot, clock, dry_run=args.dry_run
+            )
+        except _Stop as stop:
+            _fail(run, sport, stop)
+        else:
+            run.captures.append(capture)
+    if args.dry_run and run.captures:
         _say("Dry run: nothing was written.")
-    else:
-        store.write(data_dir, files)
-        _say(f"Wrote {', '.join(files)}.")
-    return _outputs(captures, slot, changed=not args.dry_run)
+
+
+def _take(
+    data_dir: Path,
+    sport: config.Sport,
+    previous: dict | None,
+    api_key: str,
+    slot: _Slot,
+    clock: Clock,
+    *,
+    dry_run: bool,
+) -> _Capture:
+    """
+    One sport from its request to its files on disk. Raises _Stop when a step
+    fails, and nothing of this sport is written then.
+    """
+    # Whatever can be checked without the provider is checked before the
+    # request: the state file by the caller, the key, and here the history
+    # file that will be added to. A request whose result is then refused has
+    # spent its credit for nothing.
+    _history_on_disk(data_dir, sport, slot.run_started)
+    capture = _capture(data_dir, sport, previous, api_key, slot, clock)
+    _say(_summary(capture))
+    for reason in capture.built.dropped:
+        _say(f"  dropped {reason}")
+    if not dry_run:
+        store.write(data_dir, capture.files)
+        _say(f"Wrote {', '.join(capture.files)}.")
+    return capture
+
+
+def _fail(run: _Run, sport: config.Sport | None, stop: _Stop) -> None:
+    """Reports that a sport failed, or the run as a whole when there is no sport to name."""
+    _complain(*stop.lines)
+    if sport is not None:
+        run.failed.append(sport)
+    if run.status == DONE:
+        run.status = stop.status
 
 
 def _capture(
@@ -273,23 +337,31 @@ def _summary(capture: _Capture) -> str:
     )
 
 
-def _outputs(captures: list[_Capture], slot: _Slot, *, changed: bool) -> dict:
+def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
     """
-    The step outputs. The counts are totals over the sports captured in this
-    run; the credits remaining and used are those of the last response.
+    The step outputs. `changed` says whether anything was written. The counts
+    are totals over the sports taken in this run, and the credits remaining
+    and used are those of the last response. `failed` and `given_up` name
+    sports, and are left out when there is none to name.
     """
-    costs = [capture.response.last for capture in captures if capture.response.last is not None]
-    last = captures[-1].response
-    return {
-        "changed": "true" if changed else "false",
-        "slot": slot.id,
-        "games": sum(len(capture.built.slate["games"]) for capture in captures),
-        "with_line": sum(len(capture.built.history) for capture in captures),
-        "dropped": sum(len(capture.built.dropped) for capture in captures),
-        "credits_remaining": _known(last.remaining, otherwise=""),
-        "credits_used": _known(last.used, otherwise=""),
-        "credits_spent": sum(costs) if costs else "",
-    }
+    captures = run.captures
+    outputs = {"changed": "true" if captures and not dry_run else "false", "slot": slot.id}
+    if captures:
+        costs = [capture.response.last for capture in captures if capture.response.last is not None]
+        last = captures[-1].response
+        outputs |= {
+            "games": sum(len(capture.built.slate["games"]) for capture in captures),
+            "with_line": sum(len(capture.built.history) for capture in captures),
+            "dropped": sum(len(capture.built.dropped) for capture in captures),
+            "credits_remaining": _known(last.remaining, otherwise=""),
+            "credits_used": _known(last.used, otherwise=""),
+            "credits_spent": sum(costs) if costs else "",
+        }
+    if run.failed:
+        outputs["failed"] = _names(run.failed)
+    if run.given_up:
+        outputs["given_up"] = _names(run.given_up)
+    return outputs
 
 
 def _write_outputs(outputs: dict) -> None:
@@ -305,6 +377,11 @@ def _write_outputs(outputs: dict) -> None:
 
 def _say(*sentences: str) -> None:
     print(*sentences, flush=True)
+
+
+def _complain(*lines: str) -> None:
+    for line in lines:
+        print(line, file=sys.stderr, flush=True)
 
 
 def _names(sports: list[config.Sport]) -> str:
