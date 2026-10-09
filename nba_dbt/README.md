@@ -90,7 +90,11 @@ dbt build --project-dir nba_dbt
 
 ## What has and has not been verified
 
-Checked with dbt-core 1.12.5 and dbt-snowflake 1.12.1 on Python 3.12, using the placeholder profile in [`ci/profiles.yml`](ci/profiles.yml). Neither command opens a connection:
+Nothing in this project has been run against a Snowflake account. This is what has been checked, with dbt-core 1.12.5 and dbt-snowflake 1.12.1 on Python 3.12.
+
+### dbt parse and dbt compile, offline
+
+Both commands use the placeholder profile in [`ci/profiles.yml`](ci/profiles.yml), and neither opens a connection:
 
 ```bash
 dbt parse   --project-dir nba_dbt --profiles-dir nba_dbt/ci
@@ -101,4 +105,27 @@ dbt compile --project-dir nba_dbt --profiles-dir nba_dbt/ci --no-populate-cache 
 - `dbt compile` renders every model and test to SQL. `--no-populate-cache` skips the catalog query that a plain `dbt compile` starts with (without it the command tries to connect and fails), and `--no-introspect` makes dbt stop rather than query the warehouse while rendering. In the compiled SQL the source resolves to the target's database and schema, or to `SNOWFLAKE_DATABASE` and `SNOWFLAKE_SCHEMA` when those are set.
 - dbt accepts the example profile above: the same `dbt compile` succeeds with it when the seven variables hold placeholder values.
 
-Not verified: the models and tests have not been run against a Snowflake account, and the example profile has not been used to connect to one.
+### The models on an emulator
+
+[`tests/test_dbt_models.py`](../tests/test_dbt_models.py) builds the project against [fakesnow](https://github.com/tekumara/fakesnow), a local emulator. The real `dbt-snowflake` adapter connects to it, and it translates Snowflake SQL to DuckDB. The test puts scoreboard responses into `RAW_NBA_SCOREBOARD`, runs `dbt build` through the task function in `data_transformation/transform_data.py`, and compares every row of both models with the rows it expects:
+
+- One response in which no game has started gives one row per game, and two rows per game in the mart with `won` null.
+- More responses are then added out of order: the newest first, one of them twice, the first one again, and one for a day without games. Each game still has one row, taken from the response in which it is furthest along. Of the two finished games one is won at home and one away, and `won` is true for the winner and false for the loser. It stays null for the game still in progress.
+- A response containing a game without an id makes the `not_null` test on `game_id` fail. The task exits with status 1 and the mart is not built.
+
+The first response is real. It is the one saved in the output of `notebooks/predict_past.ipynb` (12 December 2024, three games, none started) and is kept in `tests/fixtures/scoreboard_20241212.json`. The later ones are copies of it with made-up statuses and scores.
+
+To run it, from the repository root:
+
+```bash
+pip install -r requirements.txt -r requirements-dev.txt
+python -m pytest tests/test_dbt_models.py
+```
+
+Last run with fakesnow 0.11.20 on DuckDB 1.5.6.
+
+### Limits
+
+fakesnow is not Snowflake. A pass shows that dbt can build the project, that the emulator's Snowflake SQL parser accepts the statements, and that they return the intended rows on DuckDB. It does not show that Snowflake accepts or evaluates every expression the same way. One difference turned up while the test was being written: read through the emulator's server, a NULL timestamp came back as 1970-01-01 00:00:00.
+
+The example profile has not been used to connect to Snowflake either.
