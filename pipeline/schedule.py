@@ -28,9 +28,9 @@ SLOT_TIMES = (time(5, 10), time(9, 10), time(12, 10), time(15, 10), time(18, 10)
 # Why not less: GitHub starts scheduled runs late. In a measurement of four
 # public repositories the median delay was 13 to 21 minutes, and the first two
 # triggers of a slot must still fit. With 75 minutes the second one fits when
-# it starts up to 45 minutes late. Why not more: every run that fits is one
-# more request while a failure lasts, and beyond 90 minutes a fourth trigger
-# would fit as well.
+# it starts less than 45 minutes late. Why not more: every run that fits is
+# one more request while a failure lasts, and beyond 90 minutes a fourth
+# trigger would fit as well.
 ATTEMPT_WINDOW = timedelta(minutes=75)
 
 

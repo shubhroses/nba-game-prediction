@@ -38,8 +38,8 @@ Clock = Callable[[], datetime]
 class _Stop(Exception):
     """
     Ends one sport's part in the run, or the run as a whole, with an exit
-    status and a message. Raised only before anything of that sport is
-    written.
+    status and a message. Raised before anything of that sport is written,
+    or because writing it failed.
     """
 
     def __init__(self, status: int, *lines: str):
@@ -129,6 +129,11 @@ def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) ->
 
 
 def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
+    """
+    Sorts the selected sports into those whose slot is recorded, those it is
+    too late for and those that are due, and takes the last. Raises _Stop
+    only for what concerns the run as a whole: the arguments and the key.
+    """
     data_dir = args.data_dir
     sports = _selected(args, slot)
     if not args.dry_run:

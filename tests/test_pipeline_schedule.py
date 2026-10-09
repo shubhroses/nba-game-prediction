@@ -153,7 +153,7 @@ def test_three_triggers_of_every_slot_start_in_time_and_no_more():
     assert in_time == {slot: on_the_slot_and_30_and_60_minutes_later for slot, _ in SLOTS}
 
 
-def test_the_second_trigger_of_a_slot_is_in_time_when_it_starts_up_to_45_minutes_late():
+def test_the_second_trigger_of_a_slot_is_in_time_when_it_starts_less_than_45_minutes_late():
     # GitHub starts scheduled runs late. That is why the window is 75 minutes
     # and not 60: the trigger half an hour after the slot's start must still
     # be able to take it.
