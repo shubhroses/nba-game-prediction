@@ -12,6 +12,10 @@ import tempfile
 from datetime import date
 from pathlib import Path
 
+# write() puts its temporary directory inside the data directory, under a
+# name that starts like this.
+_STAGING = ".staging-"
+
 
 def slate_path(prefix: str) -> str:
     return f"{prefix}/slate.json"
@@ -71,7 +75,7 @@ def write(data_dir: Path, files: dict[str, str]) -> None:
     """
     data_dir.mkdir(parents=True, exist_ok=True)
     # Inside the data directory, so that the renames stay on one file system.
-    staging = Path(tempfile.mkdtemp(prefix=".staging-", dir=data_dir))
+    staging = Path(tempfile.mkdtemp(prefix=_STAGING, dir=data_dir))
     try:
         for path, content in files.items():
             (staging / path).parent.mkdir(parents=True, exist_ok=True)
@@ -82,3 +86,23 @@ def write(data_dir: Path, files: dict[str, str]) -> None:
             os.replace(staging / path, data_dir / path)
     finally:
         shutil.rmtree(staging, ignore_errors=True)
+
+
+def remove_leftovers(data_dir: Path) -> list[str]:
+    """
+    Removes the temporary directories of earlier runs from the data directory
+    and returns their names. write() removes its own, so one is left only
+    when a run was killed while it was writing. What is in it are copies that
+    were not moved into place, and the run that made them never recorded its
+    slot.
+
+    Call this when no other run is writing to the same data directory.
+    """
+    removed = []
+    if data_dir.is_dir():
+        for leftover in sorted(data_dir.glob(f"{_STAGING}*")):
+            if leftover.is_dir() and not leftover.is_symlink():
+                shutil.rmtree(leftover, ignore_errors=True)
+                if not leftover.exists():
+                    removed.append(leftover.name)
+    return removed

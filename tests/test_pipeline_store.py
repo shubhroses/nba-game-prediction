@@ -5,11 +5,16 @@ write puts every file in place or none.
 
 import json
 import os
+import subprocess
+import sys
 from datetime import date
+from pathlib import Path
 
 import pytest
 
 from pipeline import store
+
+REPOSITORY = Path(__file__).resolve().parent.parent
 
 
 def files_under(directory):
@@ -119,6 +124,54 @@ def test_files_are_moved_into_place_in_the_order_given(tmp_path, monkeypatch):
     )
 
     assert moved == ["v1/history/d.ndjson", "v1/slate.json", "v1/state.json"]
+
+
+def test_a_run_killed_while_it_writes_leaves_a_directory_that_the_next_run_removes(tmp_path):
+    data_dir = tmp_path / "data"
+    store.write(data_dir, {"v1/slate.json": "old slate\n", "v1/state.json": "old state\n"})
+    # A process that ends at its first move, without running any cleanup,
+    # which is how a kill ends it.
+    killed_at_the_first_move = (
+        "import os, sys\n"
+        "from pathlib import Path\n"
+        "from pipeline import store\n"
+        "store.os.replace = lambda source, destination: os._exit(9)\n"
+        "store.write(Path(sys.argv[1]), {'v1/slate.json': 'new\\n', 'v1/state.json': 'new\\n'})\n"
+    )
+    finished = subprocess.run(
+        [sys.executable, "-c", killed_at_the_first_move, str(data_dir)],
+        cwd=REPOSITORY,
+        timeout=60,
+        check=False,
+    )
+    assert finished.returncode == 9
+    (leftover,) = data_dir.glob(".staging-*")
+    assert files_under(leftover) == ["v1/slate.json", "v1/state.json"]
+
+    assert store.remove_leftovers(data_dir) == [leftover.name]
+
+    assert not leftover.exists()
+    assert files_under(data_dir) == ["v1/slate.json", "v1/state.json"]
+    assert store.read_text(data_dir, "v1/state.json") == "old state\n"
+    assert store.remove_leftovers(data_dir) == []
+
+
+def test_only_the_directories_that_write_makes_are_removed(tmp_path):
+    kept = [".git/config", ".staging-is-a-file", "v1/.staging-deeper/x", "v1/state.json"]
+    for path in [*kept, ".staging-b/v1/state.json", ".staging-a/v1/history/d.ndjson"]:
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_text("x\n")
+
+    assert store.remove_leftovers(tmp_path) == [".staging-a", ".staging-b"]
+
+    assert files_under(tmp_path) == kept
+
+
+def test_there_is_nothing_to_remove_from_a_data_directory_that_does_not_exist(tmp_path):
+    missing = tmp_path / "not" / "created" / "yet"
+
+    assert store.remove_leftovers(missing) == []
+    assert not missing.exists()
 
 
 def test_a_file_that_is_not_json_is_an_error_not_a_missing_file(tmp_path):

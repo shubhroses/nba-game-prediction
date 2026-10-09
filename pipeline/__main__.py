@@ -131,6 +131,10 @@ def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) ->
 def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
     data_dir = args.data_dir
     sports = _selected(args, slot)
+    if not args.dry_run:
+        # A dry run changes nothing in the data directory, not even this.
+        for name in store.remove_leftovers(data_dir):
+            _say(f"Removed {name}, which a run that was interrupted had left behind.")
 
     # First what is on disk, for every sport, before any request is made.
     previous, recorded, due = {}, [], []

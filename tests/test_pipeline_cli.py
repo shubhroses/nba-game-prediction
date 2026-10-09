@@ -509,6 +509,59 @@ def test_force_takes_another_snapshot_in_a_slot_that_is_already_recorded(run, da
     assert read(data_dir, "v1/state.json")["games"][EARLY]["first"]["at"] == "2026-10-20T22:10:41Z"
 
 
+def leave_a_staging_directory(data_dir):
+    """What a run leaves behind when it is killed while it writes."""
+    leftover = data_dir / ".staging-killed" / "v1"
+    leftover.mkdir(parents=True)
+    (leftover / "state.json").write_text("{}\n")
+    return leftover.parent
+
+
+def test_a_staging_directory_of_a_killed_run_is_removed_when_the_next_run_starts(run, data_dir):
+    leftover = leave_a_staging_directory(data_dir)
+
+    result = run("--all")
+
+    assert result.status == 0
+    assert result.out.splitlines()[0] == (
+        "Removed .staging-killed, which a run that was interrupted had left behind."
+    )
+    assert not leftover.exists()
+    assert sorted(tree(data_dir)) == [
+        "v1/history/2026-10-20.ndjson",
+        "v1/slate.json",
+        "v1/state.json",
+    ]
+
+
+def test_it_is_removed_by_a_run_that_has_nothing_else_to_do_as_well(run, data_dir):
+    run("--all")
+    after_first_run = tree(data_dir)
+    leftover = leave_a_staging_directory(data_dir)
+
+    result = run("--all", now=EVENING + timedelta(minutes=30))
+
+    assert (result.status, result.requests) == (0, 0)
+    assert result.out.splitlines() == [
+        "Removed .staging-killed, which a run that was interrupted had left behind.",
+        f"Not due: slot {EVENING_SLOT} is already recorded for basketball_nba. "
+        f"The next slot starts at {NIGHT_SLOT}.",
+    ]
+    assert not leftover.exists()
+    assert tree(data_dir) == after_first_run
+
+
+def test_a_dry_run_leaves_a_staging_directory_where_it_is(run, data_dir):
+    leftover = leave_a_staging_directory(data_dir)
+
+    result = run("--all", "--dry-run")
+
+    assert (result.status, result.requests) == (0, 1)
+    assert "Removed" not in result.out
+    assert sorted(tree(data_dir)) == [".staging-killed/v1/state.json"]
+    assert leftover.is_dir()
+
+
 def test_a_run_that_starts_just_inside_75_minutes_takes_the_slot(run, data_dir):
     result = run("--all", now=JUST_IN_TIME)
 
