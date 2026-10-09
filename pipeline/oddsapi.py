@@ -12,7 +12,6 @@ import http.client
 import json
 import os
 import re
-import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -24,7 +23,6 @@ from pipeline.timestamps import format_utc
 DEFAULT_BASE_URL = "https://api.the-odds-api.com"
 BASE_URL_VARIABLE = "ODDS_API_BASE_URL"
 TIMEOUT_SECONDS = 20
-RETRY_WAITS_SECONDS = (5, 20)
 # Sent in place of urllib's default name, which some gateways reject.
 USER_AGENT = "nba-game-prediction-pipeline"
 
@@ -46,10 +44,6 @@ class Unreachable(OddsApiError):
     """No usable answer: a network error, a timeout, a 5xx status or a body that cannot be read."""
 
 
-class _TryAgain(Exception):
-    """A failed attempt that is worth repeating."""
-
-
 @dataclass(frozen=True)
 class OddsResponse:
     events: list  # the events as the API returned them
@@ -63,10 +57,11 @@ def fetch_odds(sport: str, api_key: str, now: datetime) -> OddsResponse:
     The games of a sport that start at or after now, with the prices of the
     US sportsbooks, and the quota headers of the response.
 
-    401 and 429 are final and raise Refused at once, and so does any other
-    answer that is neither a success nor a 5xx. A network error, a timeout or
-    a 5xx status is tried again after 5 seconds and again after 20, and
-    raises Unreachable when the third attempt fails as well.
+    One request is sent, and it is not repeated whatever comes of it. Any
+    request may cost a credit, and the job is triggered again half an hour
+    later: that trigger is the retry. 401 and 429 raise Refused, and so does
+    any other answer that is neither a success nor a 5xx. A network error, a
+    timeout, a 5xx status or a success that cannot be read raises Unreachable.
     """
     query = urllib.parse.urlencode(
         {
@@ -80,16 +75,7 @@ def fetch_odds(sport: str, api_key: str, now: datetime) -> OddsResponse:
         safe=":",  # the time goes out as the provider's guide writes it, 2026-10-20T22:10:41Z
     )
     url = f"{base_url()}/v4/sports/{urllib.parse.quote(sport, safe='')}/odds?{query}"
-
-    attempts = len(RETRY_WAITS_SECONDS) + 1
-    for attempt in range(attempts):
-        if attempt:
-            time.sleep(RETRY_WAITS_SECONDS[attempt - 1])
-        try:
-            return _get(url)
-        except _TryAgain as failure:
-            reason = str(failure)
-    raise Unreachable(f"{reason}, after {attempts} attempts")
+    return _get(url)
 
 
 def base_url() -> str:
@@ -132,15 +118,13 @@ def _get(url: str) -> OddsResponse:
     except urllib.error.HTTPError as error:
         try:
             if error.code >= 500:
-                raise _TryAgain(f"HTTP {error.code}") from None
+                raise Unreachable(f"HTTP {error.code}") from None
             raise Refused(_refusal(error)) from None
         finally:
             error.close()
     except (OSError, http.client.HTTPException) as error:
-        raise _TryAgain(_kind(error)) from None
+        raise Unreachable(_kind(error)) from None
 
-    # A success is not asked for twice, even if it cannot be read: the call
-    # may already have been charged.
     try:
         events = json.loads(body)
     except ValueError:

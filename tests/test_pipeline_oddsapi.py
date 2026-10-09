@@ -3,8 +3,7 @@ Tests for pipeline/oddsapi.py.
 
 The requests go to the fake server in tests/fake_odds_api.py on 127.0.0.1.
 Nothing here reaches The Odds API, the key is a dummy and the prices are
-invented. The waits between attempts are replaced by a function that records
-them, so no test sleeps.
+invented.
 """
 
 import http.client
@@ -12,7 +11,6 @@ import socket
 import traceback
 import urllib.request
 from datetime import datetime, timezone
-from types import SimpleNamespace
 
 import pytest
 
@@ -40,12 +38,21 @@ def api(monkeypatch):
         yield fake
 
 
-@pytest.fixture(autouse=True)
-def waits(monkeypatch):
-    """The seconds the module asked to sleep between attempts. No test here really sleeps."""
-    recorded = []
-    monkeypatch.setattr(oddsapi, "time", SimpleNamespace(sleep=recorded.append))
-    return recorded
+@pytest.fixture
+def attempts(monkeypatch):
+    """
+    One entry for every time the module set out to send a request. This also
+    counts the attempts that never reach a server.
+    """
+    made = []
+    send = oddsapi._OPENER.open
+
+    def counting_open(*args, **kwargs):
+        made.append(1)
+        return send(*args, **kwargs)
+
+    monkeypatch.setattr(oddsapi._OPENER, "open", counting_open)
+    return made
 
 
 def assert_gives_nothing_away(error, base_url):
@@ -57,7 +64,7 @@ def assert_gives_nothing_away(error, base_url):
     assert "/v4/sports" not in shown
 
 
-def test_the_request_and_what_comes_back(api, waits):
+def test_the_request_and_what_comes_back(api):
     response = oddsapi.fetch_odds("basketball_nba", KEY, NOW)
 
     assert api.requests == [
@@ -76,7 +83,6 @@ def test_the_request_and_what_comes_back(api, waits):
     assert "commenceTimeFrom=2026-10-20T22:10:41Z" in api.requests[0].target
     assert response.events == EVENTS
     assert (response.remaining, response.used, response.last) == (499, 1, 1)
-    assert waits == []
 
 
 @pytest.mark.usefixtures("api")
@@ -110,7 +116,7 @@ def test_the_key_and_the_sport_are_escaped_in_the_url(api):
         (403, "not a code: <b>anything</b>", "HTTP 403"),
     ],
 )
-def test_a_refusal_is_final_and_is_asked_only_once(api, waits, status, error_code, message):
+def test_a_refusal_is_asked_only_once(api, status, error_code, message):
     api.status, api.error_code = status, error_code
 
     with pytest.raises(oddsapi.Refused) as raised:
@@ -118,7 +124,6 @@ def test_a_refusal_is_final_and_is_asked_only_once(api, waits, status, error_cod
 
     assert str(raised.value) == message
     assert len(api.requests) == 1
-    assert waits == []
     assert_gives_nothing_away(raised.value, api.url)
 
 
@@ -140,37 +145,23 @@ def test_a_redirect_is_not_followed(api):
     assert [received.sport for received in api.requests] == ["basketball_nba"]
 
 
+# A failure that may pass is not tried again within the run either. The next
+# trigger of the workflow, half an hour later, is the retry.
+
+
 @pytest.mark.parametrize("status", [500, 502, 503])
-def test_a_server_error_is_tried_three_times_with_waits_of_5_and_20_seconds(api, waits, status):
+def test_a_server_error_is_asked_only_once(api, status):
     api.status = status
 
     with pytest.raises(oddsapi.Unreachable) as raised:
         oddsapi.fetch_odds("basketball_nba", KEY, NOW)
 
-    assert str(raised.value) == f"HTTP {status}, after 3 attempts"
-    assert len(api.requests) == 3
-    assert waits == [5, 20]
+    assert str(raised.value) == f"HTTP {status}"
+    assert len(api.requests) == 1
     assert_gives_nothing_away(raised.value, api.url)
 
 
-def test_a_server_error_that_passes_is_not_an_error(api, monkeypatch):
-    api.status = 503
-    waited = []
-
-    def recover_during_the_wait(seconds):
-        waited.append(seconds)
-        api.status = 200
-
-    monkeypatch.setattr(oddsapi, "time", SimpleNamespace(sleep=recover_during_the_wait))
-
-    response = oddsapi.fetch_odds("basketball_nba", KEY, NOW)
-
-    assert response.events == EVENTS
-    assert len(api.requests) == 2
-    assert waited == [5]
-
-
-def test_a_refused_connection_is_tried_three_times(monkeypatch, waits):
+def test_a_refused_connection_is_tried_only_once(monkeypatch, attempts):
     with socket.socket() as placeholder:
         placeholder.bind(("127.0.0.1", 0))
         closed_port = placeholder.getsockname()[1]
@@ -180,12 +171,12 @@ def test_a_refused_connection_is_tried_three_times(monkeypatch, waits):
     with pytest.raises(oddsapi.Unreachable) as raised:
         oddsapi.fetch_odds("basketball_nba", KEY, NOW)
 
-    assert str(raised.value) == "ConnectionRefusedError: Connection refused, after 3 attempts"
-    assert waits == [5, 20]
+    assert str(raised.value) == "ConnectionRefusedError: Connection refused"
+    assert len(attempts) == 1
     assert_gives_nothing_away(raised.value, base_url)
 
 
-def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(api, waits, monkeypatch):
+def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(api, attempts, monkeypatch):
     # http.client refuses a request target that has a space in it, and its
     # message quotes the whole target, query string and key included.
     with pytest.raises(http.client.InvalidURL, match=KEY):
@@ -196,8 +187,8 @@ def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(api, waits, m
     with pytest.raises(oddsapi.Unreachable) as raised:
         oddsapi.fetch_odds("basketball_nba", KEY, NOW)
 
-    assert str(raised.value) == "InvalidURL, after 3 attempts"
-    assert waits == [5, 20]
+    assert str(raised.value) == "InvalidURL"
+    assert len(attempts) == 1
     assert api.requests == []
     assert_gives_nothing_away(raised.value, api.url)
 
@@ -206,16 +197,16 @@ def test_the_timeout_is_20_seconds():
     assert oddsapi.TIMEOUT_SECONDS == 20
 
 
-def test_a_timeout_is_tried_three_times(api, waits, monkeypatch):
+def test_a_request_that_times_out_is_sent_only_once(api, attempts, monkeypatch):
     monkeypatch.setattr(oddsapi, "TIMEOUT_SECONDS", 0.05)
     api.delay_seconds = 0.4
 
     with pytest.raises(oddsapi.Unreachable) as raised:
         oddsapi.fetch_odds("basketball_nba", KEY, NOW)
 
-    assert str(raised.value) == "timed out, after 3 attempts"
-    assert len(api.requests) == 3
-    assert waits == [5, 20]
+    assert str(raised.value) == "timed out"
+    assert len(attempts) == 1
+    assert len(api.requests) == 1
     assert_gives_nothing_away(raised.value, api.url)
 
 
@@ -227,7 +218,7 @@ def test_a_timeout_is_tried_three_times(api, waits, monkeypatch):
         (b'{"message": "hello"}', "the response was not a list of events"),
     ],
 )
-def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, waits, body, message):
+def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, body, message):
     api.raw_body = body
 
     with pytest.raises(oddsapi.Unreachable) as raised:
@@ -235,7 +226,6 @@ def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, waits, body, 
 
     assert str(raised.value) == message
     assert len(api.requests) == 1
-    assert waits == []
     assert_gives_nothing_away(raised.value, api.url)
 
 

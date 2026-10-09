@@ -16,13 +16,12 @@ from collections import namedtuple
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
 import pipeline
 from fake_odds_api import FakeOddsApi, event
-from pipeline import config, oddsapi, snapshot
+from pipeline import config, snapshot
 from pipeline.__main__ import main
 
 REPOSITORY = Path(__file__).resolve().parent.parent
@@ -78,24 +77,13 @@ def api():
 
 
 @pytest.fixture
-def waits(monkeypatch):
-    """The waits between attempts, recorded instead of slept."""
-    recorded = []
-    monkeypatch.setattr(oddsapi, "time", SimpleNamespace(sleep=recorded.append))
-    return recorded
-
-
-@pytest.fixture
 def data_dir(tmp_path):
     return tmp_path / "data"
 
 
 @pytest.fixture
-def run(api, waits, data_dir, tmp_path, monkeypatch, capsys):
-    """
-    Runs the command the way the workflow does, at a time the test chooses.
-    It asks for `waits` so that no run ever really sleeps between attempts.
-    """
+def run(api, data_dir, tmp_path, monkeypatch, capsys):
+    """Runs the command the way the workflow does, at a time the test chooses."""
     github_output = tmp_path / "github_output"
     monkeypatch.setenv("ODDS_API_KEY", KEY)
     monkeypatch.setenv("ODDS_API_BASE_URL", api.url)
@@ -258,8 +246,9 @@ def test_three_slots_of_one_evening(run, api, data_dir):
 
 def test_a_game_that_starts_while_the_request_is_under_way_is_left_out(run, api, data_dir):
     # The clock is read when the run begins and again when the response is
-    # there. Here the request took 90 seconds, as it can with retries, and
-    # the early game tipped off at 23:00:00 in the meantime.
+    # there. Here the request took 90 seconds, as a response that arrives a
+    # little at a time can, and the early game tipped off at 23:00:00 in the
+    # meantime.
     begun = datetime(2026, 10, 20, 22, 59, 0, tzinfo=timezone.utc)
     readings = iter([begun, begun + timedelta(seconds=90)])
 
@@ -279,7 +268,7 @@ def test_a_game_that_starts_while_the_request_is_under_way_is_left_out(run, api,
     [(401, "INVALID_KEY", "HTTP 401 (INVALID_KEY)"), (429, None, "HTTP 429")],
 )
 def test_a_refusal_is_asked_once_and_ends_with_status_3(
-    run, api, waits, data_dir, status, error_code, shown
+    run, api, data_dir, status, error_code, shown
 ):
     api.status, api.error_code = status, error_code
 
@@ -287,7 +276,6 @@ def test_a_refusal_is_asked_once_and_ends_with_status_3(
 
     assert result.status == 3
     assert result.requests == 1
-    assert waits == []
     assert result.err.splitlines() == [
         f"The provider refused the request for basketball_nba: {shown}.",
         "Nothing was written.",
@@ -296,32 +284,28 @@ def test_a_refusal_is_asked_once_and_ends_with_status_3(
     assert not data_dir.exists()
 
 
-def test_a_503_is_asked_three_times_and_ends_with_status_4(run, api, waits, data_dir):
+def test_a_503_is_asked_once_and_ends_with_status_4(run, api, data_dir):
     api.status = 503
 
     result = run("--all")
 
     assert result.status == 4
-    assert result.requests == 3
-    assert waits == [5, 20]
+    assert result.requests == 1
     assert result.err.splitlines() == [
-        "The provider gave no usable answer for basketball_nba: HTTP 503, after 3 attempts.",
+        "The provider gave no usable answer for basketball_nba: HTTP 503.",
         "Nothing was written.",
     ]
     assert result.outputs == {"changed": "false", "slot": EVENING_SLOT}
     assert not data_dir.exists()
 
 
-def test_an_answer_that_cannot_be_read_ends_with_status_4_after_one_request(
-    run, api, waits, data_dir
-):
+def test_an_answer_that_cannot_be_read_ends_with_status_4_after_one_request(run, api, data_dir):
     api.raw_body = b"<html>Service temporarily unavailable</html>"
 
     result = run("--all")
 
     assert result.status == 4
     assert result.requests == 1
-    assert waits == []
     assert result.err.splitlines() == [
         "The provider gave no usable answer for basketball_nba: the response was not JSON.",
         "Nothing was written.",

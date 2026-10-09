@@ -152,7 +152,7 @@ def _capture(
 
     # Read the clock again now that the response is here. A game is recorded
     # only if it had not started when its prices arrived, however long the
-    # request and its retries took.
+    # request took.
     captured_at = clock()
     built = snapshot.build(
         response.events,
