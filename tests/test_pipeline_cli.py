@@ -534,7 +534,7 @@ def test_a_staging_directory_of_a_killed_run_is_removed_when_the_next_run_starts
     ]
 
 
-def test_it_is_removed_by_a_run_that_has_nothing_else_to_do_as_well(run, data_dir):
+def test_a_staging_directory_is_removed_by_a_run_that_has_nothing_else_to_do(run, data_dir):
     run("--all")
     after_first_run = tree(data_dir)
     leftover = leave_a_staging_directory(data_dir)
