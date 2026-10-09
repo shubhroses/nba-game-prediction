@@ -183,6 +183,10 @@ def test_a_refused_connection_is_tried_three_times(monkeypatch, waits):
     assert_gives_nothing_away(raised.value, base_url)
 
 
+def test_the_timeout_is_20_seconds():
+    assert oddsapi.TIMEOUT_SECONDS == 20
+
+
 def test_a_timeout_is_tried_three_times(api, waits, monkeypatch):
     monkeypatch.setattr(oddsapi, "TIMEOUT_SECONDS", 0.05)
     api.delay_seconds = 0.4
