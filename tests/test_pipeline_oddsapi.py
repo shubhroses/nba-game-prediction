@@ -7,8 +7,10 @@ invented. The waits between attempts are replaced by a function that records
 them, so no test sleeps.
 """
 
+import http.client
 import socket
 import traceback
+import urllib.request
 from datetime import datetime, timezone
 from types import SimpleNamespace
 
@@ -181,6 +183,23 @@ def test_a_refused_connection_is_tried_three_times(monkeypatch, waits):
     assert str(raised.value) == "ConnectionRefusedError: Connection refused, after 3 attempts"
     assert waits == [5, 20]
     assert_gives_nothing_away(raised.value, base_url)
+
+
+def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(api, waits, monkeypatch):
+    # http.client refuses a request target that has a space in it, and its
+    # message quotes the whole target, query string and key included.
+    with pytest.raises(http.client.InvalidURL, match=KEY):
+        urllib.request.urlopen(f"{api.url}/a b?apiKey={KEY}", timeout=5)
+
+    # A base URL can put a space there.
+    monkeypatch.setenv("ODDS_API_BASE_URL", api.url + "/a b")
+    with pytest.raises(oddsapi.Unreachable) as raised:
+        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+
+    assert str(raised.value) == "InvalidURL, after 3 attempts"
+    assert waits == [5, 20]
+    assert api.requests == []
+    assert_gives_nothing_away(raised.value, api.url)
 
 
 def test_the_timeout_is_20_seconds():
