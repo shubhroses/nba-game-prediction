@@ -53,6 +53,24 @@ def test_what_the_builder_produces_passes(built):
     assert validate.problems(built.slate, built.state, OLD_LINE, OLD_LINE + added) == []
 
 
+def test_a_problem_in_any_one_of_the_three_files_is_found(built):
+    grown = OLD_LINE + store.to_ndjson(built.history)
+    bad_slate, bad_state = copy.deepcopy(built.slate), copy.deepcopy(built.state)
+    bad_slate["games"][0]["open"]["p_home"] = 1.0
+    bad_state["games"][GAME]["latest"]["n"] = 0
+
+    assert validate.problems(bad_slate, built.state, OLD_LINE, grown) == [
+        f"slate game '{GAME}' open: p_home must be a number between 0 and 1, got 1.0"
+    ]
+    assert validate.problems(built.slate, bad_state, OLD_LINE, grown) == [
+        f"state game '{GAME}' latest: n must be a whole number of at least 1, got 0"
+    ]
+    # The history file would lose the line it already has.
+    assert validate.problems(built.slate, built.state, OLD_LINE, grown[len(OLD_LINE) :]) == [
+        "history: lines that are already in the file would be changed or removed"
+    ]
+
+
 @pytest.mark.parametrize("value", [0.0, 1.0, 1.2, -0.1, 0, 1, None, "0.6", True, float("nan")])
 def test_a_probability_must_lie_strictly_between_0_and_1(built, value):
     slate_game(built)["line"]["p_home"] = value
