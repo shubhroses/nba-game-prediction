@@ -45,6 +45,14 @@ def test_the_token_can_only_read_except_in_the_job_that_pushes():
 
 def test_the_api_key_is_given_to_one_step():
     assert re.findall(r"secrets\.\w+", PIPELINE) == ["secrets.ODDS_API_KEY"]
+    # Counting the uses is not enough. In the job's own env, which is the text
+    # before the first step, a single use would reach every step.
+    job, *steps = re.split(r"\n      - name: ", PIPELINE)
+    assert "secrets." not in job
+    (step,) = [step for step in steps if "secrets." in step]
+    assert step.splitlines()[0] == "Take the snapshot"
+    # The step that has the key does not have the token that can push.
+    assert "github.token" not in step
 
 
 def test_the_only_push_goes_to_the_data_branch_and_is_not_forced():

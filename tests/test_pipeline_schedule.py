@@ -58,12 +58,17 @@ def test_each_slot_runs_from_its_start_until_the_next_one(index):
     assert [moment.utcoffset() for moment in schedule.current_and_next(start)] == [timedelta(0)] * 2
 
 
-def test_the_night_the_clocks_go_back_is_one_hour_longer():
-    last_of_october, first_of_november = utc(SLOTS[5][1]), utc(SLOTS[6][1])
-    an_ordinary_night = utc(SLOTS[12][1]) - utc(SLOTS[11][1])
+def length_of_the_slot_at(now):
+    current, following = schedule.current_and_next(now)
+    return following - current
 
-    assert an_ordinary_night == timedelta(hours=8)
-    assert first_of_november - last_of_october == timedelta(hours=9)
+
+def test_the_night_the_clocks_go_back_is_one_hour_longer():
+    # 03:00 UTC is late evening in New York, in the day's last slot.
+    assert length_of_the_slot_at(utc("2026-10-31 03:00")) == timedelta(hours=8)
+    # The night of 31 October runs from 21:10 at -04:00 to 05:10 at -05:00.
+    assert length_of_the_slot_at(utc("2026-11-01 03:00")) == timedelta(hours=9)
+    assert length_of_the_slot_at(utc("2026-11-02 03:00")) == timedelta(hours=8)
 
 
 def test_both_passes_through_the_repeated_hour_are_in_the_same_slot():
@@ -90,7 +95,8 @@ def test_the_morning_after_the_clocks_go_forward():
     # 14 March 2027: 02:00 becomes 03:00 and the offset goes from -05:00 to -04:00.
     assert slot_at(utc("2027-03-14 02:10")) == ("2027-03-13T21:10-05:00", "2027-03-14T05:10-04:00")
     assert slot_at(utc("2027-03-14 09:10")) == ("2027-03-14T05:10-04:00", "2027-03-14T09:10-04:00")
-    assert utc("2027-03-14 09:10") - utc("2027-03-14 02:10") == timedelta(hours=7)
+    # That night is an hour shorter.
+    assert length_of_the_slot_at(utc("2027-03-14 02:10")) == timedelta(hours=7)
 
 
 def test_the_cron_triggers_find_every_slot_due_exactly_once_and_at_its_start():

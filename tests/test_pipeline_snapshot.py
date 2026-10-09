@@ -384,9 +384,16 @@ def test_an_event_listed_twice_is_recorded_once():
 def test_the_previous_state_is_not_changed():
     previous = build([EARLY_GAME, LATE_GAME]).state
     untouched = copy.deepcopy(previous)
+    moved = event(
+        EARLY, "Boston Celtics", "New York Knicks", "2026-10-20T23:00:00Z", {"Book A": (1.40, 3.00)}
+    )
 
-    build([EARLY_GAME], previous=previous, now=NOW + timedelta(days=20))
+    # One snapshot gives a game a new line. Another is so late that both games leave the state.
+    updated = build([moved], previous=previous, now=NOW + timedelta(minutes=30))
+    emptied = build([], previous=previous, now=NOW + timedelta(days=20))
 
+    assert updated.state["games"][EARLY]["latest"] != untouched["games"][EARLY]["latest"]
+    assert emptied.state["games"] == {}
     assert previous == untouched
 
 
