@@ -37,6 +37,8 @@ Unpacks the `games` array of every response and keeps one snapshot per game id.
 
 Those two responses are the only real ones the models were written from. A postponed, suspended or cancelled game has not been seen, and the models do not treat one specially.
 
+The feed was looked at again on 9 October 2026. A response downloaded that day from the address the feed names in `meta.request`, with one game final and one not started, still has every field the staging model reads, and both models build from it on the emulator described below with all 13 tests passing. That response is not kept in the repository.
+
 Which snapshot is kept: the one with the highest `game_status_id`, and among those the one with the latest `snapshot_at`. The status is compared first because `meta.time` carries no time zone and may be missing.
 
 ### `fct_team_games`
