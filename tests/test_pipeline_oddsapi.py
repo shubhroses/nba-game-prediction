@@ -229,6 +229,49 @@ def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, body, message
     assert_gives_nothing_away(raised.value, api.url)
 
 
+# Far deeper than any interpreter this runs on will follow. On Python 3.11 the
+# parser gives up below 1,000 levels, on 3.12 and 3.13 below 10,000, and on
+# 3.14 it gives up when the stack is used up, a little above 100,000.
+NESTED_TOO_DEEP = b"[" * 1_000_000
+
+
+def test_a_body_nested_too_deep_is_an_answer_that_cannot_be_read(api):
+    # json.loads raises RecursionError for this, which is not a ValueError.
+    api.raw_body = NESTED_TOO_DEEP
+
+    with pytest.raises(oddsapi.Unreachable) as raised:
+        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+
+    # The class of the error and nothing of its text.
+    assert str(raised.value) == "the response could not be read (RecursionError)"
+    assert len(api.requests) == 1
+    assert_gives_nothing_away(raised.value, api.url)
+
+
+def test_a_refusal_whose_body_is_nested_too_deep_is_still_a_refusal(api):
+    api.status, api.raw_body = 401, NESTED_TOO_DEEP
+
+    with pytest.raises(oddsapi.Refused) as raised:
+        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+
+    assert str(raised.value) == "HTTP 401"
+    assert len(api.requests) == 1
+
+
+def test_an_error_nobody_foresaw_is_named_and_not_quoted(api, monkeypatch):
+    def fail(request, **kwargs):
+        raise RuntimeError(f"could not open {request.full_url}")
+
+    monkeypatch.setattr(oddsapi._OPENER, "open", fail)
+
+    with pytest.raises(oddsapi.Unreachable) as raised:
+        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+
+    assert str(raised.value) == "RuntimeError"
+    assert api.requests == []
+    assert_gives_nothing_away(raised.value, api.url)
+
+
 @pytest.mark.parametrize(
     ("header", "number"),
     [

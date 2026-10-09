@@ -85,7 +85,7 @@ class FakeOddsApi:
         self.events = events or {}
         self.status = 200
         self.error_code = None
-        self.raw_body = None  # bytes to send instead of the events, with status 200
+        self.raw_body = None  # bytes to send instead of the usual body, with whatever status is set
         self.delay_seconds = 0
         self.remaining, self.used = 500, 0
         self.requests = []
@@ -132,7 +132,7 @@ class _Handler(BaseHTTPRequestHandler):
             error = {"message": f"The fake server was told to answer {api.status}."}
             if api.error_code:
                 error["error_code"] = api.error_code
-            return self._send(api.status, error)
+            return self._send(api.status, error if api.raw_body is None else api.raw_body)
         if api.raw_body is not None:
             return self._send(200, api.raw_body)
         events = (api.events() if callable(api.events) else api.events).get(sport)

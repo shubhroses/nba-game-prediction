@@ -313,6 +313,24 @@ def test_an_answer_that_cannot_be_read_ends_with_status_4_after_one_request(run,
     assert not data_dir.exists()
 
 
+def test_an_answer_nested_too_deep_to_read_ends_with_status_4_and_no_traceback(run, api, data_dir):
+    # json.loads raises RecursionError for this body, which is not a
+    # ValueError. Left to itself it would end the command with a traceback
+    # and status 1.
+    api.raw_body = b"[" * 1_000_000
+
+    result = run("--all")
+
+    assert result.status == 4
+    assert result.requests == 1
+    assert result.err.splitlines() == [
+        "The provider gave no usable answer for basketball_nba: "
+        "the response could not be read (RecursionError).",
+        "Nothing was written.",
+    ]
+    assert not data_dir.exists()
+
+
 def test_a_failure_leaves_the_files_of_the_last_run_untouched_and_the_slot_due(run, api, data_dir):
     run("--all", now=AFTERNOON)
     after_first_run = tree(data_dir)

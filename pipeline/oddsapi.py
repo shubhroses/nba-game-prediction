@@ -124,11 +124,18 @@ def _get(url: str) -> OddsResponse:
             error.close()
     except (OSError, http.client.HTTPException) as error:
         raise Unreachable(_kind(error)) from None
+    except Exception as error:
+        # An error that nobody foresaw. Only its class is passed on: its text
+        # may quote the URL, and with it the key.
+        raise Unreachable(type(error).__name__) from None
 
     try:
         events = json.loads(body)
     except ValueError:
         raise Unreachable("the response was not JSON") from None
+    except Exception as error:
+        # For example RecursionError, for a body that is nested too deep.
+        raise Unreachable(f"the response could not be read ({type(error).__name__})") from None
     if not isinstance(events, list):
         raise Unreachable("the response was not a list of events")
     return OddsResponse(
@@ -143,7 +150,9 @@ def _refusal(error: urllib.error.HTTPError) -> str:
     """The status, with the provider's error code when the body has one: HTTP 401 (INVALID_KEY)."""
     try:
         code = json.loads(error.read()).get("error_code")
-    except (OSError, ValueError, AttributeError, http.client.HTTPException):
+    except Exception:
+        # The status says enough. A body that cannot be read, for whatever
+        # reason, only means that there is no error code to show with it.
         code = None
     if isinstance(code, str) and _ERROR_CODE.fullmatch(code):
         return f"HTTP {error.code} ({code})"
