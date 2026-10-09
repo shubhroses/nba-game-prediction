@@ -5,9 +5,10 @@
 name: 'nba_dbt'
 version: '1.0.0'
 
-# The schema tests nest their arguments under `arguments:`, which dbt
-# understands from 1.10.5 on.
-require-dbt-version: ">=1.10.5"
+# The schema tests nest their arguments under `arguments:`. dbt reads that
+# key as the test's arguments by default from 1.10.8 on. With 1.10.7 the
+# project does not parse.
+require-dbt-version: ">=1.10.8"
 
 # This setting configures which "profile" dbt uses for this project.
 profile: 'nba_dbt'

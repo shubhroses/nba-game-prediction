@@ -7,7 +7,7 @@ dbt project that turns the raw NBA scoreboard JSON in Snowflake into two relatio
 | `stg_nba__games` | view | game | source `nba.raw_nba_scoreboard` |
 | `fct_team_games` | table | team per game | `stg_nba__games` |
 
-The SQL is written for Snowflake (`VARIANT` paths, `LATERAL FLATTEN`, `QUALIFY`), so the project needs the `dbt-snowflake` adapter, which the repository's `requirements.txt` installs. `dbt_project.yml` requires dbt 1.10.5 or later.
+The SQL is written for Snowflake (`VARIANT` paths, `LATERAL FLATTEN`, `QUALIFY`), so the project needs the `dbt-snowflake` adapter, which the repository's `requirements.txt` installs. `dbt_project.yml` requires dbt 1.10.8 or later, the first release that reads the `arguments:` key of a schema test as the test's arguments by default.
 
 ## Source
 
