@@ -1,0 +1,169 @@
+name: Odds snapshot
+
+# Records what US sportsbooks imply about each upcoming NBA game and commits
+# it to the data branch. pipeline/README.md describes the job and its files.
+
+on:
+  schedule:
+    # Twice an hour. A snapshot is due six times a day (pipeline/schedule.py),
+    # and a run that finds its slot already recorded stops before it makes a
+    # request, so the other triggers cost no API credits. They are there
+    # because GitHub starts scheduled runs late and sometimes skips one.
+    - cron: "10,40 * * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Take a snapshot even if the current slot is already recorded
+        type: boolean
+        default: false
+      dry_run:
+        description: Fetch and validate, but write and push nothing
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+# One run at a time, so that two runs never take the same slot or push at the
+# same moment. A run that has started is left to finish.
+concurrency:
+  group: odds-snapshot
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  snapshot:
+    name: Take a snapshot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # the job pushes to the data branch
+    env:
+      # The working tree of the data branch, next to the files of main.
+      DATA_DIR: data-branch
+    steps:
+      - name: Check out main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          persist-credentials: false
+
+      # The pipeline uses the standard library only, so nothing is installed.
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Check out the data branch, or start it
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          REMOTE: ${{ github.server_url }}/${{ github.repository }}.git
+        run: |
+          git init --quiet --initial-branch=data "$DATA_DIR"
+          cd "$DATA_DIR"
+          git remote add origin "$REMOTE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # When the remote asks for a password, git runs this helper, which
+          # reads the token from the environment. The single quotes keep the
+          # shell from putting the token into the setting itself, so it is
+          # not written to disk, and only the two steps that set GITHUB_TOKEN
+          # can push.
+          # shellcheck disable=SC2016
+          git config credential.helper \
+            '!f() { echo username=x-access-token; echo "password=$GITHUB_TOKEN"; }; f'
+
+          status=0
+          git ls-remote --exit-code origin refs/heads/data > /dev/null || status=$?
+          case "$status" in
+            0)
+              # Only the newest commit is needed to add one on top of it.
+              git fetch --quiet --depth=1 origin data
+              git checkout --quiet -B data FETCH_HEAD
+              ;;
+            2)
+              # There is no data branch yet. Start one that shares no history
+              # with main. Its first files are a README and the file that
+              # stops Vercel from deploying the branch: Vercel builds the
+              # nba-predictions-app folder of every branch that is pushed.
+              # This commit is pushed together with the first snapshot.
+              cp -R "$GITHUB_WORKSPACE/.github/data-branch/." .
+              git add --all
+              git commit --quiet -m "Start the data branch"
+              ;;
+            *)
+              echo "Could not list the branches of the remote: git ls-remote ended with status $status." >&2
+              exit 1
+              ;;
+          esac
+
+      # The API key is in the environment of this step and of no other.
+      - name: Take the snapshot
+        id: snapshot
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+          FORCE: ${{ inputs.force }}
+          DRY_RUN: ${{ inputs.dry_run }}
+        run: |
+          options=()
+          if [ "$FORCE" = "true" ]; then options+=(--force); fi
+          if [ "$DRY_RUN" = "true" ]; then options+=(--dry-run); fi
+          python -m pipeline snapshot --all --data-dir "$DATA_DIR" "${options[@]}"
+
+      - name: Commit the snapshot and push it to the data branch
+        id: push
+        if: ${{ steps.snapshot.outputs.changed == 'true' && !inputs.dry_run }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SLOT: ${{ steps.snapshot.outputs.slot }}
+          GAMES: ${{ steps.snapshot.outputs.games }}
+        run: |
+          cd "$DATA_DIR"
+          git add --all
+          noun=games
+          if [ "$GAMES" = "1" ]; then noun=game; fi
+          git commit --quiet -m "Snapshot $SLOT: $GAMES $noun"
+          # Never forced, and never to main. The push is refused if the data
+          # branch on GitHub has moved since this run fetched it.
+          git push --quiet origin HEAD:refs/heads/data
+          echo "commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Write the job summary
+        if: ${{ !cancelled() }}
+        env:
+          SNAPSHOT: ${{ steps.snapshot.outcome }}
+          PUSH: ${{ steps.push.outcome }}
+          COMMIT: ${{ steps.push.outputs.commit }}
+          SLOT: ${{ steps.snapshot.outputs.slot }}
+          GAMES: ${{ steps.snapshot.outputs.games }}
+          WITH_LINE: ${{ steps.snapshot.outputs.with_line }}
+          DROPPED: ${{ steps.snapshot.outputs.dropped }}
+          CREDITS_SPENT: ${{ steps.snapshot.outputs.credits_spent }}
+          CREDITS_REMAINING: ${{ steps.snapshot.outputs.credits_remaining }}
+          CREDITS_USED: ${{ steps.snapshot.outputs.credits_used }}
+        run: |
+          {
+            echo "### Odds snapshot"
+            echo
+            if [ "$SNAPSHOT" = "failure" ]; then
+              echo "The snapshot for slot \`${SLOT:-unknown}\` failed and nothing was written. The log of the step says why."
+            elif [ "$SNAPSHOT" != "success" ]; then
+              echo "The snapshot step did not run."
+            elif [ -z "$GAMES" ]; then
+              echo "Not due: slot \`$SLOT\` is already recorded. No request was made."
+            else
+              echo "- Slot: \`$SLOT\`"
+              echo "- Games: $GAMES, of which $WITH_LINE with a line. Dropped: $DROPPED."
+              echo "- API credits: ${CREDITS_SPENT:-unknown} spent, ${CREDITS_REMAINING:-unknown} remaining, ${CREDITS_USED:-unknown} used."
+              if [ "$PUSH" = "success" ]; then
+                echo "- Pushed to the data branch as commit \`$COMMIT\`."
+              elif [ "$PUSH" = "failure" ]; then
+                echo "- The push to the data branch failed, so this snapshot is not recorded. The next run takes it again."
+              else
+                echo "- Dry run: nothing was written or pushed."
+              fi
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
