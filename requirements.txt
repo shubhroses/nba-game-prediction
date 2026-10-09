@@ -1,5 +1,6 @@
 boto3
-dbt-core
+# The dbt adapter for Snowflake. Installs dbt-core as well.
+dbt-snowflake
 matplotlib
 nba_api
 numpy

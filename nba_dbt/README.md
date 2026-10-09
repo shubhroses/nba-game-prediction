@@ -7,7 +7,7 @@ dbt project that turns the raw NBA scoreboard JSON in Snowflake into two relatio
 | `stg_nba__games` | view | game | source `nba.raw_nba_scoreboard` |
 | `fct_team_games` | table | team per game | `stg_nba__games` |
 
-The SQL is written for Snowflake (`VARIANT` paths, `LATERAL FLATTEN`, `QUALIFY`), so the project needs the `dbt-snowflake` adapter. `dbt_project.yml` requires dbt 1.10.5 or later.
+The SQL is written for Snowflake (`VARIANT` paths, `LATERAL FLATTEN`, `QUALIFY`), so the project needs the `dbt-snowflake` adapter, which the repository's `requirements.txt` installs. `dbt_project.yml` requires dbt 1.10.5 or later.
 
 ## Source
 
@@ -61,7 +61,7 @@ Declared in the two `_*__models.yml` files and run by `dbt build` or `dbt test`:
 
 ## Running
 
-Install the adapter and give dbt a profile named `nba_dbt`, for example in `~/.dbt/profiles.yml`. A profile that reuses the variables from the repository's `.env` looks like this:
+Give dbt a profile named `nba_dbt`, for example in `~/.dbt/profiles.yml`. A profile that reuses the variables from the repository's `.env` looks like this:
 
 ```yaml
 nba_dbt:
@@ -82,7 +82,7 @@ nba_dbt:
 dbt does not read `.env`, so export those variables in the shell first. Then, from the repository root:
 
 ```bash
-pip install dbt-snowflake
+pip install -r requirements.txt
 dbt build --project-dir nba_dbt
 ```
 
