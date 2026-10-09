@@ -180,6 +180,8 @@ def test_the_first_run_writes_the_three_files_and_reports_a_change(run, data_dir
         "books": ["Book A", "Book B"],
         "captured_at": at,
     }
+    # The second game is quoted by one sportsbook, which is counted and not named.
+    assert (slate["games"][1]["line"]["n"], slate["games"][1]["line"]["books"]) == (1, [])
     assert slate["games"][2]["line"] is None
 
     state = read(data_dir, "v1/state.json")

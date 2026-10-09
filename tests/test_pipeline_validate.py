@@ -105,12 +105,29 @@ def test_the_count_must_be_a_whole_number_of_at_least_1(built, count):
     assert "n must be a whole number of at least 1" in problem
 
 
-def test_the_board_names_as_many_sportsbooks_as_it_counts(built):
-    slate_game(built)["line"]["books"] = ["Book A"]
+NAMES_PROBLEM = (
+    f"slate game '{GAME}' line: books must name each of the n sportsbooks, and none when n is 1"
+)
 
-    assert validate.slate_problems(built.slate) == [
-        f"slate game '{GAME}' line: books must name each of the n sportsbooks"
-    ]
+
+@pytest.mark.parametrize("books", [["Book A"], [], ["Book A", "Book B", "Book C"], ["Book A", ""]])
+def test_the_board_names_as_many_sportsbooks_as_it_counts(built, books):
+    # The game has two sportsbooks.
+    slate_game(built)["line"]["books"] = books
+
+    assert validate.slate_problems(built.slate) == [NAMES_PROBLEM]
+
+
+def test_the_board_does_not_name_a_single_sportsbook(built):
+    line = slate_game(built)["line"]
+    line.update(n=1, lo=line["p_home"], hi=line["p_home"])
+
+    # The name of the one sportsbook next to its figure is what must not be published.
+    line["books"] = ["Book A"]
+    assert validate.slate_problems(built.slate) == [NAMES_PROBLEM]
+
+    line["books"] = []
+    assert validate.slate_problems(built.slate) == []
 
 
 @pytest.mark.parametrize("code", ["XXX", "bos", "Boston Celtics", "", None, ["BOS"]])

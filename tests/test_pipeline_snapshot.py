@@ -86,7 +86,7 @@ def test_the_board_lists_the_upcoming_games_in_order_of_start():
                     "lo": 0.5,
                     "hi": 0.5,
                     "n": 1,
-                    "books": ["Book A"],
+                    "books": [],  # a single sportsbook is not named
                     "captured_at": AT,
                 },
                 "open": {"p_home": 0.5, "at": AT},
@@ -146,6 +146,49 @@ def test_history_has_one_line_for_each_game_that_has_a_line():
         {"id": LATE, "at": AT, "p_home": 0.5, "lo": 0.5, "hi": 0.5, "n": 1},
     ]
     assert [list(line) for line in built.history] == [["id", "at", "p_home", "lo", "hi", "n"]] * 2
+
+
+def test_a_single_sportsbook_is_counted_but_not_named():
+    # With one sportsbook the line is that sportsbook's own figure. It is
+    # published, but nothing in the files says whose it is.
+    alone = event(
+        EARLY,
+        "Boston Celtics",
+        "New York Knicks",
+        "2026-10-20T23:00:00Z",
+        {"Lone Book": (1.50, 2.70)},
+    )
+
+    built = build([alone])
+
+    assert built.slate["games"][0]["line"] == {
+        "p_home": 0.6429,
+        "lo": 0.6429,
+        "hi": 0.6429,
+        "n": 1,
+        "books": [],
+        "captured_at": AT,
+    }
+    assert built.history == [
+        {"id": EARLY, "at": AT, "p_home": 0.6429, "lo": 0.6429, "hi": 0.6429, "n": 1}
+    ]
+    assert "Lone Book" not in json.dumps([built.slate, built.state, built.history])
+    assert validate.slate_problems(built.slate) == []
+
+
+def test_two_sportsbooks_or_more_are_named():
+    for titles in (["Book A", "Book B"], ["Book A", "Book B", "Book C"]):
+        quoted = event(
+            EARLY,
+            "Boston Celtics",
+            "New York Knicks",
+            "2026-10-20T23:00:00Z",
+            {title: (1.50, 2.70) for title in reversed(titles)},
+        )
+
+        line = build([quoted]).slate["games"][0]["line"]
+
+        assert (line["n"], line["books"]) == (len(titles), titles)
 
 
 def test_only_derived_values_are_published():

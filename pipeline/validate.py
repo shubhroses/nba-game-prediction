@@ -59,8 +59,14 @@ def slate_problems(slate: object) -> list[str]:
                 named = isinstance(books, list) and all(
                     isinstance(book, str) and book for book in books
                 )
-                if not named or len(books) != line.get("n"):
-                    found.append(f"{where} line: books must name each of the n sportsbooks")
+                # A single sportsbook is not named, because the line would
+                # then be a figure with that sportsbook's name on it.
+                expected = 0 if line.get("n") == 1 else line.get("n")
+                if not named or len(books) != expected:
+                    found.append(
+                        f"{where} line: books must name each of the n sportsbooks, "
+                        "and none when n is 1"
+                    )
         found += _opening_problems(game.get("open"), f"{where} open")
     return found
 
