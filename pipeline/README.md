@@ -408,16 +408,19 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 Checked, as of 9 October 2026:
 
 - The tests above pass on Python 3.11, 3.12, 3.13 and 3.14. The whole test suite, with the repository's requirements installed, passes on Python 3.12 on Linux, which is what CI runs.
-- The shell steps of the workflow were run on a developer machine and in a Linux container, against a temporary bare git repository standing in for `origin` and against the fake server: the first run that starts the `data` branch, a second trigger in the same slot, a dry run, a forced second snapshot that adds to the history, a refusal by the provider, a push after the branch had moved, and a remote that could not be reached. The same steps were run against a local git server over HTTP that asks for a password on a push, to check the credential helper.
-- The builder, the validator and the command were run on one real response of the `basketball_nba` endpoint, captured that day and served by the fake server. Every game in it was recorded and none was dropped. That response is not kept in the repository.
+- The tests that came with the bound on requests were each run once against the code with the behaviour they name broken, on a scratch copy, and failed: with the 75 minutes left out or made longer or shorter, a request sent again within a run, nothing written unless every sport succeeds, the commit step skipped after a failed step, and so on.
+- The shell steps of the workflow were run on a developer machine and in a Linux container, against a temporary bare git repository standing in for `origin` and against the fake server, with the clock of the pipeline step set for each run. The runs were: a dry run before there is a `data` branch, the first run that starts the branch, a second trigger in the same slot, a second snapshot in the next slot that adds to the history, one sport failing while the other is pushed and the job fails, the three triggers after that, a push that the remote refuses at each trigger of a slot until the slot is given up, the slot after it, dry runs with and without `force`, a forced run in a slot that was too old, a refusal by the provider, a push after the branch had moved, and a remote that could not be reached. The same steps were run against a local git server over HTTP that asks for a password on a push, to check the credential helper, with a token, without one and with a wrong one.
+- The builder, the validator and the command were run on one real response of the `basketball_nba` endpoint, captured on 9 October 2026 and served by the fake server. All 46 games in it were recorded and none was dropped. 23 of them were quoted by a single sportsbook and were written without a name. That response is not kept in the repository.
 - `actionlint` reports nothing for the workflow file.
 
 Not checked:
 
 - The workflow has not run on GitHub, and this code has not yet sent a request to The Odds API.
+- The rehearsal applies the conditions of the steps by hand. That GitHub runs the commit step after a failed pipeline step, as `!cancelled()` says it will, has not been seen.
+- How late GitHub starts the scheduled runs of this repository is not known. The 13 to 21 minutes behind the [75 minutes](#the-75-minutes) were measured on four other repositories.
 - Whether Vercel leaves the `data` branch alone can only be seen after the first push.
 - A response of the `basketball_nba_preseason` endpoint has not been seen.
-- A refusal by the provider has not been seen. The job looks for the provider's error code in a field named `error_code` of the error body. If the field has another name, the message gives the HTTP status alone.
+- A refusal by the provider has not been seen. The job looks for the provider's error code in a field named `error_code` of the error body. If the field has another name, the message gives the HTTP status alone. Whether a refused or an unanswered request is charged is not known either.
 
 ## Limits
 
