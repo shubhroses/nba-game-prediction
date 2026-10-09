@@ -103,7 +103,9 @@ Details are in [`nba-predictions-app/README.md`](nba-predictions-app/README.md).
 
 The web app shows what the sportsbooks say at the moment it is opened. Comparing a prediction with the sportsbooks after a game needs the line from before the game, and the free plan of The Odds API has no historical data. This job keeps that record from now on.
 
-`.github/workflows/pipeline.yml` is triggered twice an hour. Six times a day, at fixed New York times, a run finds a snapshot due and makes one request for the upcoming games. Every other run stops before it makes a request, so the spare triggers cost no API credits; they are there because GitHub may start a scheduled run late. For each game that has not started, the job takes every US sportsbook that quotes both teams, removes that sportsbook's margin from its prices, and records the median home win probability together with the lowest, the highest and the number of sportsbooks.
+`.github/workflows/pipeline.yml` is triggered twice an hour. Six times a day, at fixed New York times, a run finds a snapshot due and makes one request for the upcoming games. Every other run stops before it makes a request, so the spare triggers cost no API credits; they are there because GitHub may start a scheduled run late, and because a run can fail. For each game that has not started, the job takes every US sportsbook that quotes both teams, removes that sportsbook's margin from its prices, and records the median home win probability together with the lowest, the highest and the number of sportsbooks.
+
+Each request can cost one of the 500 credits a month that the free plan of The Odds API allows. The plan is 6 requests a day for each sport: 186 in a 31-day month for the regular season, plus the preseason rehearsal described below. When a snapshot fails, the next trigger asks again, but only a run that starts within 75 minutes of the slot's start may ask, and a run never repeats a request. Three triggers fall in those 75 minutes, so the worst case while a failure lasts is 3 requests for a slot and 18 a day for each sport, however the run fails. After that the slot is given up and stays empty.
 
 Each snapshot is one commit on the `data` branch, with three files:
 
@@ -111,7 +113,7 @@ Each snapshot is one commit on the `data` branch, with three files:
 - `v1/state.json`: what the job remembers between runs, including each game's last line from before its start, kept for 14 days.
 - `v1/history/<date>.ndjson`: one line per game per snapshot. Lines are only ever added.
 
-The files hold derived values only, no prices. The API key is a repository secret that is passed to the one step that makes the request. Until 17 October 2026 the job also records preseason games under `v1-dryrun/`, as a rehearsal.
+The files hold derived values only, no prices. A game that only one sportsbook quotes is recorded without that sportsbook's name. The API key is a repository secret that is passed to the one step that makes the request. Until 17 October 2026 the job also records preseason games under `v1-dryrun/`, as a rehearsal. The two sports are taken one after the other, and one that fails does not keep the other from being recorded.
 
 The file formats, the schedule, the credit budget, the exit codes and what has and has not been checked are in [`pipeline/README.md`](pipeline/README.md).
 
@@ -197,10 +199,10 @@ Requires Python 3.11 or newer and no packages. No key is needed to try it: `test
 ```bash
 python tests/fake_odds_api.py --port 8765 &
 export ODDS_API_BASE_URL=http://127.0.0.1:8765 ODDS_API_KEY=any-value
-python -m pipeline snapshot --all --data-dir /tmp/odds-data
+python -m pipeline snapshot --all --data-dir /tmp/odds-data --force
 ```
 
-The command writes its files under `/tmp/odds-data/`. Run again within the same slot, it prints `Not due` and makes no request. [`pipeline/README.md`](pipeline/README.md#running-it) lists the options.
+The command writes its files under `/tmp/odds-data/`. It is forced because, without `--force`, a run takes a snapshot only in the first 75 minutes of a slot. Run again without `--force` within the same slot, it prints `Not due` and makes no request. [`pipeline/README.md`](pipeline/README.md#running-it) lists the options.
 
 ## Tests and CI
 
@@ -216,7 +218,7 @@ The tests need no AWS or Snowflake account, no API key and no credentials.
 | `tests/test_move_nba_data_to_sf.py` | Runs the load script's `main()` against a fake S3 client and a fake Snowflake connection. It asserts the statements sent to Snowflake, in order, that the `COPY INTO` carries no `FORCE` option, what is logged for each kind of `COPY INTO` result, and that neither the AWS key pair nor the Snowflake password appears in any log record. |
 | `tests/test_transform_data.py` | Calls the flow's task function with `subprocess.run` replaced by a fake. It asserts the dbt command and the exit status when dbt fails or is not installed. |
 | `tests/test_dbt_models.py` | Builds the dbt project against [fakesnow](https://github.com/tekumara/fakesnow), a local emulator that translates Snowflake SQL to DuckDB, by calling the flow's task function with the real `dbt`. It then compares every row of both models with the rows expected for a set of scoreboard responses. Skipped when fakesnow is not installed. |
-| `tests/test_pipeline_*.py` | The odds pipeline and its workflow file; [`pipeline/README.md`](pipeline/README.md#tests) lists the files. The end-to-end tests run the command against `tests/fake_odds_api.py` on `127.0.0.1` with invented prices and a dummy key: a first run, a second run in the same slot that must make no request, refusals and outages, a validation failure that must leave the files untouched. After every run they check that the key is in nothing the command printed or wrote. |
+| `tests/test_pipeline_*.py` | The odds pipeline and its workflow file; [`pipeline/README.md`](pipeline/README.md#tests) lists the files. The end-to-end tests run the command against `tests/fake_odds_api.py` on `127.0.0.1` with invented prices and a dummy key: a first run, a second run in the same slot that must make no request, refusals and outages, a validation failure that must leave the files untouched, one sport failing while the other is written. After every run they check that the key is in nothing the command printed or wrote. `tests/test_pipeline_credits.py` walks all the triggers of a day through the command for each way a run can fail and counts the requests: at most 3 for a slot and 18 a day for each sport. |
 
 `.github/workflows/ci.yml` runs on every push and pull request. Its token can only read the repository, and its actions are pinned to commit SHAs. It has three jobs:
 

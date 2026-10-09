@@ -1,6 +1,6 @@
 # Odds snapshots
 
-This branch holds data, not code. The `Odds snapshot` workflow on the `main` branch adds a commit here up to six times a day. Each commit records, for every upcoming NBA game, the home team's chance of winning as US sportsbooks price it.
+This branch holds data, not code. The `Odds snapshot` workflow on the `main` branch adds a commit here for each snapshot it takes, normally six a day. Each commit records, for every upcoming NBA game, the home team's chance of winning as US sportsbooks price it.
 
 Do not edit the files by hand. The job reads back what it wrote, and it refuses to continue from a state file it cannot check or to change a history line that is already there.
 
@@ -14,4 +14,4 @@ Do not edit the files by hand. The job reads back what it wrote, and it refuses 
 
 The fields of each file, the schedule and the rules the job follows are described in [`pipeline/README.md` on `main`](https://github.com/shubhroses/nba-game-prediction/blob/main/pipeline/README.md).
 
-The files hold derived figures only: for each game the median, the lowest and the highest of the sportsbooks' home win probabilities with each sportsbook's margin removed, and the number and the names of the sportsbooks. The responses of the odds provider and the prices in them are not published.
+The files hold derived figures only: for each game the median, the lowest and the highest of the sportsbooks' home win probabilities with each sportsbook's margin removed, the number of sportsbooks, and their names when there are two or more. The responses of the odds provider and the prices in them are not published.
