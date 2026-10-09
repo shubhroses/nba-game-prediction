@@ -21,10 +21,11 @@ load_dotenv(dotenv_path=env_path)
 @task
 def run_dbt_transformation():
     """
-    Runs a dbt command to transform data. In this example, we run:
-      dbt run --select my_first_dbt_model
-    against your 'nba_dbt' project folder.
-    Adjust the command or paths as needed.
+    Builds the dbt project in the 'nba_dbt' folder:
+      dbt build --project-dir $DBT_PROJECT_DIR
+    'dbt build' creates the staging view stg_nba__games and the mart table
+    fct_team_games and runs their schema tests in dependency order, so the
+    mart is not rebuilt when a test on the staging model fails.
     """
     # Path to your dbt project folder
     dbt_project_dir = os.getenv("DBT_PROJECT_DIR", "/path/to/nba_dbt")
@@ -32,8 +33,7 @@ def run_dbt_transformation():
     # Log the command we intend to run
     command = [
         "dbt",
-        "run",
-        "--select", "my_first_dbt_model",
+        "build",
         "--project-dir", dbt_project_dir
     ]
     logger.info(f"Running dbt command: {' '.join(command)}")
@@ -59,8 +59,8 @@ def run_dbt_transformation():
 @flow
 def transform_data_flow():
     """
-    A Prefect flow that calls a dbt transformation to parse & transform data
-    in your Snowflake (or other) environment.
+    A Prefect flow that runs dbt to turn the raw scoreboard JSON in Snowflake
+    into the game and team-game models.
     """
     run_dbt_transformation()
 
