@@ -32,7 +32,7 @@ export default function Layout({ children }: LayoutProps) {
           </div>
           <div className="flex justify-between items-center border-t border-gray-700 pt-4">
             <p className="text-sm">© {new Date().getFullYear()} NBA Predictions App</p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-4 whitespace-nowrap">
               <a href={REPOSITORY} className="text-gray-400 hover:text-white transition-colors">
                 Source code
               </a>
