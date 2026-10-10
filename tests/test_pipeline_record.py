@@ -348,8 +348,12 @@ def test_rebuilding_gives_the_same_bytes_whatever_order_the_lines_come_in():
         assert store.to_json(built(lines)) == first
 
 
-def test_the_lines_are_not_changed():
-    lines = [game(1, 0.7, HOME_WIN), game(2, 0.3, HOME_WIN)]
+def test_the_lines_are_not_changed_and_stay_in_the_order_they_were_given_in():
+    # The later game comes first, as it can in a results file.
+    lines = [
+        game(1, 0.7, HOME_LOSS, "2026-10-21T23:00:00Z"),
+        game(2, 0.3, HOME_WIN, "2026-10-20T23:00:00Z"),
+    ]
     untouched = [dict(line, market=dict(line["market"])) for line in lines]
 
     built(lines)
