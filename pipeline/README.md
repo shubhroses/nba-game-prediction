@@ -21,7 +21,7 @@ With `--all` there can be more than one sport. The state files of all of them ar
 | --- | --- |
 | `config.py` | The sports to capture and the directory each is written under. |
 | `schedule.py` | The six slots, the rule for when a snapshot is due, and for how long a slot may be asked for. |
-| `oddsapi.py` | The request and its errors. |
+| `oddsapi.py` | The two requests, for odds and for scores, and their errors. |
 | `teams.py` | The 30 team names as the provider spells them, with the NBA's three-letter codes. |
 | `feed.py` | What is read from every event the provider lists: its id, its start and its two teams. |
 | `consensus.py` | The margin-free home probability of one sportsbook, and the median across sportsbooks. |
@@ -401,7 +401,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
 | `tests/test_pipeline_validate.py` | Each check, by breaking one thing in a valid snapshot. |
 | `tests/test_pipeline_store.py` | The file formats on disk, that a write which fails before any file is moved leaves the data directory as it was, the order of the moves, and that the temporary directory of a killed run is removed. |
-| `tests/test_pipeline_oddsapi.py` | The request against the fake server: its parameters, that it is sent once whatever comes of it, the refusals, a redirect, a body that is nested too deep, and that no error message or traceback holds the key or the URL. |
+| `tests/test_pipeline_oddsapi.py` | The two requests against the fake server, for odds and for scores: the parameters of each, and for both of them that a request is sent once whatever comes of it, the refusals, a redirect, a body that is nested too deep, and that no error message or traceback holds the key or the URL. |
 | `tests/test_pipeline_cli.py` | The command from end to end: a first run, a second run in the same slot, three slots of one evening, 401, 429 and 503, a validation failure, files that cannot be written, a slot just inside and just outside its 75 minutes, `--dry-run`, `--force`, and `--all` with two sports of which one fails. After every run it looks for the dummy key in the output and in the files. |
 | `tests/test_pipeline_credits.py` | The bound on requests. Every cron trigger of a day is walked through the command, on an ordinary day and on the days of 25 and of 23 hours, once for each way a run can end. The requests are counted for each slot, each sport and the day. |
 | `tests/test_pipeline_workflow.py` | The workflow file, read as text: every slot starts on a cron trigger, the 75 minutes are given as `schedule.py` has them, the actions are pinned to the commits CI uses, the token is read-only outside the job that pushes, the checkout keeps no credentials, the key goes to one step, runs wait for each other and none is cancelled, the job is limited to 10 minutes, what was written is pushed although the pipeline step failed and that step still fails the job, the commit message has the count for each prefix, and the only push is an unforced one to `data`. |

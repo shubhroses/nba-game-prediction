@@ -1,6 +1,7 @@
 """
-The one request this job makes: the upcoming games of a sport from The Odds
-API, with each US sportsbook's head-to-head prices.
+The two requests this job makes to The Odds API: the upcoming games of a
+sport with each US sportsbook's head-to-head prices, and the scores of its
+games of the last three days.
 
 The API takes its key in the query string, so the URL is a secret. Nothing in
 this module logs, and the errors it raises are built from the status code,
@@ -23,6 +24,8 @@ from pipeline.timestamps import format_utc
 DEFAULT_BASE_URL = "https://api.the-odds-api.com"
 BASE_URL_VARIABLE = "ODDS_API_BASE_URL"
 TIMEOUT_SECONDS = 20
+# How far back the scores go. Three days is the most the provider offers.
+SCORES_DAYS = 3
 # Sent in place of urllib's default name, which some gateways reject.
 USER_AGENT = "nba-game-prediction-pipeline"
 
@@ -75,6 +78,21 @@ def fetch_odds(sport: str, api_key: str, now: datetime) -> OddsResponse:
         safe=":",  # the time goes out as the provider's guide writes it, 2026-10-20T22:10:41Z
     )
     url = f"{base_url()}/v4/sports/{urllib.parse.quote(sport, safe='')}/odds?{query}"
+    return _get(url)
+
+
+def fetch_scores(sport: str, api_key: str) -> OddsResponse:
+    """
+    The games of a sport from three days back to the ones still to come, and
+    the quota headers of the response. Each game says whether it is completed
+    and carries the two scores once it has them.
+
+    Asking for past days is what makes this request cost 2 credits. It is
+    sent once and its errors are those of fetch_odds: the same answers raise
+    Refused and the same raise Unreachable.
+    """
+    query = urllib.parse.urlencode({"apiKey": api_key, "daysFrom": SCORES_DAYS})
+    url = f"{base_url()}/v4/sports/{urllib.parse.quote(sport, safe='')}/scores?{query}"
     return _get(url)
 
 

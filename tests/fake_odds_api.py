@@ -6,11 +6,12 @@ ODDS_API_BASE_URL. It also runs by hand, to try the pipeline without a key:
 
     python tests/fake_odds_api.py --port 8765
 
-Every game and every price it serves is invented. It answers one path,
-GET /v4/sports/<sport>/odds, in the shape of the real response, and sends the
-three quota headers. Unlike the real API it ignores commenceTimeFrom and
-returns whatever it was given, so the tests can check that the pipeline
-leaves out a started game by itself.
+Every game, every price and every score it serves is invented. It answers
+two paths, GET /v4/sports/<sport>/odds and GET /v4/sports/<sport>/scores, in
+the shape of the real responses, and sends the three quota headers. Unlike
+the real API it ignores commenceTimeFrom and daysFrom and returns whatever it
+was given, so the tests can check that the pipeline leaves out a started
+game, or a game that is not over, by itself.
 """
 
 import argparse
@@ -24,7 +25,7 @@ from datetime import datetime, timedelta, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qsl, urlsplit
 
-ODDS_PATH = re.compile(r"/v4/sports/([^/]+)/odds/?")
+SPORT_PATH = re.compile(r"/v4/sports/([^/]+)/(odds|scores)/?")
 
 
 def event(event_id, home, away, commence_time, prices, sport="basketball_nba"):
@@ -60,12 +61,36 @@ def event(event_id, home, away, commence_time, prices, sport="basketball_nba"):
     }
 
 
+def score_event(
+    event_id, home, away, commence_time, points, completed=True, sport="basketball_nba"
+):
+    """
+    One event as the scores endpoint returns it. `points` is the pair (home
+    points, away points), or None for a game that has no score yet.
+    """
+    scores = points and [
+        {"name": team, "score": str(scored)} for team, scored in zip((home, away), points)
+    ]
+    return {
+        "id": event_id,
+        "sport_key": sport,
+        "sport_title": "NBA",
+        "commence_time": commence_time,
+        "completed": completed,
+        "home_team": home,
+        "away_team": away,
+        "scores": scores,
+        "last_update": "2026-10-01T00:00:00Z" if points else None,
+    }
+
+
 @dataclass(frozen=True)
 class Received:
     """One request the fake server got."""
 
     sport: str
     query: dict  # the query string, decoded
+    endpoint: str = "odds"  # or "scores"
     target: str = field(default="", compare=False)  # the path and query string as they arrived
 
 
@@ -75,15 +100,21 @@ class FakeOddsApi:
         api.url        where it listens, for ODDS_API_BASE_URL
         api.requests   every request received so far
         api.status     set to 401, 429, 503 ... to make it refuse or fail
+        api.scores     {"basketball_nba": [score_event(...), ...]}
 
     `events` maps a sport key to its events, or is a function that returns
     such a mapping when a request comes in. A sport that is not in the
-    mapping gets a 404 with UNKNOWN_SPORT, one of the provider's error codes.
+    mapping gets a 404 with UNKNOWN_SPORT, one of the provider's error codes,
+    whichever of the two paths is asked for. `scores` maps a sport key to
+    what the scores path lists for it, which is nothing when the sport is
+    not in that mapping.
     """
 
-    def __init__(self, events=None, *, port=0, verbose=False):
+    def __init__(self, events=None, scores=None, *, port=0, verbose=False):
         self.events = events or {}
+        self.scores = scores or {}
         self.status = 200
+        self.scores_status = None  # a status for the scores path alone, in place of `status`
         self.error_code = None
         self.raw_body = None  # bytes to send instead of the usual body, with whatever status is set
         self.delay_seconds = 0
@@ -119,29 +150,36 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         api = self.server.api
         parts = urlsplit(self.path)
-        match = ODDS_PATH.fullmatch(parts.path)
+        match = SPORT_PATH.fullmatch(parts.path)
         if not match:
             return self._send(404, {"message": "Not found"})
-        sport = match.group(1)
+        sport, endpoint = match.groups()
         query = dict(parse_qsl(parts.query))
-        api.requests.append(Received(sport=sport, query=query, target=self.path))
+        api.requests.append(Received(sport=sport, query=query, endpoint=endpoint, target=self.path))
         if api.delay_seconds:
             time.sleep(api.delay_seconds)
 
-        if api.status != 200:
-            error = {"message": f"The fake server was told to answer {api.status}."}
+        status = api.status
+        if endpoint == "scores" and api.scores_status is not None:
+            status = api.scores_status
+        if status != 200:
+            error = {"message": f"The fake server was told to answer {status}."}
             if api.error_code:
                 error["error_code"] = api.error_code
-            return self._send(api.status, error if api.raw_body is None else api.raw_body)
+            return self._send(status, error if api.raw_body is None else api.raw_body)
         if api.raw_body is not None:
             return self._send(200, api.raw_body)
         events = (api.events() if callable(api.events) else api.events).get(sport)
         if events is None:
             return self._send(404, {"message": "Unknown sport", "error_code": "UNKNOWN_SPORT"})
 
-        # One region and one market cost one credit. A response without
-        # events costs nothing, as the provider's guide says.
-        cost = 1 if events else 0
+        if endpoint == "scores":
+            events = (api.scores() if callable(api.scores) else api.scores).get(sport, [])
+        # An odds request for one region and one market costs one credit. A
+        # scores request that asks for past days costs two. A response
+        # without events costs nothing, as the provider's guide says of odds.
+        price = 2 if endpoint == "scores" and "daysFrom" in query else 1
+        cost = price if events else 0
         api.remaining -= cost
         api.used += cost
         quota = {
@@ -229,6 +267,71 @@ def sample_events(first_start, request_number=0):
     return {"basketball_nba": regular_season, "basketball_nba_preseason": preseason}
 
 
+def sample_scores(first_start):
+    """
+    Invented scores for the two sports: games that are over, one that is
+    being played and one that is still to come. The games that are over have
+    ids that sample_events never lists, so the pipeline has no line for them.
+    """
+
+    def at(hours):
+        return (first_start + timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    regular_season = [
+        score_event(
+            "000000000000000000000000000000a4",
+            "Cleveland Cavaliers",
+            "Orlando Magic",
+            at(-45),
+            (118, 109),
+        ),
+        score_event(
+            "000000000000000000000000000000a5",
+            "Dallas Mavericks",
+            "Houston Rockets",
+            at(-42),
+            (101, 107),
+        ),
+        score_event(
+            "000000000000000000000000000000a6",
+            "Atlanta Hawks",
+            "Indiana Pacers",
+            at(-25),
+            (55, 61),
+            completed=False,
+        ),
+        score_event(
+            "000000000000000000000000000000a1",
+            "Boston Celtics",
+            "New York Knicks",
+            at(0),
+            None,
+            completed=False,
+        ),
+    ]
+    preseason = [
+        score_event(
+            "000000000000000000000000000000b3",
+            "Sacramento Kings",
+            "Portland Trail Blazers",
+            at(-44),
+            (97, 102),
+            sport="basketball_nba_preseason",
+        ),
+        # A finished game against a club from outside the league. The
+        # pipeline must leave it out and say so.
+        score_event(
+            "000000000000000000000000000000b4",
+            "Toronto Raptors",
+            "Example Visitors",
+            at(-43),
+            (110, 88),
+            sport="basketball_nba_preseason",
+        ),
+    ]
+    return {"basketball_nba": regular_season, "basketball_nba_preseason": preseason}
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="A local stand-in for The Odds API, with invented data."
@@ -240,6 +343,7 @@ def main():
     first_start += timedelta(days=1)
     api = FakeOddsApi(port=args.port, verbose=True)
     api.events = lambda: sample_events(first_start, request_number=len(api.requests))
+    api.scores = sample_scores(first_start)
     print(f"Fake Odds API with invented games on {api.url}. Stop it with Ctrl+C.", flush=True)
     with contextlib.suppress(KeyboardInterrupt):
         api.serve_forever()

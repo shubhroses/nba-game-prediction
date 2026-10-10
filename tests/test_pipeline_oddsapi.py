@@ -2,8 +2,12 @@
 Tests for pipeline/oddsapi.py.
 
 The requests go to the fake server in tests/fake_odds_api.py on 127.0.0.1.
-Nothing here reaches The Odds API, the key is a dummy and the prices are
-invented.
+Nothing here reaches The Odds API, the key is a dummy and the prices and
+scores are invented.
+
+The module makes two requests, for odds and for scores. Every test of what
+is sent once, of what counts as a refusal and of what an error may say runs
+for both of them.
 """
 
 import http.client
@@ -14,7 +18,7 @@ from datetime import datetime, timezone
 
 import pytest
 
-from fake_odds_api import FakeOddsApi, Received, event
+from fake_odds_api import FakeOddsApi, Received, event, score_event
 from pipeline import oddsapi
 
 # A made-up value. It is deliberately not shaped like a real key.
@@ -29,13 +33,33 @@ EVENTS = [
         {"Book A": (1.50, 2.70)},
     )
 ]
+SCORES = [
+    score_event("d" * 32, "Miami Heat", "Chicago Bulls", "2026-10-19T23:30:00Z", (112, 104)),
+    score_event("e" * 32, "Boston Celtics", "New York Knicks", "2026-10-20T23:00:00Z", None, False),
+]
 
 
 @pytest.fixture
 def api(monkeypatch):
-    with FakeOddsApi({"basketball_nba": EVENTS, "basketball_nba_preseason": []}) as fake:
+    with FakeOddsApi(
+        {"basketball_nba": EVENTS, "basketball_nba_preseason": []}, {"basketball_nba": SCORES}
+    ) as fake:
         monkeypatch.setenv("ODDS_API_BASE_URL", fake.url)
         yield fake
+
+
+def odds(sport="basketball_nba"):
+    return oddsapi.fetch_odds(sport, KEY, NOW)
+
+
+def scores(sport="basketball_nba"):
+    return oddsapi.fetch_scores(sport, KEY)
+
+
+@pytest.fixture(params=[odds, scores], ids=["odds", "scores"])
+def fetch(request):
+    """Each of the two requests in turn. What holds for one has to hold for the other."""
+    return request.param
 
 
 @pytest.fixture
@@ -85,9 +109,22 @@ def test_the_request_and_what_comes_back(api):
     assert (response.remaining, response.used, response.last) == (499, 1, 1)
 
 
+def test_the_scores_request_and_what_comes_back(api):
+    response = oddsapi.fetch_scores("basketball_nba", KEY)
+
+    # The key, and the three days back that are the most the provider offers.
+    assert api.requests == [
+        Received(sport="basketball_nba", query={"apiKey": KEY, "daysFrom": "3"}, endpoint="scores")
+    ]
+    assert api.requests[0].target.startswith("/v4/sports/basketball_nba/scores?")
+    assert response.events == SCORES
+    # Asking for past days makes the request cost two credits.
+    assert (response.remaining, response.used, response.last) == (498, 2, 2)
+
+
 @pytest.mark.usefixtures("api")
-def test_a_response_without_events_is_a_success():
-    response = oddsapi.fetch_odds("basketball_nba_preseason", KEY, NOW)
+def test_a_response_without_events_is_a_success(fetch):
+    response = fetch("basketball_nba_preseason")
 
     assert response.events == []
     assert (response.remaining, response.used, response.last) == (500, 0, 0)
@@ -105,6 +142,17 @@ def test_the_key_and_the_sport_are_escaped_in_the_url(api):
     assert received.query["regions"] == "us"
 
 
+def test_the_key_and_the_sport_are_escaped_in_the_url_for_scores_too(api):
+    awkward_key = "dummy key&daysFrom=1#x"
+
+    with pytest.raises(oddsapi.Refused):
+        oddsapi.fetch_scores("a/b?c", awkward_key)
+
+    (received,) = api.requests
+    assert (received.sport, received.endpoint) == ("a%2Fb%3Fc", "scores")
+    assert received.query == {"apiKey": awkward_key, "daysFrom": "3"}
+
+
 @pytest.mark.parametrize(
     ("status", "error_code", "message"),
     [
@@ -116,30 +164,30 @@ def test_the_key_and_the_sport_are_escaped_in_the_url(api):
         (403, "not a code: <b>anything</b>", "HTTP 403"),
     ],
 )
-def test_a_refusal_is_asked_only_once(api, status, error_code, message):
+def test_a_refusal_is_asked_only_once(api, fetch, status, error_code, message):
     api.status, api.error_code = status, error_code
 
     with pytest.raises(oddsapi.Refused) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == message
     assert len(api.requests) == 1
     assert_gives_nothing_away(raised.value, api.url)
 
 
-def test_an_unknown_sport_is_a_refusal(api):
+def test_an_unknown_sport_is_a_refusal(api, fetch):
     with pytest.raises(oddsapi.Refused) as raised:
-        oddsapi.fetch_odds("basketball_xyz", KEY, NOW)
+        fetch("basketball_xyz")
 
     assert str(raised.value) == "HTTP 404 (UNKNOWN_SPORT)"
     assert len(api.requests) == 1
 
 
-def test_a_redirect_is_not_followed(api):
+def test_a_redirect_is_not_followed(api, fetch):
     api.status = 302
 
     with pytest.raises(oddsapi.Refused) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == "HTTP 302"
     assert [received.sport for received in api.requests] == ["basketball_nba"]
@@ -150,18 +198,18 @@ def test_a_redirect_is_not_followed(api):
 
 
 @pytest.mark.parametrize("status", [500, 502, 503])
-def test_a_server_error_is_asked_only_once(api, status):
+def test_a_server_error_is_asked_only_once(api, fetch, status):
     api.status = status
 
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == f"HTTP {status}"
     assert len(api.requests) == 1
     assert_gives_nothing_away(raised.value, api.url)
 
 
-def test_a_refused_connection_is_tried_only_once(monkeypatch, attempts):
+def test_a_refused_connection_is_tried_only_once(monkeypatch, attempts, fetch):
     with socket.socket() as placeholder:
         placeholder.bind(("127.0.0.1", 0))
         closed_port = placeholder.getsockname()[1]
@@ -169,14 +217,16 @@ def test_a_refused_connection_is_tried_only_once(monkeypatch, attempts):
     monkeypatch.setenv("ODDS_API_BASE_URL", base_url)
 
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == "ConnectionRefusedError: Connection refused"
     assert len(attempts) == 1
     assert_gives_nothing_away(raised.value, base_url)
 
 
-def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(api, attempts, monkeypatch):
+def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(
+    api, attempts, monkeypatch, fetch
+):
     # http.client refuses a request target that has a space in it, and its
     # message quotes the whole target, query string and key included.
     with pytest.raises(http.client.InvalidURL, match=KEY):
@@ -185,7 +235,7 @@ def test_an_error_whose_text_holds_the_key_is_named_and_not_quoted(api, attempts
     # A base URL can put a space there.
     monkeypatch.setenv("ODDS_API_BASE_URL", api.url + "/a b")
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == "InvalidURL"
     assert len(attempts) == 1
@@ -197,12 +247,12 @@ def test_the_timeout_is_20_seconds():
     assert oddsapi.TIMEOUT_SECONDS == 20
 
 
-def test_a_request_that_times_out_is_sent_only_once(api, attempts, monkeypatch):
+def test_a_request_that_times_out_is_sent_only_once(api, attempts, monkeypatch, fetch):
     monkeypatch.setattr(oddsapi, "TIMEOUT_SECONDS", 0.05)
     api.delay_seconds = 0.4
 
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == "timed out"
     assert len(attempts) == 1
@@ -218,11 +268,11 @@ def test_a_request_that_times_out_is_sent_only_once(api, attempts, monkeypatch):
         (b'{"message": "hello"}', "the response was not a list of events"),
     ],
 )
-def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, body, message):
+def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, fetch, body, message):
     api.raw_body = body
 
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == message
     assert len(api.requests) == 1
@@ -235,12 +285,12 @@ def test_a_success_that_cannot_be_read_is_not_asked_for_again(api, body, message
 NESTED_TOO_DEEP = b"[" * 1_000_000
 
 
-def test_a_body_nested_too_deep_is_an_answer_that_cannot_be_read(api):
+def test_a_body_nested_too_deep_is_an_answer_that_cannot_be_read(api, fetch):
     # json.loads raises RecursionError for this, which is not a ValueError.
     api.raw_body = NESTED_TOO_DEEP
 
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     # The class of the error and nothing of its text.
     assert str(raised.value) == "the response could not be read (RecursionError)"
@@ -248,24 +298,24 @@ def test_a_body_nested_too_deep_is_an_answer_that_cannot_be_read(api):
     assert_gives_nothing_away(raised.value, api.url)
 
 
-def test_a_refusal_whose_body_is_nested_too_deep_is_still_a_refusal(api):
+def test_a_refusal_whose_body_is_nested_too_deep_is_still_a_refusal(api, fetch):
     api.status, api.raw_body = 401, NESTED_TOO_DEEP
 
     with pytest.raises(oddsapi.Refused) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == "HTTP 401"
     assert len(api.requests) == 1
 
 
-def test_an_error_nobody_foresaw_is_named_and_not_quoted(api, monkeypatch):
+def test_an_error_nobody_foresaw_is_named_and_not_quoted(api, monkeypatch, fetch):
     def fail(request, **kwargs):
         raise RuntimeError(f"could not open {request.full_url}")
 
     monkeypatch.setattr(oddsapi._OPENER, "open", fail)
 
     with pytest.raises(oddsapi.Unreachable) as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert str(raised.value) == "RuntimeError"
     assert api.requests == []
@@ -310,10 +360,10 @@ def test_the_address_is_the_providers_unless_the_variable_names_this_machine(mon
         "localhost:8765",
     ],
 )
-def test_any_other_address_is_refused_before_a_request_is_made(monkeypatch, elsewhere):
+def test_any_other_address_is_refused_before_a_request_is_made(monkeypatch, fetch, elsewhere):
     monkeypatch.setenv("ODDS_API_BASE_URL", elsewhere)
 
     with pytest.raises(ValueError, match="may only name a server on this machine") as raised:
-        oddsapi.fetch_odds("basketball_nba", KEY, NOW)
+        fetch()
 
     assert elsewhere not in str(raised.value)
