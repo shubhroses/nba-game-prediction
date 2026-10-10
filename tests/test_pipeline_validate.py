@@ -106,13 +106,14 @@ def test_the_count_must_be_a_whole_number_of_at_least_1(built, count):
 
 
 NAMES_PROBLEM = (
-    f"slate game '{GAME}' line: books must name each of the n sportsbooks, and none when n is 1"
+    f"slate game '{GAME}' line: books must name each of the n sportsbooks, "
+    "and none when n is 1 or lo equals hi"
 )
 
 
 @pytest.mark.parametrize("books", [["Book A"], [], ["Book A", "Book B", "Book C"], ["Book A", ""]])
 def test_the_board_names_as_many_sportsbooks_as_it_counts(built, books):
-    # The game has two sportsbooks.
+    # The game has two sportsbooks, and their figures differ.
     slate_game(built)["line"]["books"] = books
 
     assert validate.slate_problems(built.slate) == [NAMES_PROBLEM]
@@ -124,6 +125,17 @@ def test_the_board_does_not_name_a_single_sportsbook(built):
 
     # The name of the one sportsbook next to its figure is what must not be published.
     line["books"] = ["Book A"]
+    assert validate.slate_problems(built.slate) == [NAMES_PROBLEM]
+
+    line["books"] = []
+    assert validate.slate_problems(built.slate) == []
+
+
+def test_the_board_does_not_name_sportsbooks_that_all_give_the_same_figure(built):
+    # Two sportsbooks, and the lowest figure is the highest: it is the figure of both.
+    line = slate_game(built)["line"]
+    line.update(lo=line["p_home"], hi=line["p_home"])
+
     assert validate.slate_problems(built.slate) == [NAMES_PROBLEM]
 
     line["books"] = []

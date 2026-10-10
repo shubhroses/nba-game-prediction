@@ -97,7 +97,7 @@ def build(
             }
             latest = {**numbers, "at": at}
             first = first or {"p_home": numbers["p_home"], "at": at}
-            on_board = {**numbers, "books": _named(line), "captured_at": at}
+            on_board = {**numbers, "books": _named(line, numbers), "captured_at": at}
 
         game = {"commence_time": format_utc(start), "home": home, "away": away}
         games[game_id] = {**game, "first": first, "latest": latest}
@@ -148,13 +148,16 @@ def published(probability: float) -> float:
     return min(0.9999, max(0.0001, round(probability, 4)))
 
 
-def _named(line: consensus.Line) -> list[str]:
+def _named(line: consensus.Line, numbers: dict) -> list[str]:
     """
-    The names of the sportsbooks behind a line, for the board. A single
-    sportsbook is counted but not named: the line is then that sportsbook's
-    own figure, and the files never put a figure to the name of a sportsbook.
+    The names of the sportsbooks behind a line, for the board. They are named
+    only when the lowest and the highest figure are written as different
+    numbers. When the two are the same, every sportsbook behind the line gave
+    that figure, and the names next to it would say what each of them gave.
+    The files never put a figure to the name of a sportsbook. A single
+    sportsbook is the plainest case: it is counted but not named.
     """
-    return list(line.books) if line.n >= 2 else []
+    return list(line.books) if numbers["lo"] != numbers["hi"] else []
 
 
 def _id_and_start(event: object) -> tuple[str, datetime]:

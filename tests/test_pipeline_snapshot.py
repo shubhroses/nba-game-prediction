@@ -176,19 +176,47 @@ def test_a_single_sportsbook_is_counted_but_not_named():
     assert validate.slate_problems(built.slate) == []
 
 
-def test_two_sportsbooks_or_more_are_named():
+def test_two_sportsbooks_or_more_are_named_when_they_differ():
     for titles in (["Book A", "Book B"], ["Book A", "Book B", "Book C"]):
-        quoted = event(
-            EARLY,
-            "Boston Celtics",
-            "New York Knicks",
-            "2026-10-20T23:00:00Z",
-            {title: (1.50, 2.70) for title in reversed(titles)},
-        )
+        # Each sportsbook quotes the home team a little differently.
+        prices = {
+            title: (1.50 + number / 100, 2.70) for number, title in enumerate(reversed(titles))
+        }
+        quoted = event(EARLY, "Boston Celtics", "New York Knicks", "2026-10-20T23:00:00Z", prices)
 
         line = build([quoted]).slate["games"][0]["line"]
 
+        assert line["lo"] < line["hi"]
         assert (line["n"], line["books"]) == (len(titles), titles)
+
+
+@pytest.mark.parametrize(
+    "prices",
+    [
+        {"Book A": (1.50, 2.70), "Book B": (1.50, 2.70)},
+        {"Book A": (1.50, 2.70), "Book B": (1.50, 2.70), "Book C": (1.50, 2.70)},
+        # 0.64286 and 0.64287: different shares that are written as the same number.
+        {"Book A": (1.50, 2.70), "Book B": (1.4999, 2.70)},
+    ],
+)
+def test_sportsbooks_that_all_give_the_same_figure_are_counted_but_not_named(prices):
+    # When the lowest and the highest figure are the same number, it is the
+    # figure of every sportsbook behind the line. Their names next to it
+    # would say what each of them gave.
+    agreed = event(EARLY, "Boston Celtics", "New York Knicks", "2026-10-20T23:00:00Z", prices)
+
+    built = build([agreed])
+
+    assert built.slate["games"][0]["line"] == {
+        "p_home": 0.6429,
+        "lo": 0.6429,
+        "hi": 0.6429,
+        "n": len(prices),
+        "books": [],
+        "captured_at": AT,
+    }
+    assert "Book" not in json.dumps([built.slate, built.state, built.history])
+    assert validate.slate_problems(built.slate) == []
 
 
 def test_only_derived_values_are_published():

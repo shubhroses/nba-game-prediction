@@ -59,13 +59,15 @@ def slate_problems(slate: object) -> list[str]:
                 named = isinstance(books, list) and all(
                     isinstance(book, str) and book for book in books
                 )
-                # A single sportsbook is not named, because the line would
-                # then be a figure with that sportsbook's name on it.
-                expected = 0 if line.get("n") == 1 else line.get("n")
+                # Sportsbooks that all gave the same figure are not named,
+                # because the line would then be a figure with each of their
+                # names on it. A single sportsbook is the plainest case.
+                alike = line.get("n") == 1 or line.get("lo") == line.get("hi")
+                expected = 0 if alike else line.get("n")
                 if not named or len(books) != expected:
                     found.append(
                         f"{where} line: books must name each of the n sportsbooks, "
-                        "and none when n is 1"
+                        "and none when n is 1 or lo equals hi"
                     )
         found += _opening_problems(game.get("open"), f"{where} open")
     return found
