@@ -11,17 +11,6 @@ export function formatDate(date: Date, timeZone?: string): string {
   }).format(date);
 }
 
-  export function formatOdds(decimal: number): string {
-    if (decimal <= 1) return '-';
-    
-    // Convert to American odds format
-    if (decimal >= 2) {
-      return `+${Math.round((decimal - 1) * 100)}`;
-    } else {
-      return `${Math.round(-100 / (decimal - 1))}`;
-    }
-  }
-
 /**
  * The logo of each team, by the team's full name. tests/test_pipeline_teams.py
  * reads this table to check that the pipeline spells the names the same way.
