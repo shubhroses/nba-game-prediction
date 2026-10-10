@@ -18,7 +18,7 @@ on:
   workflow_dispatch:
     inputs:
       force:
-        description: Take a snapshot even if the current slot is already recorded or started 75 minutes ago or more
+        description: Take a snapshot even if the current slot is already recorded or started 75 minutes ago or more, and do the daily work if that of the last 05:10 slot is not on record
         type: boolean
         default: false
       dry_run:
