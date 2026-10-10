@@ -69,7 +69,7 @@ Once a day the job asks for the scores of the last three days, which is as far b
 
 ### The line a game is graded against
 
-A game is graded against the latest line that the state file holds for it, `games.{id}.latest`. The snapshot replaces that line only before the game starts, so it is the game's last line from before the start. It is not the closing line. It is the line of the last slot before the game. When no slot was missed, that slot is at most three hours before the start of a game that starts after 09:10 in New York.
+A game is graded against the latest line that the state file holds for it, `games.{id}.latest`. The snapshot replaces that line only before the game starts, so it is the game's last line from before the start. It is not the closing line. It is the line of the last slot before the game. When no slot was missed, that slot started at most three hours before a game that starts between 09:10 in the morning and 00:10 at night in New York.
 
 The scores give a start for each game as well, and it is the start a result line carries. It can differ from the one the odds gave. In the example responses of the provider's [guide](https://the-odds-api.com/liveapi/guides/v4/), a game that is being played or is over has a start to the second, such as `03:10:38`, where a game that is still to come has one on the minute. So the line is held against the start that the scores give:
 
