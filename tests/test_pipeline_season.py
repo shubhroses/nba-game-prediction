@@ -131,7 +131,18 @@ def test_the_list_of_neutral_floors_is_matched_by_the_day_of_the_game(opening):
     assert opening.game(utc("2027-01-14 19:00"), "SAS", "NOP").neutral
     assert opening.game(utc("2027-01-15 02:00"), "SAS", "NOP").neutral
     assert not opening.game(utc("2027-01-15 19:00"), "SAS", "NOP").neutral
-    assert len(opening.neutral_floors) == len(opening.points_rest["neutral_games"]) == 3
+
+
+def test_every_game_that_the_file_lists_is_a_neutral_floor(opening):
+    # The list is kept by hand and grows during the season: the final of the
+    # NBA Cup is added in December, when its teams are known. So the three
+    # games it opened with are looked for, and their number is not fixed here.
+    assert len(opening.neutral_floors) == len(opening.points_rest["neutral_games"])
+    assert opening.neutral_floors >= {
+        (date(2026, 11, 7), frozenset({"IND", "DEN"})),
+        (date(2027, 1, 14), frozenset({"SAS", "NOP"})),
+        (date(2027, 1, 17), frozenset({"SAS", "NOP"})),
+    }
 
 
 def test_a_finished_game_carries_its_day_its_floor_and_its_score(opening):
