@@ -7,12 +7,10 @@ same events, previous state and time always give the same result.
 """
 
 import copy
-import json
-import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
 
-from pipeline import consensus, teams
+from pipeline import consensus, feed
 from pipeline.timestamps import format_utc, parse_utc
 
 SCHEMA = 1
@@ -21,11 +19,6 @@ SCHEMA = 1
 # step can still find the last line taken before the start.
 RETENTION = timedelta(days=14)
 
-# The provider's event ids are 32 hexadecimal characters. An id is used as a
-# key in the published files, so anything that is not a short plain token is
-# turned away.
-_EVENT_ID = re.compile(r"[A-Za-z0-9_-]{1,64}")
-
 
 @dataclass(frozen=True)
 class Snapshot:
@@ -33,10 +26,6 @@ class Snapshot:
     state: dict  # as written to state.json
     history: list[dict]  # one line per game that has a line, in board order
     dropped: list[str]  # one sentence per event that was left out, saying why
-
-
-class _Unusable(Exception):
-    """An event that cannot be recorded. The message says why."""
 
 
 def build(
@@ -72,11 +61,11 @@ def build(
 
     for event in events:
         try:
-            game_id, start = _id_and_start(event)
+            game_id, start = feed.id_and_start(event)
             if start <= now:
                 continue
-            home, away = _team_codes(event, game_id)
-        except _Unusable as reason:
+            home, away = feed.team_codes(event, game_id)
+        except feed.Unusable as reason:
             dropped.append(str(reason))
             continue
         if game_id in listed:
@@ -158,67 +147,3 @@ def _named(line: consensus.Line, numbers: dict) -> list[str]:
     sportsbook is the plainest case: it is counted but not named.
     """
     return list(line.books) if numbers["lo"] != numbers["hi"] else []
-
-
-def _id_and_start(event: object) -> tuple[str, datetime]:
-    """An event's id and its start in UTC. Raises _Unusable when either is missing."""
-    if not isinstance(event, dict):
-        raise _Unusable(f"an entry that is not an event: {_show(event)}")
-    game_id = event.get("id")
-    if not isinstance(game_id, str) or not _EVENT_ID.fullmatch(game_id):
-        raise _Unusable(f"an event without a usable id: {_show(game_id)}")
-    start = _start(event.get("commence_time"))
-    if start is None:
-        raise _Unusable(
-            f"event {game_id}: no usable commence_time: {_show(event.get('commence_time'))}"
-        )
-    return game_id, start
-
-
-def _team_codes(event: dict, game_id: str) -> tuple[str, str]:
-    """The home and the away team's codes. Raises _Unusable for a team that is not one of the 30."""
-    codes = []
-    for side in ("home_team", "away_team"):
-        code = teams.code(event.get(side))
-        if code is None:
-            raise _Unusable(f"event {game_id}: unknown team {_show(event.get(side))}")
-        codes.append(code)
-    home, away = codes
-    if home == away:
-        raise _Unusable(f"event {game_id}: {home} is on both sides")
-    return home, away
-
-
-def _start(value: object) -> datetime | None:
-    """
-    The provider's commence_time in UTC, to the second. None when it is not
-    an ISO 8601 time with an offset.
-    """
-    if not isinstance(value, str):
-        return None
-    try:
-        moment = datetime.fromisoformat(value)
-        if moment.tzinfo is None:
-            return None
-        # A fraction of a second is dropped here, before the time is compared
-        # with anything, because it is dropped when the time is written. Left
-        # on, it could put a game on the board that the validator, reading
-        # the written time, finds has already started.
-        return moment.astimezone(timezone.utc).replace(microsecond=0)
-    except (ValueError, OverflowError):
-        return None
-
-
-def _show(value: object) -> str:
-    """
-    A value from the response, made safe to print: JSON-escaped, so it stays
-    on one line and in ASCII, and cut to 80 characters. A value that is
-    nested too deep to be written out is described instead.
-    """
-    try:
-        text = json.dumps(value)
-    except RecursionError:
-        # On Python 3.14 json.loads accepts a body that is nested a little
-        # deeper than json.dumps can write out again.
-        return f"a {type(value).__name__} nested too deep to show"
-    return text if len(text) <= 80 else text[:77] + "..."

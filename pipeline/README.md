@@ -23,6 +23,7 @@ With `--all` there can be more than one sport. The state files of all of them ar
 | `schedule.py` | The six slots, the rule for when a snapshot is due, and for how long a slot may be asked for. |
 | `oddsapi.py` | The request and its errors. |
 | `teams.py` | The 30 team names as the provider spells them, with the NBA's three-letter codes. |
+| `feed.py` | What is read from every event the provider lists: its id, its start and its two teams. |
 | `consensus.py` | The margin-free home probability of one sportsbook, and the median across sportsbooks. |
 | `snapshot.py` | Builds the board, the state and the history lines from a response and the previous state. A pure function. |
 | `validate.py` | The checks on the three files. |
