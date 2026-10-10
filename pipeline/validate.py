@@ -303,6 +303,26 @@ def record_problems(record: object, lines: list[dict]) -> list[str]:
     return found
 
 
+def board_problems(headline: object, lines: list[dict]) -> list[str]:
+    """
+    The wins and the losses that the state notes for the board must equal a
+    recount of the result lines as well. The lines are taken to have passed
+    result_problems.
+    """
+    where = "state results record"
+    found = _headline_problems(headline, where)
+    if not found:
+        verdicts = Counter(line["market_verdict"] for line in lines)
+        recount = {"wins": verdicts[grading.FAVORITE_WON], "losses": verdicts[grading.UPSET]}
+        found = [
+            f"{where}: {name} is {headline['market'][name]}, "
+            f"and a recount of the result lines gives {counted}"
+            for name, counted in recount.items()
+            if headline["market"][name] != counted
+        ]
+    return found
+
+
 def _schema_problems(document: dict, where: str) -> list[str]:
     if document.get("schema") != SCHEMA:
         return [f"{where}: schema is {document.get('schema')!r}, expected {SCHEMA}"]
