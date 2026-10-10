@@ -77,7 +77,9 @@ def build(
       are given in both. Elo is published all the same: a missing game
       leaves two of its ratings a little behind and nothing else.
     - A forecast is made for each game of the day that the state knows and
-      that has not started, from the results of earlier days only.
+      that has not started, from the results of earlier days only. A game
+      whose result is on record gets none, whatever start the state has
+      for it.
     - A predictions file is written once. When the day has one, no forecast
       is made, and the file is noted in the state as it is.
     """
@@ -123,8 +125,9 @@ def build(
     predictions = None
     if frozen is None:
         before = [final for final in played if final.day < day]
+        over = {line["id"] for line in lines}
         games = _forecasts_for(
-            state["games"], now, day, season, before, with_points_rest=not reasons
+            state["games"], over, now, day, season, before, with_points_rest=not reasons
         )
         if games:
             earlier = max((final.day for final in before), default=None)
@@ -244,6 +247,7 @@ def _wins_and_losses(played: list[Final]) -> dict:
 
 def _forecasts_for(
     known: dict,
+    over: set,
     now: datetime,
     day: date,
     season: Season,
@@ -255,7 +259,10 @@ def _forecasts_for(
     The forecasts for the games of a day that have not started, in order of
     start. `before` are the results of the earlier days, and nothing else
     goes into a forecast: a game of the same day that is already over, as it
-    can be when the daily work is done late, changes nothing.
+    can be when the daily work is done late, changes nothing. `over` are the
+    ids of the games that have a result. The state can still have such a
+    game as one to come, when it was played earlier than any snapshot saw,
+    and a forecast for it would be one made after the game.
     """
     ratings = _elo_ratings(season, before)
     state = points_rest.Model(season.points_rest).replay(before) if with_points_rest else None
@@ -263,7 +270,7 @@ def _forecasts_for(
     for game_id, game in _in_order_of_start(known):
         start = parse_utc(game["commence_time"])
         fixture = season.game(start, game["home"], game["away"])
-        if start <= now or fixture.day != day or day < season.first_day:
+        if start <= now or fixture.day != day or day < season.first_day or game_id in over:
             continue
         line = game["latest"]
         forecasts.append(

@@ -295,6 +295,23 @@ def test_a_game_that_has_started_or_belongs_to_another_day_gets_no_forecast():
     assert built["published_at"] == "2026-10-20T23:30:00Z"
 
 
+def test_a_game_whose_result_is_on_record_gets_no_forecast():
+    # The state has the game in Los Angeles at 22:00 in New York. It was
+    # played in the afternoon, no snapshot saw the new start, and the scores
+    # have it over when the daily work is done by hand at 18:45.
+    evening = datetime(2026, 10, 20, 22, 45, 0, tzinfo=timezone.utc)
+    played_early = result(
+        LAL_GSW, 99, 120, recorded_at="2026-10-20T22:45:00Z", commence_time="2026-10-20T19:00:21Z"
+    )
+
+    built = build([played_early], now=evening)
+
+    # Its forecast would be one made after the game, from ratings that
+    # already have the game in them.
+    assert [forecast["id"] for forecast in built.predictions["games"]] == [SAS_OKC, BOS_NYK]
+    assert (built.model["games"], built.model["elo"]["ratings"]["LAL"]["rating"]) == (1, 1540)
+
+
 def test_a_day_without_a_game_to_forecast_has_no_predictions_file():
     built = build(games=known(DET_BOS))
 
