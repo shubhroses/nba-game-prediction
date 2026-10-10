@@ -29,6 +29,41 @@ def test_the_paths_of_the_three_files():
     assert store.history_path("v1", date(2026, 10, 20)) == "v1/history/2026-10-20.ndjson"
 
 
+def test_the_paths_of_the_record_and_of_the_results_of_a_month():
+    assert store.record_path("v1") == "v1/record.json"
+    assert store.results_path("v1", date(2026, 10, 20)) == "v1/results/2026-10.ndjson"
+    assert store.results_path("v1", date(2027, 1, 1)) == "v1/results/2027-01.ndjson"
+
+
+def test_the_results_files_on_disk_are_listed_in_order_of_month(tmp_path):
+    for path in (
+        "v1/results/2027-01.ndjson",
+        "v1/results/2026-10.ndjson",
+        "v1/results/2026-12.ndjson",
+        "v1/results/notes.txt",
+        "v1/results/2026-11.ndjson/a-directory-not-a-file",
+        "v1/history/2026-10-20.ndjson",
+        "v1-dryrun/results/2026-10.ndjson",
+    ):
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_text("")
+
+    assert store.results_paths(tmp_path, "v1") == [
+        "v1/results/2026-10.ndjson",
+        "v1/results/2026-12.ndjson",
+        "v1/results/2027-01.ndjson",
+    ]
+    assert store.results_paths(tmp_path, "v1-dryrun") == ["v1-dryrun/results/2026-10.ndjson"]
+
+
+def test_a_sport_without_results_has_no_results_files(tmp_path):
+    missing = tmp_path / "not" / "created" / "yet"
+
+    assert store.results_paths(missing, "v1") == []
+    assert store.results_paths(tmp_path, "v1") == []
+    assert not missing.exists()
+
+
 def test_a_data_directory_that_does_not_exist_yet_reads_as_empty(tmp_path):
     missing = tmp_path / "not" / "created" / "yet"
 
@@ -74,6 +109,36 @@ def test_history_lines_are_compact_and_keep_their_field_order():
         '{"id":"h","at":"2026-10-20T22:10:41Z","p_home":0.5,"lo":0.5,"hi":0.5,"n":1}\n'
     )
     assert store.to_ndjson([]) == ""
+
+
+def test_a_result_line_is_written_compact_and_read_back_as_it_was():
+    line = {
+        "id": "g",
+        "commence_time": "2026-10-20T23:00:00Z",
+        "home": "BOS",
+        "away": "NYK",
+        "home_pts": 112,
+        "away_pts": 104,
+        "recorded_at": "2026-10-21T09:10:07Z",
+        "market": {"p_home": 0.532, "lo": 0.52, "hi": 0.55, "n": 3, "at": "2026-10-20T22:10:41Z"},
+        "market_verdict": "favorite_won",
+    }
+    without_a_line = {**line, "id": "h", "market": None, "market_verdict": "not_graded"}
+
+    written = store.to_ndjson([line, without_a_line])
+
+    assert written.splitlines()[0] == (
+        '{"id":"g","commence_time":"2026-10-20T23:00:00Z","home":"BOS","away":"NYK",'
+        '"home_pts":112,"away_pts":104,"recorded_at":"2026-10-21T09:10:07Z",'
+        '"market":{"p_home":0.532,"lo":0.52,"hi":0.55,"n":3,"at":"2026-10-20T22:10:41Z"},'
+        '"market_verdict":"favorite_won"}'
+    )
+    assert written.splitlines()[1].endswith('"market":null,"market_verdict":"not_graded"}')
+    assert store.from_ndjson(written) == [line, without_a_line]
+    # The order of the fields survives the round trip, in the line and in the line within it.
+    assert [list(read) for read in store.from_ndjson(written)] == [list(line)] * 2
+    assert list(store.from_ndjson(written)[0]["market"]) == ["p_home", "lo", "hi", "n", "at"]
+    assert store.from_ndjson("") == []
 
 
 def test_a_value_that_is_not_a_number_cannot_be_written():

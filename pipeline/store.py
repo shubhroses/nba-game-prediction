@@ -30,6 +30,23 @@ def history_path(prefix: str, day: date) -> str:
     return f"{prefix}/history/{day.isoformat()}.ndjson"
 
 
+def results_path(prefix: str, month: date) -> str:
+    """The results file for the games that started in one UTC month, given as any day of it."""
+    return f"{prefix}/results/{month:%Y-%m}.ndjson"
+
+
+def record_path(prefix: str) -> str:
+    return f"{prefix}/record.json"
+
+
+def results_paths(data_dir: Path, prefix: str) -> list[str]:
+    """The results files of a sport that are on disk, in order of name and so of month."""
+    directory = data_dir / prefix / "results"
+    return sorted(
+        f"{prefix}/results/{file.name}" for file in directory.glob("*.ndjson") if file.is_file()
+    )
+
+
 def read_json(data_dir: Path, path: str) -> object | None:
     """The parsed file, or None when it does not exist. Raises ValueError when it is not JSON."""
     try:
@@ -57,6 +74,11 @@ def to_ndjson(lines: list[dict]) -> str:
     return "".join(
         json.dumps(line, separators=(",", ":"), allow_nan=False) + "\n" for line in lines
     )
+
+
+def from_ndjson(content: str) -> list[dict]:
+    """The lines of a file that to_ndjson wrote. Call this only with content that has been checked."""
+    return [json.loads(line) for line in content.splitlines()]
 
 
 def write(data_dir: Path, files: dict[str, str]) -> None:
