@@ -12,7 +12,7 @@ from datetime import date, datetime, timedelta, timezone
 
 import pytest
 
-from pipeline import forecasts, store, teams
+from pipeline import forecasts, store, teams, validate_forecasts
 from pipeline.model import elo, points_rest, season
 
 OPENING = season.load("2026_27")
@@ -642,3 +642,11 @@ def test_the_state_notes_elos_ratings_and_the_days_forecasts_for_the_board():
     assert state == untouched
     # What is noted is a copy: the board is not handed the file's own objects.
     assert built.state["models"]["predictions"] is not built.predictions
+
+
+def test_what_is_built_passes_the_checks():
+    built = on_wednesday()
+
+    assert validate_forecasts.model_problems(built.model, TUESDAY_NIGHT, OPENING) == []
+    assert validate_forecasts.forecasts_problems(built.predictions, "predictions") == []
+    assert validate_forecasts.note_problems(built.state["models"]) == []
