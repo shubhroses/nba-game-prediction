@@ -45,10 +45,13 @@ def test_a_day_begins_ten_hours_after_midnight_utc():
 
 
 def test_the_day_is_the_same_for_a_start_given_in_another_time_zone():
-    new_york = timezone(timedelta(hours=-4))
-    start = datetime(2026, 10, 20, 22, 30, tzinfo=new_york)
+    # 22:30 on Tuesday in New York, which is 11:30 on Wednesday in Tokyo.
+    in_new_york = datetime(2026, 10, 20, 22, 30, tzinfo=timezone(timedelta(hours=-4)))
+    in_tokyo = datetime(2026, 10, 21, 11, 30, tzinfo=timezone(timedelta(hours=9)))
 
-    assert season.game_day(start) == date(2026, 10, 20)
+    assert in_new_york == in_tokyo
+    assert season.game_day(in_new_york) == date(2026, 10, 20)
+    assert season.game_day(in_tokyo) == date(2026, 10, 20)
     with pytest.raises(ValueError, match="time zone"):
         season.game_day(datetime(2026, 10, 20, 22, 30))
 
