@@ -1,14 +1,16 @@
-export function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZoneName: 'short'
-    }).format(date);
-  }
-  
+/** A game's start, as in "Tue, Oct 20, 7:00 PM EDT". Without a time zone the visitor's own is used. */
+export function formatDate(date: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short',
+    timeZone,
+  }).format(date);
+}
+
   export function formatOdds(decimal: number): string {
     if (decimal <= 1) return '-';
     
