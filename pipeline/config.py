@@ -14,11 +14,11 @@ class Sport:
 SPORTS = (
     Sport(key="basketball_nba", prefix="v1"),
     # Rehearsal only. The regular season starts on 20 October 2026, and the
-    # grading step has to be tried on real games before opening night. The
-    # only real games before then are preseason games, so they are captured
-    # under a prefix of their own, apart from the real record. Delete this
-    # entry after opening night. No code and no test depends on it. The
-    # READMEs mention it.
+    # daily work, which records results and grades them, has to be tried on
+    # real games before opening night. The only real games before then are
+    # preseason games, so they are captured under a prefix of their own,
+    # apart from the real record. Delete this entry after opening night. No
+    # code and no test depends on it. The READMEs mention it.
     Sport(key="basketball_nba_preseason", prefix="v1-dryrun", last_day=date(2026, 10, 17)),
 )
 

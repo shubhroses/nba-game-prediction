@@ -1,5 +1,6 @@
 """
-Scheduled capture of the sportsbook consensus for upcoming NBA games.
+Scheduled capture of the sportsbook consensus for upcoming NBA games, and of
+the results of the games that are over, graded against that consensus.
 
     python -m pipeline snapshot --all --data-dir DIR
 
