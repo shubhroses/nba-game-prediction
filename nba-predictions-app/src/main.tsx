@@ -1,113 +1,38 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.tsx'
-import './index.css'
+import { Component, StrictMode, type ReactNode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App';
+import './index.css';
 
-interface ErrorBoundaryProps {
-  children: ReactNode;
-}
+/** Catches an error thrown while the page renders and tells the visitor no more than they can act on. */
+class ErrorBoundary extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
 
-interface ErrorBoundaryState {
-  hasError: boolean;
-  error: Error | null;
-  errorInfo: ErrorInfo | null;
-}
-
-class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { 
-      hasError: false, 
-      error: null, 
-      errorInfo: null 
-    };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    this.setState({ errorInfo });
-    console.error("Error caught by boundary:", error, errorInfo);
+  static getDerivedStateFromError() {
+    return { failed: true };
   }
 
   render() {
-    if (this.state.hasError) {
-      // You can render any custom fallback UI
-      return (
-        <div style={{ 
-          padding: '20px', 
-          maxWidth: '800px', 
-          margin: '0 auto', 
-          fontFamily: 'system-ui, sans-serif' 
-        }}>
-          <h1>Something went wrong</h1>
-          <p>The application encountered an error. Here are the details:</p>
-          <div style={{ 
-            backgroundColor: '#f8f8f8', 
-            padding: '15px', 
-            borderRadius: '4px',
-            marginBottom: '20px',
-            border: '1px solid #ddd'
-          }}>
-            <h3>Error: {this.state.error?.message}</h3>
-            <details style={{ whiteSpace: 'pre-wrap' }}>
-              <summary>Stack trace</summary>
-              <p>{this.state.error?.stack}</p>
-              <p>{this.state.errorInfo?.componentStack}</p>
-            </details>
-          </div>
-          <p>Please check the console for more information.</p>
-          <div>
-            <h3>Environment information:</h3>
-            <pre style={{ 
-              backgroundColor: '#f8f8f8', 
-              padding: '10px', 
-              borderRadius: '4px', 
-              overflowX: 'auto',
-              border: '1px solid #ddd'
-            }}>
-              {JSON.stringify({
-                hostname: window.location.hostname,
-                pathname: window.location.pathname,
-                userAgent: navigator.userAgent,
-                timeStamp: new Date().toISOString(),
-                mode: import.meta.env?.MODE || 'unknown',
-                isProduction: import.meta.env?.PROD || false
-              }, null, 2)}
-            </pre>
-          </div>
-          <button 
-            onClick={() => window.location.reload()} 
-            style={{
-              backgroundColor: '#4CAF50',
-              border: 'none',
-              color: 'white',
-              padding: '10px 20px',
-              textAlign: 'center',
-              textDecoration: 'none',
-              display: 'inline-block',
-              fontSize: '16px',
-              margin: '20px 0',
-              cursor: 'pointer',
-              borderRadius: '4px'
-            }}
-          >
-            Reload Page
-          </button>
-        </div>
-      );
-    }
+    if (!this.state.failed) return this.props.children;
 
-    return this.props.children;
+    return (
+      <div className="max-w-xl mx-auto p-8 text-center">
+        <h1 className="text-xl font-semibold">Something went wrong</h1>
+        <p className="mt-2 text-gray-600">This page ran into an error and cannot show the games. Reloading it may help.</p>
+        <button
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-800 transition-colors"
+        >
+          Reload the page
+        </button>
+      </div>
+    );
   }
 }
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
-  </React.StrictMode>,
-) 
+  </StrictMode>,
+);
