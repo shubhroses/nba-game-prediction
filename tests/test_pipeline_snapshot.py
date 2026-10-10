@@ -12,7 +12,8 @@ from datetime import datetime, timedelta, timezone
 import pytest
 
 from fake_odds_api import event
-from pipeline import snapshot, validate
+from pipeline import forecasts, snapshot, validate
+from pipeline.model import season
 
 SLOT, NEXT_DUE = "2026-10-20T18:10-04:00", "2026-10-20T21:10-04:00"
 NOW = datetime(2026, 10, 20, 22, 10, 41, tzinfo=timezone.utc)
@@ -613,3 +614,204 @@ def test_the_board_and_the_state_do_not_share_what_they_carry():
     assert built.state["results"]["record"] == {"market": {"wins": 41, "losses": 19}}
     assert built.state["results"]["recent"][0]["market"]["p_home"] == 0.532
     assert previous == untouched
+
+
+# From here on: a sport that the two models forecast. The daily run of
+# Tuesday morning built the models and froze the forecasts for Tuesday's two
+# games, and noted both in the state.
+OPENING = season.load("2026_27")
+TUESDAY_MORNING = datetime(2026, 10, 20, 9, 10, 7, tzinfo=timezone.utc)
+
+
+def forecast_build(events, previous=None, now=NOW):
+    return snapshot.build(
+        events,
+        previous,
+        now,
+        sport="basketball_nba",
+        slot=SLOT,
+        next_due=NEXT_DUE,
+        credits=CREDITS,
+        season=OPENING,
+    )
+
+
+def after_the_daily_run(events=(EARLY_GAME, LATE_GAME, UNPRICED_GAME)):
+    """The state after Monday night's snapshot and Tuesday morning's daily run."""
+    monday_night = datetime(2026, 10, 20, 1, 10, 30, tzinfo=timezone.utc)
+    listed = forecast_build(list(events), now=monday_night).state
+    return forecasts.build(
+        [],
+        listed,
+        TUESDAY_MORNING,
+        sport="basketball_nba",
+        season=OPENING,
+        day=TUESDAY_MORNING.date(),
+        frozen=None,
+        commit=None,
+    ).state
+
+
+def by_id(built):
+    return {game["id"]: game for game in built.slate["games"]}
+
+
+def test_a_game_of_the_day_carries_the_frozen_forecasts_of_both_models():
+    previous = after_the_daily_run()
+    frozen = {game["id"]: game for game in previous["models"]["predictions"]["games"]}
+    assert sorted(frozen) == [EARLY, LATE]
+
+    board = by_id(forecast_build([EARLY_GAME, LATE_GAME, UNPRICED_GAME], previous))
+
+    for game_id in (EARLY, LATE):
+        assert board[game_id]["elo"] == {"p_home": frozen[game_id]["elo"]["p_home"]}
+        assert board[game_id]["points_rest"] == frozen[game_id]["points_rest"]
+    # Boston, 1607, hosts New York, 1720: 0.3965. The Lakers, 1568, host
+    # Golden State, 1451: 10 ^ (-157 / 400) = 0.405042, and 1 / 1.405042 = 0.7117.
+    assert (board[EARLY]["elo"], board[LATE]["elo"]) == ({"p_home": 0.3965}, {"p_home": 0.7117})
+    assert list(board[EARLY]["points_rest"]) == [
+        "p_home",
+        "margin",
+        "rating_edge",
+        "home_court",
+        "rest_edge",
+    ]
+
+
+def test_a_game_of_a_later_day_carries_what_elos_ratings_make_of_it_now_and_nothing_else():
+    board = by_id(forecast_build([EARLY_GAME, UNPRICED_GAME], after_the_daily_run()))
+
+    # Miami, 1520, hosts Chicago, 1385, on Wednesday:
+    # 10 ^ (-(1520 + 40 - 1385) / 400) = 0.365174, and 1 / 1.365174 = 0.7325.
+    assert board[UNPRICED]["elo"] == {"p_home": 0.7325}
+    assert board[UNPRICED]["points_rest"] is None
+
+
+def test_the_frozen_forecast_is_shown_and_not_what_the_ratings_would_make_of_the_game_now():
+    # The ratings that are noted have moved since the forecasts were frozen,
+    # as they have when the daily work is done a second time that morning.
+    previous = after_the_daily_run()
+    previous["models"]["elo"].update(BOS=1619, NYK=1708, MIA=1530)
+
+    board = by_id(forecast_build([EARLY_GAME, UNPRICED_GAME], previous))
+
+    assert board[EARLY]["elo"] == {"p_home": 0.3965}
+    # A game that has no frozen forecast follows the ratings.
+    assert board[UNPRICED]["elo"] == {
+        "p_home": round(1 / (1 + 10 ** (-(1530 + 40 - 1385) / 400)), 4)
+    }
+
+
+def test_before_the_models_have_been_built_the_board_carries_neither():
+    built = forecast_build([EARLY_GAME, UNPRICED_GAME])
+
+    assert [(game["elo"], game["points_rest"]) for game in built.slate["games"]] == [
+        (None, None),
+        (None, None),
+    ]
+    assert built.slate["models"] is None
+    assert built.state["models"] is None
+    assert validate.problems(built.slate, built.state, "", "", forecast=True) == []
+    # The same from a state that was written before the models were added.
+    old = build([EARLY_GAME]).state
+    assert "models" not in old
+    assert forecast_build([EARLY_GAME], old).slate["games"][0]["elo"] is None
+
+
+def test_the_board_says_how_far_the_models_reach_and_which_days_forecasts_it_carries():
+    built = forecast_build([EARLY_GAME], after_the_daily_run())
+
+    assert built.slate["models"] == {
+        "results_through": None,
+        "status": "ok",
+        "predictions_day": "2026-10-20",
+    }
+    # On a day without a game to forecast there is no such day.
+    no_game = forecast_build([UNPRICED_GAME], after_the_daily_run([UNPRICED_GAME]))
+    assert no_game.slate["models"]["predictions_day"] is None
+    assert no_game.slate["games"][0]["elo"] == {"p_home": 0.7325}
+
+
+def test_what_the_daily_run_noted_of_the_models_is_carried_over_as_it_is():
+    previous = after_the_daily_run()
+    untouched = copy.deepcopy(previous)
+
+    built = forecast_build([EARLY_GAME, LATE_GAME], previous)
+    built.slate["games"][0]["points_rest"]["margin"] = 99.0
+    built.state["models"]["elo"]["BOS"] = 0
+
+    assert previous == untouched
+    assert forecast_build([EARLY_GAME], previous).state["models"] == untouched["models"]
+
+
+def test_a_game_that_was_put_off_to_another_day_does_not_keep_its_frozen_forecast():
+    previous = after_the_daily_run()
+    put_off = dict(EARLY_GAME, commence_time="2026-10-21T23:00:00Z")
+
+    board = by_id(forecast_build([put_off], previous))
+
+    # The forecast of Tuesday morning knew nothing of who plays on Tuesday.
+    # Elo's chance happens to be the same, because no rating has moved.
+    assert board[EARLY]["points_rest"] is None
+    assert board[EARLY]["elo"] == {"p_home": 0.3965}
+
+
+def test_a_frozen_forecast_for_other_teams_is_not_shown():
+    previous = after_the_daily_run()
+    previous["models"]["predictions"]["games"][0].update(home="NYK", away="BOS")
+    previous["models"]["predictions"]["games"][0]["elo"]["p_home"] = 0.9
+
+    board = by_id(forecast_build([EARLY_GAME], previous))
+
+    assert board[EARLY] | {"line": None, "open": None} == {
+        "id": EARLY,
+        "commence_time": "2026-10-20T23:00:00Z",
+        "home": "BOS",
+        "away": "NYK",
+        "line": None,
+        "open": None,
+        "elo": {"p_home": 0.3965},
+        "points_rest": None,
+    }
+
+
+def test_elos_chance_on_the_board_has_no_home_court_on_a_neutral_floor():
+    # Indiana and Denver in Mexico City on 7 November, seen on the board the evening before.
+    mexico_city = event("9" * 32, "Indiana Pacers", "Denver Nuggets", "2026-11-07T22:00:00Z", {})
+    evening = datetime(2026, 11, 6, 23, 10, 30, tzinfo=timezone.utc)
+    previous = after_the_daily_run([])
+
+    (game,) = forecast_build([mexico_city], previous, now=evening).slate["games"]
+
+    # 1 / (1 + 10 ^ ((1597 - 1379) / 400)) = 0.2219. With a home court of 40 it would be 0.2641.
+    assert game["elo"] == {"p_home": 0.2219}
+
+
+def test_on_a_day_with_elo_alone_the_board_carries_elos_frozen_forecast_and_no_other():
+    previous = after_the_daily_run()
+    noted = previous["models"]
+    noted["status"] = noted["predictions"]["status"] = "degraded"
+    noted["predictions"]["reasons"] = ["BOS has 2 results on 2026-10-19"]
+    for game in noted["predictions"]["games"]:
+        game["points_rest"] = None
+
+    built = forecast_build([EARLY_GAME, UNPRICED_GAME], previous)
+
+    assert by_id(built)[EARLY]["elo"] == {"p_home": 0.3965}
+    assert by_id(built)[EARLY]["points_rest"] is None
+    assert built.slate["models"]["status"] == "degraded"
+    assert validate.problems(built.slate, built.state, "", "", forecast=True) == []
+
+
+def test_the_board_of_a_forecast_sport_passes_the_checks():
+    built = forecast_build([EARLY_GAME, LATE_GAME, UNPRICED_GAME], after_the_daily_run())
+
+    assert validate.problems(built.slate, built.state, "", "", forecast=True) == []
+
+
+def test_a_sport_that_is_not_forecast_carries_nothing_of_the_models():
+    # Even from a state that has them noted.
+    built = build([EARLY_GAME, UNPRICED_GAME], after_the_daily_run())
+
+    assert "models" not in built.slate and "models" not in built.state
+    assert all("elo" not in game and "points_rest" not in game for game in built.slate["games"])

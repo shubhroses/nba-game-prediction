@@ -1045,3 +1045,47 @@ def test_a_models_wins_and_losses_on_the_board_are_whole_numbers(built, counts):
     assert validate.state_problems(built.state) == [
         "state results record: elo must hold whole numbers for wins and losses"
     ]
+
+
+def test_the_board_of_a_forecast_sport_has_the_models_fields_and_another_board_need_not(built):
+    assert validate.slate_problems(built.slate) == []
+
+    found = validate.slate_problems(built.slate, forecast=True)
+
+    # Two games, and neither has the two fields.
+    assert found == [
+        f"slate game '{GAME}' elo: must be null or hold p_home, a number between 0 and 1",
+        f"slate game '{GAME}' points_rest: must be null or a forecast",
+        f"slate game '{'a' * 32}' elo: must be null or hold p_home, a number between 0 and 1",
+        f"slate game '{'a' * 32}' points_rest: must be null or a forecast",
+    ]
+    # The check of a whole snapshot finds the same, when it is told that the sport is forecast.
+    assert validate.problems(built.slate, built.state, "", "", forecast=True) == found
+    assert validate.problems(built.slate, built.state, "", "") == []
+    for game in built.slate["games"]:
+        game.update(elo={"p_home": 0.55}, points_rest=None)
+    built.slate["models"] = None
+    assert validate.slate_problems(built.slate, forecast=True) == []
+    assert validate.problems(built.slate, built.state, "", "", forecast=True) == []
+
+
+def test_what_the_board_says_of_the_models_is_checked_in_a_forecast_sport(built):
+    for game in built.slate["games"]:
+        game.update(elo=None, points_rest=None)
+    built.slate["models"] = {"results_through": None, "status": "fine", "predictions_day": None}
+
+    assert validate.slate_problems(built.slate, forecast=True) == [
+        "slate models: status is 'fine', which is not one of ok, degraded"
+    ]
+    assert validate.slate_problems(built.slate) == []
+
+
+def test_what_the_state_notes_of_the_models_is_checked_with_the_state(built):
+    built.state["models"] = None
+    assert validate.state_problems(built.state) == []
+
+    built.state["models"] = {"built_at": "2026-10-21T09:10:07Z", "results_through": None}
+    assert validate.state_problems(built.state) == [
+        "state models: status is None, which is not one of ok, degraded",
+        "state models: elo must give each of the 30 teams a whole-number rating",
+    ]

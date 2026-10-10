@@ -12,7 +12,7 @@ from collections import Counter
 from datetime import datetime
 from pathlib import PurePosixPath
 
-from pipeline import grading, model
+from pipeline import grading, model, validate_forecasts
 from pipeline.checks import (
     as_object,
     is_probability,
@@ -41,16 +41,22 @@ RESULT_FIELDS = [
 MODEL_FIELDS = [field for name in model.NAMES for field in (name, f"{name}_verdict")]
 
 
-def problems(slate: object, state: object, history_before: str, history_after: str) -> list[str]:
-    """Everything wrong with one snapshot: the board, the state and the day's history file."""
+def problems(
+    slate: object, state: object, history_before: str, history_after: str, *, forecast: bool = False
+) -> list[str]:
+    """
+    Everything wrong with one snapshot: the board, the state and the day's
+    history file. `forecast` says whether the sport is one that the models
+    forecast, whose board carries their forecasts.
+    """
     return (
-        slate_problems(slate)
+        slate_problems(slate, forecast=forecast)
         + state_problems(state)
         + history_problems(history_before, history_after)
     )
 
 
-def slate_problems(slate: object) -> list[str]:
+def slate_problems(slate: object, *, forecast: bool = False) -> list[str]:
     if not isinstance(slate, dict):
         return ["slate: not a JSON object"]
     found = schema_problems(slate, "slate")
@@ -94,6 +100,10 @@ def slate_problems(slate: object) -> list[str]:
                         "and none when n is 1 or lo equals hi"
                     )
         found += _opening_problems(game.get("open"), f"{where} open")
+        if forecast:
+            found += validate_forecasts.game_problems(game, where)
+    if forecast:
+        found += validate_forecasts.board_problems(slate.get("models"))
     if slate.get("record") is not None:
         found += _headline_problems(slate["record"], "slate record")
     found += _recent_problems(slate.get("recent_results"), "slate recent_results")
@@ -131,7 +141,11 @@ def state_problems(state: object) -> list[str]:
         found += _opening_problems(game.get("first"), f"{where} first")
         if game.get("latest") is not None:
             found += line_problems(game["latest"], f"{where} latest", time_field="at")
-    return found + _noted_problems(state.get("results"))
+    return (
+        found
+        + _noted_problems(state.get("results"))
+        + validate_forecasts.note_problems(state.get("models"))
+    )
 
 
 def history_problems(before: str, after: str) -> list[str]:

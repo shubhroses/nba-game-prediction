@@ -11,6 +11,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from pipeline import consensus, feed
+from pipeline.model import elo
+from pipeline.model.season import Season
 from pipeline.timestamps import format_utc, parse_utc
 
 SCHEMA = 1
@@ -41,11 +43,13 @@ def build(
     slot: str,
     next_due: str,
     credits: dict,
+    season: Season | None = None,
 ) -> Snapshot:
     """
     events    the events of one response
     previous  the state the last run wrote, or None on the first run
     now       when the response was received
+    season    for a sport that is forecast, the opening files of its season
 
     The rules:
 
@@ -61,6 +65,12 @@ def build(
     - What the last daily run noted in the state is carried over, and the
       board shows it: the record so far and the recent results. A result
       leaves that list eight days after the start of its game.
+    - In a sport that is forecast, what the daily run noted of the models
+      is carried over as well, and every game on the board is given Elo's
+      chance. A game of the day whose forecasts are frozen is given those
+      forecasts, of both models. Any other game is given what the Elo
+      ratings of the last daily run make of it now, and nothing of the
+      points-and-rest model, which says nothing before the morning of a game.
     """
     at = format_utc(now)
     games = copy.deepcopy(previous["games"]) if previous else {}
@@ -136,6 +146,17 @@ def build(
         "games": games,
         "results": copy.deepcopy(results),
     }
+    if season is not None:
+        models = previous.get("models") if previous else None
+        frozen = models and models["predictions"]
+        for game in board:
+            game.update(_forecasts(game, models, season))
+        slate["models"] = models and {
+            "results_through": models["results_through"],
+            "status": models["status"],
+            "predictions_day": frozen and frozen["day"],
+        }
+        state["models"] = copy.deepcopy(models)
     return Snapshot(slate=slate, state=state, history=history, dropped=dropped)
 
 
@@ -144,6 +165,33 @@ def recent(lines: list[dict], now: datetime) -> list[dict]:
     oldest_kept = now - RECENT
     kept = [line for line in lines if parse_utc(line["commence_time"]) > oldest_kept]
     return sorted(kept, key=lambda line: (line["commence_time"], line["id"]))
+
+
+def _forecasts(game: dict, models: dict | None, season: Season) -> dict:
+    """
+    What a game on the board carries of the two models, from what the last
+    daily run noted of them: nothing when no daily run has built them yet.
+    """
+    if models is None:
+        return {"elo": None, "points_rest": None}
+    fixture = season.game(parse_utc(game["commence_time"]), game["home"], game["away"])
+    frozen = models["predictions"]
+    if frozen and frozen["day"] == fixture.day.isoformat():
+        for forecast in frozen["games"]:
+            if (forecast["id"], forecast["home"], forecast["away"]) == (
+                game["id"],
+                fixture.home,
+                fixture.away,
+            ):
+                return {
+                    "elo": {"p_home": forecast["elo"]["p_home"]},
+                    "points_rest": copy.deepcopy(forecast["points_rest"]),
+                }
+    ratings = models["elo"]
+    chance = elo.win_probability(
+        ratings[fixture.home], ratings[fixture.away], season.elo_home_court(fixture)
+    )
+    return {"elo": {"p_home": published(chance)}, "points_rest": None}
 
 
 def published(probability: float) -> float:
