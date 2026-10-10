@@ -1,6 +1,8 @@
 import React from 'react';
 import { ReactNode } from 'react';
 
+const REPOSITORY = 'https://github.com/shubhroses/nba-game-prediction';
+
 interface LayoutProps {
   children: ReactNode;
 }
@@ -17,11 +19,11 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </div>
       </header>
-      
+
       <main className="container mx-auto py-8 px-4">
         {children}
       </main>
-      
+
       <footer className="bg-gray-800 text-gray-300">
         <div className="container mx-auto py-6 px-4">
           <div className="text-center mb-4">
@@ -32,14 +34,11 @@ export default function Layout({ children }: LayoutProps) {
           <div className="flex justify-between items-center border-t border-gray-700 pt-4">
             <p className="text-sm">© {new Date().getFullYear()} NBA Predictions App</p>
             <div className="flex space-x-4">
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                Terms
+              <a href={REPOSITORY} className="text-gray-400 hover:text-white transition-colors">
+                Source code
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                Privacy
-              </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                About
+              <a href={`${REPOSITORY}/tree/data`} className="text-gray-400 hover:text-white transition-colors">
+                Data
               </a>
             </div>
           </div>
