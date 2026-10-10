@@ -14,8 +14,10 @@ Exit status:
 
 Each sport is taken on its own, in two steps. The first is the daily work,
 which is due once a day, in the day's first slot: the games that are over are
-recorded with their final scores and graded. The second is the snapshot. Each
-step is fetched, built, validated and written before the next one is started.
+recorded with their final scores and graded, and for a sport that is forecast
+the two models are rebuilt from the results and their forecasts for the games
+of the day are frozen. The second is the snapshot. Each step is fetched,
+built, validated and written before the next one is started.
 For a step that fails nothing is written, and what was written for another
 step or another sport stays. The exit status is that of the first failure.
 """
@@ -26,14 +28,29 @@ import re
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import date, datetime, timezone
+from pathlib import Path, PurePosixPath
 
-from pipeline import config, oddsapi, results, schedule, snapshot, store, validate
+from pipeline import (
+    config,
+    forecasts,
+    model,
+    oddsapi,
+    results,
+    schedule,
+    snapshot,
+    store,
+    validate,
+    validate_forecasts,
+)
+from pipeline.model import season
 from pipeline.timestamps import parse_utc
 
 DONE, USAGE, INVALID, REFUSED, UNREACHABLE = 0, 1, 2, 3, 4
 KEY_VARIABLE = "ODDS_API_KEY"
+# The workflow puts the commit of the code it runs here, and the model files
+# name it.
+COMMIT_VARIABLE = "PIPELINE_COMMIT"
 
 Clock = Callable[[], datetime]
 
@@ -60,6 +77,7 @@ class _Slot:
     in_time: bool  # whether a run that starts now may still ask for this slot
     run_started: datetime
     daily: str  # the id of the slot the daily work belongs to: this one, or the last such before it
+    day: date  # the New York date of that slot, which is the day whose games it forecasts
 
     @property
     def is_daily(self) -> bool:
@@ -73,7 +91,12 @@ class _Graded:
     sport: config.Sport
     response: oddsapi.OddsResponse
     built: results.Results
+    forecast: forecasts.Forecasts | None  # of the two models, in a sport that is forecast
+    state: dict  # the state as the daily work leaves it
     files: dict[str, str]  # path in the data directory -> new content
+    # What kept the models from being built, when the results were recorded
+    # without them: a _Stop, or an error that nobody foresaw.
+    trouble: Exception | None = None
 
 
 @dataclass(frozen=True)
@@ -93,6 +116,8 @@ class _Run:
     # The steps that were taken, in order, and written unless this is a dry run.
     done: list[_Graded | _Capture] = field(default_factory=list)
     failed: list[config.Sport] = field(default_factory=list)  # a step of theirs failed
+    # Their results were recorded and their models were not built.
+    without_models: list[config.Sport] = field(default_factory=list)
     given_up: list[config.Sport] = field(default_factory=list)  # too late to ask for their slot
     results_given_up: list[config.Sport] = field(default_factory=list)  # or for its daily work
     status: int = DONE  # the status of the first failure
@@ -121,12 +146,14 @@ def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
 
     now = clock()
     current, following = schedule.current_and_next(now)
+    daily = schedule.last_daily(now)
     slot = _Slot(
         id=schedule.slot_id(current),
         next_due=schedule.slot_id(following),
         in_time=schedule.in_time(current, now),
         run_started=now,
-        daily=schedule.slot_id(schedule.last_daily(now)),
+        daily=schedule.slot_id(daily),
+        day=daily.astimezone(schedule.ZONE).date(),
     )
     run = _Run()
     try:
@@ -162,6 +189,8 @@ def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) ->
         no_snapshot = [sport for sport in run.failed if sport in graded and sport not in captured]
         if no_results:
             _complain(f"The results for {_names(no_results)} were not recorded.")
+        if run.without_models:
+            _complain(f"The models for {_names(run.without_models)} were not built.")
         if no_snapshot:
             _complain(f"The snapshot for {_names(no_snapshot)} was not taken.")
 
@@ -175,6 +204,7 @@ def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: 
     """
     data_dir = args.data_dir
     sports = _selected(args, slot)
+    openings = {sport: _opening_files(sport) for sport in sports}
     if not args.dry_run:
         # A dry run changes nothing in the data directory, not even this.
         for name in store.remove_leftovers(data_dir):
@@ -229,10 +259,12 @@ def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: 
     _say(f"Slot {slot.id}.", _next(slot))
     unforeseen = None
     for sport, results_due, snapshot_due in due:
-        state = previous[sport]
+        state, opening = previous[sport], openings[sport]
         if results_due:
             try:
-                graded = _grade(data_dir, sport, state, api_key, slot, clock, dry_run=args.dry_run)
+                graded = _grade(
+                    data_dir, sport, opening, state, api_key, slot, clock, dry_run=args.dry_run
+                )
             except _Stop as stop:
                 _fail(run, sport, stop)
             except Exception as error:
@@ -243,10 +275,19 @@ def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: 
                 run.failed.append(sport)
             else:
                 run.done.append(graded)
-                state = graded.built.state
+                state = graded.state
+                if graded.trouble is not None:
+                    run.without_models.append(sport)
+                    if isinstance(graded.trouble, _Stop):
+                        _complain(*graded.trouble.lines)
+                        run.status = run.status or graded.trouble.status
+                    else:
+                        unforeseen = unforeseen or graded.trouble
         if snapshot_due:
             try:
-                capture = _take(data_dir, sport, state, api_key, slot, clock, dry_run=args.dry_run)
+                capture = _take(
+                    data_dir, sport, opening, state, api_key, slot, clock, dry_run=args.dry_run
+                )
             except _Stop as stop:
                 _fail(run, sport, stop)
             else:
@@ -260,6 +301,7 @@ def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: 
 def _grade(
     data_dir: Path,
     sport: config.Sport,
+    opening: season.Season | None,
     previous: dict | None,
     api_key: str,
     slot: _Slot,
@@ -271,11 +313,20 @@ def _grade(
     One sport's daily work from its request to its files on disk: every game
     that is over and not yet recorded gets a result line with its final score
     and the verdict on its last line from before the start, and the record is
-    rebuilt. Raises _Stop when something fails, and nothing of the daily work
+    rebuilt. For a sport that is forecast, the line also gets the verdict on
+    what each model said that morning, the models are rebuilt from every
+    result of the season, and their forecasts for the games of the day are
+    frozen. Raises _Stop when something fails, and nothing of the daily work
     is written then.
+
+    The models come second. When they cannot be built or do not pass their
+    checks, the results are written without them, and what went wrong is
+    handed back with them: a night's results can only be had for three days,
+    and a fault in the models is no reason to lose them.
     """
     # As in _take, what will be added to is checked before the request.
     before = _results_on_disk(data_dir, sport)
+    frozen = _predictions_on_disk(data_dir, sport) if opening else {}
     try:
         response = oddsapi.fetch_scores(sport.key, api_key)
     except oddsapi.Refused as error:
@@ -288,54 +339,129 @@ def _grade(
             f"The provider gave no usable answer to the scores request for {sport.key}: {error}.",
         ) from None
 
+    received = clock()
     recorded = [line for content in before.values() for line in store.from_ndjson(content)]
+    # The forecasts that each day's file froze, by day, for the results to be held against.
+    published = {
+        PurePosixPath(path).stem: store.from_json(content) for path, content in frozen.items()
+    }
     built = results.build(
         response.events,
         previous,
         recorded,
-        clock(),
+        received,
         sport=sport.key,
         slot=slot.daily,
         credits={"remaining": response.remaining, "used": response.used, "last": response.last},
+        predictions=published if opening else None,
     )
     after = dict(before)
     for line in built.lines:
         path = store.results_path(sport.prefix, parse_utc(line["commence_time"]).date())
         after[path] = after.get(path, "") + store.to_ndjson([line])
 
-    found = validate.results_problems(before, after)
+    every_line = recorded + built.lines
+    models = model.NAMES if opening else ()
+    found = validate.results_problems(before, after, forecast=opening is not None)
     if not found:
         # The recounts take every line to be sound, so they come after the check of the lines.
-        every_line = recorded + built.lines
-        found = validate.record_problems(built.record, every_line)
-        found += validate.board_problems(built.state["results"]["record"], every_line)
+        found = validate.record_problems(built.record, every_line, models=models)
+        found += validate.board_problems(
+            built.state["results"]["record"], every_line, models=models
+        )
     found += validate.state_problems(built.state)
     if found:
         raise _Stop(
             INVALID, f"Validation failed for the results of {sport.key}:", *_indented(found)
         )
 
+    forecast, state, trouble, published_now = None, built.state, None, {}
+    if opening:
+        try:
+            forecast, published_now = _forecast(
+                sport, opening, every_line, built.state, received, slot, frozen
+            )
+            state = forecast.state
+        except Exception as error:
+            trouble = error
+
     # The state is listed last, for the reason given in _capture: if the
     # moves were interrupted, the daily work would not be on record and the
     # next run would do it again. It would find the games that were written
-    # already recorded, add none of them twice and rebuild the record.
+    # already recorded and add none of them twice, find the forecasts of the
+    # day published and leave them as they are, and rebuild the rest.
     files = {path: content for path, content in after.items() if content != before.get(path)}
+    files |= published_now
+    if forecast:
+        files[store.model_path(sport.prefix)] = store.to_json(forecast.model)
     files[store.record_path(sport.prefix)] = store.to_json(built.record)
-    files[store.state_path(sport.prefix)] = store.to_json(built.state)
-    graded = _Graded(sport=sport, response=response, built=built, files=files)
+    files[store.state_path(sport.prefix)] = store.to_json(state)
+    graded = _Graded(
+        sport=sport,
+        response=response,
+        built=built,
+        forecast=forecast,
+        state=state,
+        files=files,
+        trouble=trouble,
+    )
     _say(_results_summary(graded))
     for reason in built.dropped:
         _say(f"  dropped {reason}")
     for reason in built.refused:
         _say(f"  not graded {reason}")
+    if forecast:
+        _say(_models_summary(graded, slot))
+        for reason in forecast.reasons:
+            _say(f"  points-and-rest left out: {reason}")
     if not dry_run:
         _write(data_dir, sport, files, "results")
     return graded
 
 
+def _forecast(
+    sport: config.Sport,
+    opening: season.Season,
+    lines: list[dict],
+    state: dict,
+    received: datetime,
+    slot: _Slot,
+    frozen: dict[str, str],
+) -> tuple[forecasts.Forecasts, dict[str, str]]:
+    """
+    The models' part of a sport's daily work, built and validated: what goes
+    into the model file and the state, and the predictions file of the day
+    with its path, when one is to be written. `lines` are all the result
+    lines, `state` is the state with the daily work noted, and `frozen` are
+    the predictions files on disk. Raises _Stop when validation refuses what
+    was built.
+    """
+    today = store.predictions_path(sport.prefix, slot.day)
+    forecast = forecasts.build(
+        lines,
+        state,
+        received,
+        sport=sport.key,
+        season=opening,
+        day=slot.day,
+        frozen=store.from_json(frozen[today]) if today in frozen else None,
+        commit=_commit(),
+    )
+    published_now = {}
+    if forecast.predictions is not None:
+        published_now[today] = store.to_json(forecast.predictions)
+    found = validate_forecasts.model_problems(forecast.model, lines, opening)
+    found += validate_forecasts.predictions_problems(frozen, frozen | published_now)
+    found += validate.state_problems(forecast.state)
+    if found:
+        raise _Stop(INVALID, f"Validation failed for the models of {sport.key}:", *_indented(found))
+    return forecast, published_now
+
+
 def _take(
     data_dir: Path,
     sport: config.Sport,
+    opening: season.Season | None,
     previous: dict | None,
     api_key: str,
     slot: _Slot,
@@ -352,7 +478,7 @@ def _take(
     # file that will be added to. A request whose result is then refused has
     # spent its credit for nothing.
     _history_on_disk(data_dir, sport, slot.run_started)
-    capture = _capture(data_dir, sport, previous, api_key, slot, clock)
+    capture = _capture(data_dir, sport, opening, previous, api_key, slot, clock)
     _say(_summary(capture))
     for reason in capture.built.dropped:
         _say(f"  dropped {reason}")
@@ -386,6 +512,7 @@ def _fail(run: _Run, sport: config.Sport | None, stop: _Stop) -> None:
 def _capture(
     data_dir: Path,
     sport: config.Sport,
+    opening: season.Season | None,
     previous: dict | None,
     api_key: str,
     slot: _Slot,
@@ -415,11 +542,12 @@ def _capture(
         slot=slot.id,
         next_due=slot.next_due,
         credits={"remaining": response.remaining, "used": response.used, "last": response.last},
+        season=opening,
     )
     history_file, before = _history_on_disk(data_dir, sport, captured_at)
     after = before + store.to_ndjson(built.history)
 
-    found = validate.problems(built.slate, built.state, before, after)
+    found = validate.problems(built.slate, built.state, before, after, forecast=opening is not None)
     if found:
         raise _Stop(INVALID, f"Validation failed for {sport.key}:", *_indented(found))
 
@@ -496,6 +624,48 @@ def _results_on_disk(data_dir: Path, sport: config.Sport) -> dict[str, str]:
     return before
 
 
+def _predictions_on_disk(data_dir: Path, sport: config.Sport) -> dict[str, str]:
+    """The path and the content of every predictions file of a sport, checked."""
+    frozen = {}
+    for path in store.predictions_paths(data_dir, sport.prefix):
+        try:
+            frozen[path] = store.read_text(data_dir, path)
+        except ValueError:
+            raise _Stop(INVALID, f"{path} is not UTF-8 text.") from None
+    found = validate_forecasts.predictions_problems(frozen, frozen)
+    if found:
+        raise _Stop(
+            INVALID,
+            f"The forecasts in {sport.prefix}/predictions/ cannot be continued from:",
+            *_indented(found),
+        )
+    return frozen
+
+
+def _opening_files(sport: config.Sport) -> season.Season | None:
+    """The opening files of the season a sport is forecast from. None for a sport that is not."""
+    if sport.season is None:
+        return None
+    try:
+        return season.load(sport.season)
+    except (OSError, ValueError, KeyError) as error:
+        raise _Stop(
+            USAGE,
+            f"The opening files of season {sport.season} in pipeline/model/ cannot be used "
+            f"for {sport.key}: {type(error).__name__}: {error}.",
+        ) from None
+
+
+def _commit() -> str | None:
+    """
+    The commit of the code that runs, as the workflow passes it on. None
+    when the environment does not say, as on a developer's machine, or says
+    something that is not a commit.
+    """
+    commit = os.environ.get(COMMIT_VARIABLE, "").strip()
+    return commit if re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", commit) else None
+
+
 def _is_due(slot: _Slot, previous: dict | None) -> bool:
     return schedule.is_due(slot.id, previous["last_slot"] if previous else None)
 
@@ -538,6 +708,22 @@ def _results_summary(graded: _Graded) -> str:
     )
 
 
+def _models_summary(graded: _Graded, slot: _Slot) -> str:
+    made, built = graded.forecast, graded.forecast.model
+    which = "Elo and points-and-rest" if not made.reasons else "Elo alone"
+    through = f" through {built['results_through']}" if built["games"] else ""
+    if made.predictions is not None:
+        frozen = f"{_forecasts(graded)} for {slot.day}"
+    elif made.state["models"]["predictions"] is not None:
+        frozen = f"the forecasts for {slot.day} are published already"
+    else:
+        frozen = f"no game to forecast for {slot.day}"
+    return (
+        f"{graded.sport.key} -> {graded.sport.prefix}/: {which} from "
+        f"{built['games']} {'result' if built['games'] == 1 else 'results'}{through}, {frozen}."
+    )
+
+
 def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
     """
     The step outputs. `changed` says whether anything was written, and
@@ -546,7 +732,9 @@ def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
     counts are totals over the sports of which that step was taken in this
     run, and the credits remaining and used are those of the last response.
     `failed`, `given_up` and `results_given_up` name sports, and are left out
-    when there is none to name.
+    when there is none to name. `models` and `forecasts` are there when the
+    daily work was done for a sport that is forecast: whether both models
+    were built or Elo alone, and how many games got a forecast in this run.
     """
     graded, captures = run.graded, run.captures
     outputs = {"changed": "true" if run.done and not dry_run else "false", "slot": slot.id}
@@ -555,6 +743,13 @@ def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
             "results": sum(len(step.built.lines) for step in graded),
             "results_not_graded": sum(_not_graded(step) for step in graded),
             "results_dropped": sum(len(step.built.dropped) for step in graded),
+        }
+    forecast = [step for step in graded if step.forecast]
+    if forecast:
+        left_out = any(step.forecast.reasons for step in forecast)
+        outputs |= {
+            "models": model.DEGRADED if left_out else model.OK,
+            "forecasts": sum(_forecast_count(step) for step in forecast),
         }
     if captures:
         outputs |= {
@@ -572,8 +767,9 @@ def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
         }
         if not dry_run:
             outputs["written"] = _written(run)
-    if run.failed:
-        outputs["failed"] = _names(run.failed)
+    failed = run.failed + [sport for sport in run.without_models if sport not in run.failed]
+    if failed:
+        outputs["failed"] = _names(failed)
     if run.given_up:
         outputs["given_up"] = _names(run.given_up)
     if run.results_given_up:
@@ -630,6 +826,18 @@ def _not_graded(graded: _Graded) -> int:
     return sum(line["market"] is None for line in graded.built.lines)
 
 
+def _forecast_count(graded: _Graded) -> int:
+    """How many games got a forecast in this run: none when the day's file was there already."""
+    made = graded.forecast.predictions
+    return len(made["games"]) if made else 0
+
+
+def _forecasts(graded: _Graded) -> str:
+    """The number of games a daily run forecast, in words: "1 game forecast", "9 games forecast"."""
+    count = _forecast_count(graded)
+    return f"{count} {'game' if count == 1 else 'games'} forecast"
+
+
 def _next(slot: _Slot) -> str:
     return f"The next slot starts at {slot.next_due}."
 
@@ -666,7 +874,7 @@ class _Parser(argparse.ArgumentParser):
 
 def _parser() -> argparse.ArgumentParser:
     parser = _Parser(
-        prog="python -m pipeline", description="Odds snapshots and results of NBA games."
+        prog="python -m pipeline", description="Odds snapshots, results and forecasts of NBA games."
     )
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
     command = commands.add_parser(
@@ -674,7 +882,8 @@ def _parser() -> argparse.ArgumentParser:
         help="record the sportsbook consensus for the upcoming games",
         description=(
             "Record the sportsbook consensus for the upcoming games, if a snapshot is due, "
-            "and before it the final scores of the games that are over, if the daily work is. "
+            "and before it the final scores of the games that are over and the forecasts of "
+            "the two models for the games of the day, if the daily work is. "
             f"The key for The Odds API is read from the environment variable {KEY_VARIABLE}."
         ),
     )

@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from pipeline import __main__ as command
-from pipeline import schedule
+from pipeline import model, schedule
 
 WORKFLOWS = Path(__file__).resolve().parent.parent / ".github" / "workflows"
 PIPELINE = (WORKFLOWS / "pipeline.yml").read_text()
@@ -134,7 +134,7 @@ def test_every_output_the_workflow_reads_is_one_the_command_writes():
     source = inspect.getsource(command._outputs)
     written = set(re.findall(r'"(\w+)": ', source)) | set(re.findall(r'outputs\["(\w+)"\]', source))
 
-    assert len(written) == 15
+    assert len(written) == 17
     assert read <= written
     # All of them but `written`, which is for the message of the commit, are in the summary.
     summary = step_named("Write the job summary")
@@ -156,6 +156,19 @@ def test_the_summary_gives_the_results_of_a_run_that_did_the_daily_work():
     assert 'if [ -n "$GAMES" ]; then\n                echo "- Games: $GAMES,' in summary
     # A run that was too late for the daily work says so.
     assert 'if [ -n "$RESULTS_GIVEN_UP" ]; then\n' in summary
+
+
+def test_the_summary_says_whether_both_models_were_built_or_elo_alone():
+    summary = step_named("Write the job summary")
+
+    assert "          MODELS: ${{ steps.snapshot.outputs.models }}\n" in summary
+    assert "          FORECASTS: ${{ steps.snapshot.outputs.forecasts }}\n" in summary
+    # The two words are the ones the command writes.
+    assert (model.OK, model.DEGRADED) == ("ok", "degraded")
+    assert 'if [ "$MODELS" = "ok" ]; then\n                echo "- Models: both rebuilt' in summary
+    assert 'elif [ -n "$MODELS" ]; then\n                echo "- Models: Elo alone,' in summary
+    # Both lines say how many games were forecast.
+    assert summary.count("Games forecast today: $FORECASTS.") == 2
 
 
 def test_a_step_that_fails_fails_the_job():

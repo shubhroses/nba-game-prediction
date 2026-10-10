@@ -168,9 +168,10 @@ def test_the_first_run_writes_the_three_files_and_reports_a_change(run, data_dir
         "generated_at": at,
         "slot": EVENING_SLOT,
         "next_due": NIGHT_SLOT,
-        # No daily run has recorded a result yet.
+        # No daily run has recorded a result yet, or built the models.
         "record": None,
         "recent_results": [],
+        "models": None,
     }
     assert [(game["id"], game["home"], game["away"]) for game in slate["games"]] == [
         (EARLY, "BOS", "NYK"),

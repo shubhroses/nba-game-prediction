@@ -7,6 +7,12 @@ record is rebuilt.
 As in test_pipeline_cli.py the command runs against the fake server in
 tests/fake_odds_api.py, with a dummy key and a clock the test sets. Every
 game, price and score is invented, and nothing here reaches The Odds API.
+
+The sport is one that the two models forecast, so the daily work also writes
+the model file and the forecasts of the day. What is in those is the subject
+of test_pipeline_forecasting.py. Here they are counted among the files, and
+the games of Tuesday, which were played before any forecast was made, are
+not graded for either model.
 """
 
 import errno
@@ -19,7 +25,7 @@ from pathlib import Path
 import pytest
 
 from fake_odds_api import FakeOddsApi, event, score_event
-from pipeline import record, results, snapshot, store
+from pipeline import model, record, results, snapshot, store
 from pipeline.__main__ import main
 
 # A made-up value. It is deliberately not shaped like a real key.
@@ -35,6 +41,23 @@ LINES_AT, RECORDED_AT = "2026-10-20T22:10:41Z", "2026-10-21T09:10:07Z"
 EVENING_SLOT = "2026-10-20T18:10-04:00"
 DAILY_SLOT, NEXT_SLOT = "2026-10-21T05:10-04:00", "2026-10-21T09:10-04:00"
 OCTOBER = "v1/results/2026-10.ndjson"
+# What the models say on Wednesday morning, after Tuesday's five results.
+MODELS_BUILT = (
+    "basketball_nba -> v1/: Elo and points-and-rest from 5 results through 2026-10-20, "
+    "1 game forecast for 2026-10-21."
+)
+WROTE_THE_DAILY_WORK = (
+    "Wrote v1/results/2026-10.ndjson, v1/predictions/2026-10-21.json, v1/model.json, "
+    "v1/record.json, v1/state.json."
+)
+# Neither model had said anything about a game before the first daily run.
+NO_FORECAST = {"wins": 0, "losses": 0}
+# The record on the board after Tuesday's five games.
+AFTER_TUESDAY = {
+    "market": {"wins": 2, "losses": 1},
+    "elo": NO_FORECAST,
+    "points_rest": NO_FORECAST,
+}
 # What is on disk when Tuesday evening's and Wednesday morning's snapshots have
 # been taken and no daily work has been recorded.
 FILES_OF_THE_SNAPSHOTS = [
@@ -189,7 +212,8 @@ def test_the_daily_run_records_the_results_and_then_takes_the_snapshot(run, api,
         f"Slot {DAILY_SLOT}. The next slot starts at {NEXT_SLOT}.",
         "basketball_nba -> v1/: 5 results, 1 not graded, 0 dropped. "
         "Credits: 497 remaining, 3 used, 2 spent on this call.",
-        "Wrote v1/results/2026-10.ndjson, v1/record.json, v1/state.json.",
+        MODELS_BUILT,
+        WROTE_THE_DAILY_WORK,
         "basketball_nba -> v1/: 1 game, 1 with a line, 0 dropped. "
         "Credits: 496 remaining, 4 used, 1 spent on this call.",
         "Wrote v1/history/2026-10-21.ndjson, v1/slate.json, v1/state.json.",
@@ -200,6 +224,8 @@ def test_the_daily_run_records_the_results_and_then_takes_the_snapshot(run, api,
         "results": "5",
         "results_not_graded": "1",
         "results_dropped": "0",
+        "models": "ok",
+        "forecasts": "1",
         "games": "1",
         "with_line": "1",
         "dropped": "0",
@@ -211,6 +237,8 @@ def test_the_daily_run_records_the_results_and_then_takes_the_snapshot(run, api,
     assert sorted(tree(data_dir)) == [
         "v1/history/2026-10-20.ndjson",
         "v1/history/2026-10-21.ndjson",
+        "v1/model.json",
+        "v1/predictions/2026-10-21.json",
         "v1/record.json",
         "v1/results/2026-10.ndjson",
         "v1/slate.json",
@@ -229,7 +257,10 @@ def test_each_game_that_is_over_gets_one_line_with_its_score_its_line_and_the_ve
         f'{{"id":"{BOS_NYK.id}","commence_time":"2026-10-20T23:00:00Z","home":"BOS","away":"NYK",'
         f'"home_pts":112,"away_pts":104,"recorded_at":"{RECORDED_AT}",'
         f'"market":{{"p_home":0.532,"lo":0.532,"hi":0.532,"n":1,"at":"{LINES_AT}"}},'
-        '"market_verdict":"favorite_won"}'
+        '"market_verdict":"favorite_won",'
+        # No forecast was published before Tuesday's games.
+        '"elo":null,"elo_verdict":"not_graded",'
+        '"points_rest":null,"points_rest_verdict":"not_graded"}'
     )
     lines = results_in(data_dir)
     # In order of start.
@@ -250,7 +281,7 @@ def test_the_record_is_built_from_the_lines(run, data_dir):
     run(now=MORNING)
 
     built = read(data_dir, "v1/record.json")
-    assert built == record.build(results_in(data_dir), sport=NBA)
+    assert built == record.build(results_in(data_dir), sport=NBA, models=model.NAMES)
     assert (built["since"], built["games"]) == ("2026-10-20", 5)
     market = built["market"]
     assert (market["games"], market["wins"], market["losses"]) == (3, 2, 1)
@@ -261,13 +292,18 @@ def test_the_record_is_built_from_the_lines(run, data_dir):
     assert built["baseline_home"] == {"games": 5, "wins": 3}
     assert [upset["id"] for upset in market["biggest_upsets"]] == [DEN_DAL.id]
     # All five were played on Tuesday evening in New York, the last two after midnight UTC.
+    not_graded = {"wins": 0, "losses": 0, "toss_ups": 0, "not_graded": 5}
     assert built["by_day"] == [
         {
             "day": "2026-10-20",
             "games": 5,
             "market": {"wins": 2, "losses": 1, "toss_ups": 1, "not_graded": 1},
+            "elo": not_graded,
+            "points_rest": not_graded,
         }
     ]
+    assert (built["elo"]["games"], built["elo"]["not_graded"]) == (0, 5)
+    assert (built["points_rest"]["games"], built["points_rest"]["not_graded"]) == (0, 5)
 
 
 @pytest.mark.usefixtures("played")
@@ -279,13 +315,13 @@ def test_the_state_notes_the_daily_work_and_the_board_shows_it(run, data_dir):
     assert state["results"] == {
         "last_slot": DAILY_SLOT,
         "last_run_at": RECORDED_AT,
-        "record": {"market": {"wins": 2, "losses": 1}},
+        "record": AFTER_TUESDAY,
         "recent": results_in(data_dir),
     }
     # The credits are those of the last response, which was the odds.
     assert state["credits"] == {"remaining": 496, "used": 4, "last": 1}
     # The snapshot that followed in the same run put the record on the board.
-    assert slate["record"] == {"market": {"wins": 2, "losses": 1}}
+    assert slate["record"] == AFTER_TUESDAY
     assert slate["recent_results"] == results_in(data_dir)
     assert [game["id"] for game in slate["games"]] == [HOU_SAS.id]
 
@@ -306,7 +342,7 @@ def test_files_from_before_there_was_any_daily_work_are_continued_from(run, data
     assert (result.status, result.asked) == (0, ["scores", "odds"])
     assert [line["market_verdict"] for line in results_in(data_dir)] == VERDICTS
     assert read(data_dir, "v1/state.json")["results"]["last_slot"] == DAILY_SLOT
-    assert read(data_dir, "v1/slate.json")["record"] == {"market": {"wins": 2, "losses": 1}}
+    assert read(data_dir, "v1/slate.json")["record"] == AFTER_TUESDAY
 
 
 @pytest.mark.usefixtures("played")
@@ -387,7 +423,7 @@ def test_the_next_mornings_run_adds_what_is_new_and_changes_no_line(run, api, da
         ("2026-10-20", 5),
         ("2026-10-21", 1),
     ]
-    assert read(data_dir, "v1/slate.json")["record"] == {"market": {"wins": 2, "losses": 2}}
+    assert read(data_dir, "v1/slate.json")["record"]["market"] == {"wins": 2, "losses": 2}
 
 
 @pytest.mark.usefixtures("played")
@@ -405,11 +441,18 @@ def test_the_same_scores_on_another_morning_change_neither_the_results_nor_the_r
         "0",
         "v1 0 results and 0 games",
     )
-    assert result.out.splitlines()[1:3] == [
+    assert result.out.splitlines()[1:5] == [
         "basketball_nba -> v1/: 0 results, 0 not graded, 0 dropped. "
         "Credits: 494 remaining, 6 used, 2 spent on this call.",
-        "Wrote v1/record.json, v1/state.json.",
+        # Wednesday's game started 33 hours ago and is still not reported as
+        # over. With a result missing, the points-and-rest model is left out.
+        "basketball_nba -> v1/: Elo alone from 5 results through 2026-10-20, "
+        "no game to forecast for 2026-10-22.",
+        "  points-and-rest left out: no result for SAS at HOU, "
+        f"which started at 2026-10-22T00:00:00Z (game {HOU_SAS.id})",
+        "Wrote v1/model.json, v1/record.json, v1/state.json.",
     ]
+    assert result.outputs["models"] == "degraded"
     second = tree(data_dir)
     assert second[OCTOBER] == first[OCTOBER]
     assert second["v1/record.json"] == first["v1/record.json"]
@@ -491,7 +534,8 @@ def test_the_next_trigger_asks_for_the_scores_again_and_not_for_the_odds(run, ap
         f"Slot {DAILY_SLOT}. The next slot starts at {NEXT_SLOT}.",
         "basketball_nba -> v1/: 5 results, 1 not graded, 0 dropped. "
         "Credits: 496 remaining, 4 used, 2 spent on this call.",
-        "Wrote v1/results/2026-10.ndjson, v1/record.json, v1/state.json.",
+        MODELS_BUILT,
+        WROTE_THE_DAILY_WORK,
     ]
     assert result.outputs == {
         "changed": "true",
@@ -499,6 +543,8 @@ def test_the_next_trigger_asks_for_the_scores_again_and_not_for_the_odds(run, ap
         "results": "5",
         "results_not_graded": "1",
         "results_dropped": "0",
+        "models": "ok",
+        "forecasts": "1",
         "credits_remaining": "496",
         "credits_used": "4",
         "credits_spent": "2",
@@ -514,7 +560,7 @@ def test_the_next_trigger_asks_for_the_scores_again_and_not_for_the_odds(run, ap
 
     at_09_10 = run(now=MORNING + timedelta(hours=4))
     assert at_09_10.asked == ["odds"]
-    assert read(data_dir, "v1/slate.json")["record"] == {"market": {"wins": 2, "losses": 1}}
+    assert read(data_dir, "v1/slate.json")["record"] == AFTER_TUESDAY
     assert len(read(data_dir, "v1/slate.json")["recent_results"]) == 5
 
 
@@ -580,7 +626,8 @@ def test_when_the_snapshot_fails_the_results_are_still_recorded_and_the_run_fail
     assert result.out.splitlines()[1:] == [
         "basketball_nba -> v1/: 5 results, 1 not graded, 0 dropped. "
         "Credits: 497 remaining, 3 used, 2 spent on this call.",
-        "Wrote v1/results/2026-10.ndjson, v1/record.json, v1/state.json.",
+        MODELS_BUILT,
+        WROTE_THE_DAILY_WORK,
     ]
     assert result.err.splitlines() == [
         "The provider gave no usable answer for basketball_nba: HTTP 503.",
@@ -596,7 +643,7 @@ def test_when_the_snapshot_fails_the_results_are_still_recorded_and_the_run_fail
     api.status = 200
     after = run(now=MORNING + timedelta(minutes=30))
     assert (after.status, after.asked, after.outputs["written"]) == (0, ["odds"], "v1 1 game")
-    assert read(data_dir, "v1/slate.json")["record"] == {"market": {"wins": 2, "losses": 1}}
+    assert read(data_dir, "v1/slate.json")["record"] == AFTER_TUESDAY
 
 
 @pytest.mark.usefixtures("played")
@@ -659,6 +706,7 @@ def test_a_dry_run_does_the_daily_work_and_writes_nothing(run, data_dir):
         f"Slot {DAILY_SLOT}. The next slot starts at {NEXT_SLOT}.",
         "basketball_nba -> v1/: 5 results, 1 not graded, 0 dropped. "
         "Credits: 497 remaining, 3 used, 2 spent on this call.",
+        MODELS_BUILT,
         "basketball_nba -> v1/: 1 game, 1 with a line, 0 dropped. "
         "Credits: 496 remaining, 4 used, 1 spent on this call.",
         "Dry run: nothing was written.",
@@ -732,17 +780,16 @@ def test_the_results_of_two_months_go_into_two_files(run, api, data_dir):
 
     assert result.status == 0
     assert (
-        "Wrote v1/results/2026-10.ndjson, v1/results/2026-11.ndjson, v1/record.json" in result.out
+        "Wrote v1/results/2026-10.ndjson, v1/results/2026-11.ndjson, v1/model.json, v1/record.json"
+        in result.out
     )
     assert [line["id"] for line in results_in(data_dir)] == ["7" * 32]
     assert [line["id"] for line in results_in(data_dir, "v1/results/2026-11.ndjson")] == ["8" * 32]
     # Both belong to the same day in New York.
+    not_graded = {"wins": 0, "losses": 0, "toss_ups": 0, "not_graded": 2}
     assert read(data_dir, "v1/record.json")["by_day"] == [
-        {
-            "day": "2026-10-31",
-            "games": 2,
-            "market": {"wins": 0, "losses": 0, "toss_ups": 0, "not_graded": 2},
-        }
+        {"day": "2026-10-31", "games": 2, "market": not_graded, "elo": not_graded}
+        | {"points_rest": not_graded}
     ]
 
 
@@ -821,7 +868,9 @@ def test_wins_and_losses_for_the_board_that_differ_from_a_recount_are_refused(
 ):
     # A bug in what the state notes for the board: the wins and the losses change places.
     monkeypatch.setattr(
-        record, "headline", lambda built, models=(): {"market": {"wins": 1, "losses": 2}}
+        record,
+        "headline",
+        lambda built, models: AFTER_TUESDAY | {"market": {"wins": 1, "losses": 2}},
     )
 
     result = run(now=MORNING)
@@ -888,9 +937,9 @@ def test_lines_that_a_failed_write_left_behind_are_not_added_a_second_time(
     assert result.outputs["results"] == "0"
     assert (data_dir / OCTOBER).read_text() == left_behind
     state = read(data_dir, "v1/state.json")
-    assert state["results"]["record"] == {"market": {"wins": 2, "losses": 1}}
+    assert state["results"]["record"] == AFTER_TUESDAY
     assert [line["id"] for line in state["results"]["recent"]] == [game.id for game in TUESDAY]
-    assert read(data_dir, "v1/slate.json")["record"] == {"market": {"wins": 2, "losses": 1}}
+    assert read(data_dir, "v1/slate.json")["record"] == AFTER_TUESDAY
 
 
 @pytest.mark.parametrize(

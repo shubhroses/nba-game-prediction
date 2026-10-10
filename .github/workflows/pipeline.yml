@@ -2,8 +2,10 @@ name: Odds snapshot
 
 # Records what US sportsbooks imply about each upcoming NBA game and, once a
 # day, how the games that are over ended and whether the sportsbooks' favorite
-# won. Commits both to the data branch. pipeline/README.md describes the job
-# and its files.
+# won. The same daily run rebuilds the two models from the results of the
+# season, freezes their forecasts for the games of the day and grades the
+# forecasts of the games that are over. Commits all of it to the data branch.
+# pipeline/README.md describes the job and its files.
 
 on:
   schedule:
@@ -156,6 +158,8 @@ jobs:
           RESULTS: ${{ steps.snapshot.outputs.results }}
           RESULTS_NOT_GRADED: ${{ steps.snapshot.outputs.results_not_graded }}
           RESULTS_DROPPED: ${{ steps.snapshot.outputs.results_dropped }}
+          MODELS: ${{ steps.snapshot.outputs.models }}
+          FORECASTS: ${{ steps.snapshot.outputs.forecasts }}
           GAMES: ${{ steps.snapshot.outputs.games }}
           WITH_LINE: ${{ steps.snapshot.outputs.with_line }}
           DROPPED: ${{ steps.snapshot.outputs.dropped }}
@@ -172,6 +176,11 @@ jobs:
               echo "- Slot: \`$SLOT\`"
               if [ -n "$RESULTS" ]; then
                 echo "- Results: $RESULTS recorded, of which $RESULTS_NOT_GRADED not graded. Dropped: $RESULTS_DROPPED."
+              fi
+              if [ "$MODELS" = "ok" ]; then
+                echo "- Models: both rebuilt from the results of the season. Games forecast today: $FORECASTS."
+              elif [ -n "$MODELS" ]; then
+                echo "- Models: Elo alone, because the results did not pass the checks. Games forecast today: $FORECASTS. The log of the step says which check failed."
               fi
               if [ -n "$GAMES" ]; then
                 echo "- Games: $GAMES, of which $WITH_LINE with a line. Dropped: $DROPPED."
