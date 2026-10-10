@@ -1,9 +1,15 @@
 """
 Tests for pipeline/model/elo.py: the rule against updates worked out by
-hand. The games are invented.
+hand, and against a season of the ratings that FiveThirtyEight published.
+
+The games of the hand-worked tests are invented. The season is in
+tests/fixtures/fivethirtyeight_nba_elo_2022_23.csv, and the file next to it
+says where it comes from and under which license.
 """
 
+import csv
 from datetime import date, timedelta
+from pathlib import Path
 
 import pytest
 
@@ -11,6 +17,9 @@ from pipeline.model import elo
 from pipeline.model.season import Final
 
 OPENING_DAY = date(2026, 10, 20)
+PUBLISHED = Path(__file__).parent / "fixtures" / "fivethirtyeight_nba_elo_2022_23.csv"
+# FiveThirtyEight gave the home team 100 points. The pipeline gives it 40.
+FIVETHIRTYEIGHT_HOME_COURT = 100.0
 
 
 def final(home, away, home_pts, away_pts, day=OPENING_DAY, neutral=False):
@@ -170,3 +179,80 @@ def test_between_seasons_a_rating_gives_up_a_quarter_of_its_distance_to_1505():
     carried = elo.carried_over({"NYK": 1705, "WAS": 1305, "MIA": 1505}, mean=1505, reversion=0.25)
 
     assert carried == {"NYK": 1655.0, "WAS": 1355.0, "MIA": 1505.0}
+
+
+@pytest.fixture(scope="module")
+def published():
+    """The 1,320 games of 2022-23 as FiveThirtyEight published them, in order of date."""
+    with PUBLISHED.open(newline="") as file:
+        return list(csv.DictReader(file))
+
+
+def home_court_of(row):
+    return 0.0 if row["neutral"] == "1" else FIVETHIRTYEIGHT_HOME_COURT
+
+
+def test_the_published_season_is_the_whole_of_2022_23(published):
+    assert len(published) == 1320
+    assert (published[0]["date"], published[-1]["date"]) == ("2022-10-18", "2023-06-12")
+    assert {row["season"] for row in published} == {"2023"}
+    assert len({row["team1"] for row in published} | {row["team2"] for row in published}) == 30
+    # Two games were played on a neutral floor, in Mexico City and in Paris.
+    assert [row["date"] for row in published if row["neutral"] == "1"] == [
+        "2022-12-17",
+        "2023-01-19",
+    ]
+
+
+def test_every_published_chance_is_the_one_the_formula_gives(published):
+    for row in published:
+        chance = elo.win_probability(
+            float(row["elo1_pre"]), float(row["elo2_pre"]), home_court_of(row)
+        )
+
+        assert chance == pytest.approx(float(row["elo_prob1"]), abs=1e-12), row
+
+
+def test_every_published_rating_after_a_game_is_the_one_the_rule_gives(published):
+    for row in published:
+        home, away = float(row["elo1_pre"]), float(row["elo2_pre"])
+
+        gain = elo.home_gain(
+            home, away, int(row["score1"]), int(row["score2"]), k=20, home_court=home_court_of(row)
+        )
+
+        # The file gives ratings to eleven decimals or fewer.
+        assert home + gain == pytest.approx(float(row["elo1_post"]), abs=1e-9), row
+        assert away - gain == pytest.approx(float(row["elo2_post"]), abs=1e-9), row
+
+
+def test_replaying_the_published_season_ends_at_the_published_ratings_of_june_2023(published):
+    opening, closing, games = {}, {}, []
+    for row in published:
+        opening.setdefault(row["team1"], float(row["elo1_pre"]))
+        opening.setdefault(row["team2"], float(row["elo2_pre"]))
+        closing[row["team1"]], closing[row["team2"]] = (
+            float(row["elo1_post"]),
+            float(row["elo2_post"]),
+        )
+        games.append(
+            Final(
+                date.fromisoformat(row["date"]),
+                row["team1"],
+                row["team2"],
+                row["neutral"] == "1",
+                int(row["score1"]),
+                int(row["score2"]),
+            )
+        )
+
+    after = elo.replay(opening, games, k=20, home_court=FIVETHIRTYEIGHT_HOME_COURT)
+
+    assert after == pytest.approx(closing, abs=1e-6)
+    # Denver won the title and ended highest. These ratings are where the
+    # opening file of 2026-27 starts from.
+    assert max(after, key=after.get) == "DEN"
+    assert after["DEN"] == pytest.approx(1685.2319, abs=1e-4)
+    # 1,320 games moved every rating and left their sum where it was.
+    assert sum(after.values()) == pytest.approx(sum(opening.values()), abs=1e-6)
+    assert sum(after.values()) == pytest.approx(45148.6155, abs=1e-4)
