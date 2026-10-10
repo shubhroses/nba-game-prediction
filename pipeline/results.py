@@ -1,12 +1,13 @@
 """
 Turns one scores response into what the daily run publishes: a result line
 for each game that is over and not yet recorded, graded against the line the
-sportsbooks gave before the start, the record rebuilt from every line so far,
-and the state with the run noted in it.
+sportsbooks gave before the start and, for a sport that is forecast, against
+what each model said on the morning of the game, the record rebuilt from
+every line so far, and the state with the run noted in it.
 
 build() reads nothing, writes nothing and does not look at the clock. The
-same events, previous state, recorded lines and time always give the same
-result.
+same events, previous state, recorded lines, forecasts and time always give
+the same result.
 """
 
 import copy
@@ -14,11 +15,14 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from pipeline import feed, grading, record, snapshot
+from pipeline import feed, grading, model, record, snapshot
+from pipeline.model.season import game_day
 from pipeline.timestamps import format_utc, parse_utc
 
 # What a result keeps of the line its game is graded against.
 _LINE_FIELDS = ("p_home", "lo", "hi", "n", "at")
+# And of the forecast of each model.
+_FORECAST_FIELDS = {"elo": ("p_home",), "points_rest": ("p_home", "margin")}
 
 
 @dataclass(frozen=True)
@@ -27,7 +31,9 @@ class Results:
     record: dict  # as written to record.json
     state: dict  # as written to state.json
     dropped: list[str]  # one sentence per completed event that was left out, saying why
-    refused: list[str]  # one sentence per stored line that was not graded against, saying why
+    # One sentence per stored line or forecast that its game was not graded
+    # against, saying why.
+    refused: list[str]
 
 
 class _Refused(Exception):
@@ -43,13 +49,16 @@ def build(
     sport: str,
     slot: str,
     credits: dict,
+    predictions: dict | None = None,
 ) -> Results:
     """
-    events    the events of one scores response
-    previous  the state the last run wrote, or None when there is none
-    recorded  every result line that is already on disk
-    now       when the response was received
-    slot      the id of the daily slot that this work is done for
+    events       the events of one scores response
+    previous     the state the last run wrote, or None when there is none
+    recorded     every result line that is already on disk
+    now          when the response was received
+    slot         the id of the daily slot that this work is done for
+    predictions  for a sport that is forecast, the predictions files there
+                 are, each by its day. None for a sport that is not.
 
     The rules:
 
@@ -66,7 +75,14 @@ def build(
       that is for other teams, is refused. Its game is recorded as not
       graded, and the reason is in Results.refused.
     - A game that the state has no line for is recorded as not graded.
+    - In a sport that is forecast, each line also carries what the two
+      models said of its game in the predictions file of the game's day,
+      with a verdict on each. A forecast counts only if it was published
+      before the start the scores give. One that was not stays in the line,
+      and the verdict says that the game was not graded for that model.
+      Forecasts for other teams are refused as a line for other teams is.
     """
+    models = () if predictions is None else model.NAMES
     at = format_utc(now)
     games = previous["games"] if previous else {}
     already = {line["id"] for line in recorded}
@@ -97,29 +113,45 @@ def build(
         except _Refused as reason:
             line = None
             refused.append(f"event {game_id}: {reason}")
-        lines.append(
-            {
-                "id": game_id,
-                "commence_time": format_utc(start),
-                "home": home,
-                "away": away,
-                "home_pts": home_pts,
-                "away_pts": away_pts,
-                "recorded_at": at,
-                "market": line,
-                "market_verdict": grading.verdict(line and line["p_home"], home_pts, away_pts),
-            }
-        )
+        result = {
+            "id": game_id,
+            "commence_time": format_utc(start),
+            "home": home,
+            "away": away,
+            "home_pts": home_pts,
+            "away_pts": away_pts,
+            "recorded_at": at,
+            "market": line,
+            "market_verdict": grading.verdict(line and line["p_home"], home_pts, away_pts),
+        }
+        if predictions is not None:
+            try:
+                forecasts = _forecasts_of_the_morning(predictions, game_id, home, away, start)
+            except _Refused as reason:
+                forecasts = dict.fromkeys(models)
+                refused.append(f"event {game_id}: {reason}")
+            published_at = next((made["published_at"] for made in forecasts.values() if made), None)
+            in_time = published_at is not None and parse_utc(published_at) < start
+            if published_at is not None and not in_time:
+                refused.append(
+                    f"event {game_id}: its forecasts were published at {published_at}, "
+                    f"which is not before the start at {format_utc(start)}"
+                )
+            for name, forecast in forecasts.items():
+                counted = forecast["p_home"] if forecast and in_time else None
+                result[name] = forecast
+                result[f"{name}_verdict"] = grading.verdict(counted, home_pts, away_pts)
+        lines.append(result)
 
     lines.sort(key=lambda line: (line["commence_time"], line["id"]))
     everything = recorded + lines
-    rebuilt = record.build(everything, sport=sport)
+    rebuilt = record.build(everything, sport=sport, models=models)
     state = copy.deepcopy(previous) if previous else _blank_state()
     state["credits"] = dict(credits)
     state["results"] = {
         "last_slot": slot,
         "last_run_at": at,
-        "record": record.headline(rebuilt),
+        "record": record.headline(rebuilt, models),
         "recent": copy.deepcopy(snapshot.recent(everything, now)),
     }
     return Results(lines=lines, record=rebuilt, state=state, dropped=dropped, refused=refused)
@@ -148,6 +180,37 @@ def _line_before_the_start(game: dict | None, home: str, away: str, start: datet
             f"which is not before the start at {format_utc(start)}"
         )
     return {field: line[field] for field in _LINE_FIELDS}
+
+
+def _forecasts_of_the_morning(
+    predictions: dict, game_id: str, home: str, away: str, start: datetime
+) -> dict:
+    """
+    What each model said of a game in the predictions file of the game's
+    day, with the time the file was published: None for a model that has no
+    forecast there. A game is looked for in the file of its own day and in
+    no other, so a game that was put off is held against the forecast of the
+    morning it was played on. Raises _Refused for forecasts that are there
+    and must not be used.
+    """
+    published = predictions.get(game_day(start).isoformat())
+    listed = [game for game in published["games"] if game["id"] == game_id] if published else []
+    if not listed:
+        return dict.fromkeys(model.NAMES)
+    (game,) = listed
+    if (game["home"], game["away"]) != (home, away):
+        raise _Refused(
+            f"its forecasts are for {game['away']} at {game['home']}, "
+            f"and the game was played by {away} at {home}"
+        )
+    return {
+        name: game[name]
+        and {
+            **{field: game[name][field] for field in _FORECAST_FIELDS[name]},
+            "published_at": published["published_at"],
+        }
+        for name in model.NAMES
+    }
 
 
 def _points(event: dict, game_id: str) -> tuple[int, int]:

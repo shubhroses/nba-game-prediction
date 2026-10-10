@@ -438,3 +438,209 @@ def test_the_lines_that_were_recorded_before_are_not_changed():
 
     assert first.lines == untouched
     assert [line["home_pts"] for line in second.lines] == [99]
+
+
+# From here on: a sport that the two models forecast. The builder is handed
+# the predictions files there are, each by its day, and every line it writes
+# carries what the models said of the game on the morning it was played.
+PUBLISHED = "2026-10-20T09:10:07Z"
+EARLY_FORECAST = {
+    "id": EARLY,
+    "commence_time": EARLY_START,
+    "home": "BOS",
+    "away": "NYK",
+    "neutral": False,
+    "elo": {"p_home": 0.3965, "home_rating": 1607, "away_rating": 1720, "home_court": 40},
+    "points_rest": {
+        "p_home": 0.4479,
+        "margin": -1.55,
+        "rating_edge": -2.94,
+        "home_court": 1.39,
+        "rest_edge": 0.0,
+    },
+    "market": None,
+}
+
+
+def predictions(*forecasts, day="2026-10-20", published_at=PUBLISHED):
+    """The predictions files, by day: one file with the forecasts given."""
+    return {day: {"day": day, "published_at": published_at, "games": list(forecasts)}}
+
+
+def build_forecast(scores, published, previous=None, recorded=()):
+    return results.build(
+        scores,
+        previous,
+        list(recorded),
+        NOW,
+        sport="basketball_nba",
+        slot=DAILY_SLOT,
+        credits=CREDITS,
+        predictions=published,
+    )
+
+
+def test_a_result_carries_what_each_model_said_that_morning_and_the_verdict_on_it():
+    # Boston won 112 to 104. Elo had given it 39.65% and the points-and-rest
+    # model 44.79%, so both had picked New York, and both were wrong.
+    built = build_forecast([early_game((112, 104))], predictions(EARLY_FORECAST), state_with())
+
+    (line,) = built.lines
+    assert list(line) == validate.RESULT_FIELDS + validate.MODEL_FIELDS
+    assert list(line)[9:] == ["elo", "elo_verdict", "points_rest", "points_rest_verdict"]
+    assert line["elo"] == {"p_home": 0.3965, "published_at": PUBLISHED}
+    assert line["points_rest"] == {"p_home": 0.4479, "margin": -1.55, "published_at": PUBLISHED}
+    assert (line["elo_verdict"], line["points_rest_verdict"]) == ("upset", "upset")
+    # The sportsbooks' line, 0.532 for Boston, is graded as before.
+    assert (line["market"]["p_home"], line["market_verdict"]) == (0.532, "favorite_won")
+    assert built.refused == []
+
+
+def test_a_models_verdict_follows_the_rules_of_the_sportsbooks_line():
+    def verdicts(elo_chance, rest_chance, points):
+        forecast = copy.deepcopy(EARLY_FORECAST)
+        forecast["elo"]["p_home"], forecast["points_rest"]["p_home"] = elo_chance, rest_chance
+        (line,) = build_forecast([early_game(points)], predictions(forecast)).lines
+        return line["elo_verdict"], line["points_rest_verdict"]
+
+    assert verdicts(0.52, 0.48, (112, 104)) == ("favorite_won", "upset")
+    assert verdicts(0.52, 0.48, (104, 112)) == ("upset", "favorite_won")
+    # Between 48% and 52% a model has no favorite either.
+    assert verdicts(0.5199, 0.4801, (112, 104)) == ("toss_up", "toss_up")
+
+
+@pytest.mark.parametrize("published_at", [EARLY_START, "2026-10-20T23:00:01Z"])
+def test_forecasts_published_at_or_after_the_start_stay_in_the_line_and_are_not_graded(
+    published_at,
+):
+    late = predictions(EARLY_FORECAST, published_at=published_at)
+
+    built = build_forecast([early_game((104, 112))], late)
+
+    (line,) = built.lines
+    assert line["elo"] == {"p_home": 0.3965, "published_at": published_at}
+    assert line["points_rest"]["published_at"] == published_at
+    assert (line["elo_verdict"], line["points_rest_verdict"]) == ("not_graded", "not_graded")
+    assert built.refused == [
+        f"event {EARLY}: its forecasts were published at {published_at}, "
+        f"which is not before the start at {EARLY_START}"
+    ]
+    assert (built.record["elo"]["late"], built.record["elo"]["games"]) == (1, 0)
+
+
+def test_forecasts_published_one_second_before_the_start_are_graded():
+    just_in_time = predictions(EARLY_FORECAST, published_at="2026-10-20T22:59:59Z")
+
+    built = build_forecast([early_game((104, 112))], just_in_time)
+
+    assert built.lines[0]["elo_verdict"] == "favorite_won"
+    assert built.refused == []
+
+
+def test_the_start_that_the_forecasts_are_held_against_is_the_one_the_scores_give():
+    # Published at 22:45, a quarter of an hour before the scheduled start.
+    # The scores say that the game started at 22:40.
+    published = predictions(EARLY_FORECAST, published_at="2026-10-20T22:45:00Z")
+
+    built = build_forecast([early_game(start="2026-10-20T22:40:00Z")], published)
+
+    assert built.lines[0]["elo_verdict"] == "not_graded"
+    assert built.lines[0]["elo"]["p_home"] == 0.3965
+
+
+def test_a_game_without_a_forecast_is_not_graded_for_the_models_and_nothing_is_reported():
+    # No file for the day, a file for another day, and a file without the game.
+    other_game = dict(EARLY_FORECAST, id="0" * 32)
+    for published in ({}, predictions(EARLY_FORECAST, day="2026-10-19"), predictions(other_game)):
+        built = build_forecast([early_game()], published)
+
+        (line,) = built.lines
+        assert list(line) == validate.RESULT_FIELDS + validate.MODEL_FIELDS
+        assert (line["elo"], line["elo_verdict"]) == (None, "not_graded")
+        assert (line["points_rest"], line["points_rest_verdict"]) == (None, "not_graded")
+        assert built.refused == []
+        assert built.record["elo"]["late"] == 0
+
+
+def test_on_a_day_with_elo_alone_the_points_and_rest_model_is_not_graded():
+    alone = dict(EARLY_FORECAST, points_rest=None)
+
+    (line,) = build_forecast([early_game((104, 112))], predictions(alone)).lines
+
+    assert (line["elo"]["p_home"], line["elo_verdict"]) == (0.3965, "favorite_won")
+    assert (line["points_rest"], line["points_rest_verdict"]) == (None, "not_graded")
+
+
+def test_forecasts_for_other_teams_are_refused():
+    the_other_way_round = dict(EARLY_FORECAST, home="NYK", away="BOS")
+
+    built = build_forecast([early_game()], predictions(the_other_way_round))
+
+    (line,) = built.lines
+    assert (line["elo"], line["elo_verdict"]) == (None, "not_graded")
+    assert (line["points_rest"], line["points_rest_verdict"]) == (None, "not_graded")
+    assert built.refused == [
+        f"event {EARLY}: its forecasts are for BOS at NYK, and the game was played by NYK at BOS"
+    ]
+
+
+def test_a_game_is_held_against_the_forecasts_of_the_day_it_was_played_on():
+    # The game was to be played on Monday and was put off to Tuesday. Both
+    # mornings' files have a forecast for it.
+    monday = copy.deepcopy(EARLY_FORECAST)
+    monday["elo"]["p_home"] = 0.9
+    published = {
+        **predictions(monday, day="2026-10-19", published_at="2026-10-19T09:10:07Z"),
+        **predictions(EARLY_FORECAST),
+    }
+
+    (line,) = build_forecast([early_game()], published).lines
+
+    assert line["elo"] == {"p_home": 0.3965, "published_at": PUBLISHED}
+
+
+def test_the_late_game_of_an_evening_is_a_game_of_that_day():
+    # 22:00 in New York on Tuesday is 02:00 UTC on Wednesday.
+    late = dict(EARLY_FORECAST, id=LATE, commence_time=LATE_START, home="LAL", away="GSW")
+
+    (line,) = build_forecast([late_game((99, 120))], predictions(late)).lines
+
+    assert (line["commence_time"], line["elo_verdict"]) == (LATE_START, "favorite_won")
+
+
+def test_the_record_and_the_board_count_the_models_in_a_sport_that_is_forecast():
+    built = build_forecast([early_game((104, 112))], predictions(EARLY_FORECAST), state_with())
+
+    assert built.record["elo"]["wins"] == built.record["points_rest"]["wins"] == 1
+    assert built.record["by_day"][0]["elo"] == {
+        "wins": 1,
+        "losses": 0,
+        "toss_ups": 0,
+        "not_graded": 0,
+    }
+    assert built.state["results"]["record"] == {
+        "market": {"wins": 0, "losses": 1},
+        "elo": {"wins": 1, "losses": 0},
+        "points_rest": {"wins": 1, "losses": 0},
+    }
+
+
+def test_a_sport_that_is_not_forecast_has_the_nine_fields_and_no_model_in_its_record():
+    built = build([early_game()], state_with())
+
+    assert list(built.lines[0]) == validate.RESULT_FIELDS
+    assert "elo" not in built.record and "points_rest" not in built.record
+    assert list(built.record["by_day"][0]) == ["day", "games", "market"]
+    assert built.state["results"]["record"] == {"market": {"wins": 1, "losses": 0}}
+
+
+def test_what_is_built_for_a_forecast_sport_passes_the_checks():
+    built = build_forecast(
+        [early_game(), late_game()], predictions(EARLY_FORECAST), state_with(late=0.25)
+    )
+    path = "v1/results/2026-10.ndjson"
+    written = {path: store.to_ndjson(built.lines)}
+
+    assert validate.results_problems({}, written, forecast=True) == []
+    assert validate.record_problems(built.record, built.lines, models=("elo", "points_rest")) == []
+    assert validate.state_problems(built.state) == []
