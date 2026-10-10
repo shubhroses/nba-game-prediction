@@ -291,6 +291,25 @@ def test_the_state_notes_the_daily_work_and_the_board_shows_it(run, data_dir):
 
 
 @pytest.mark.usefixtures("played")
+def test_files_from_before_there_was_any_daily_work_are_continued_from(run, data_dir):
+    # The first snapshots on the data branch were written before the job did
+    # any daily work. Their state has no `results`, and their board has
+    # neither a record nor recent results.
+    state, slate = read(data_dir, "v1/state.json"), read(data_dir, "v1/slate.json")
+    del state["results"], slate["record"], slate["recent_results"]
+    (data_dir / "v1/state.json").write_text(store.to_json(state))
+    (data_dir / "v1/slate.json").write_text(store.to_json(slate))
+
+    result = run(now=MORNING)
+
+    # The lines that those snapshots stored are what the games are graded against.
+    assert (result.status, result.asked) == (0, ["scores", "odds"])
+    assert [line["market_verdict"] for line in results_in(data_dir)] == VERDICTS
+    assert read(data_dir, "v1/state.json")["results"]["last_slot"] == DAILY_SLOT
+    assert read(data_dir, "v1/slate.json")["record"] == {"market": {"wins": 2, "losses": 1}}
+
+
+@pytest.mark.usefixtures("played")
 def test_a_result_is_stamped_with_the_moment_its_scores_arrived(run, data_dir):
     # The clock is read when the run begins, when the scores are there and
     # when the odds are there. Here the scores took 90 seconds to arrive.
