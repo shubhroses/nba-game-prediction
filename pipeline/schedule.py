@@ -29,11 +29,13 @@ DAILY_SLOT = SLOT_TIMES[0]
 
 # A slot may be attempted only by a run that starts less than this long after
 # the slot's start. This is what bounds the cost of a failure that does not
-# pass. A run makes one request for a sport, and the workflow's triggers are
-# 30 minutes apart, so three of them fall in the 75 minutes: at the slot's
+# pass. A run makes one odds request for a sport, and the workflow's triggers
+# are 30 minutes apart, so three of them fall in the 75 minutes: at the slot's
 # start, and 30 and 60 minutes after it. A slot therefore costs at most three
-# requests for a sport. The count is of runs, however they were started: one
-# that is started by hand inside the 75 minutes asks as well.
+# odds requests for a sport. The daily work is held to the same limit, so the
+# daily slot costs at most three scores requests for a sport as well. The
+# count is of runs, however they were started: one that is started by hand
+# inside the 75 minutes asks as well.
 #
 # Why not less: GitHub starts scheduled runs late. In a measurement of four
 # public repositories the median delay was 13 to 21 minutes, and the first two

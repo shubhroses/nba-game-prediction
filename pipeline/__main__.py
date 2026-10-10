@@ -5,17 +5,19 @@ The command line.
 
 Exit status:
 
-    0  a snapshot was taken, or none was due, or the slot was given up
+    0  what was due was done, or nothing was due, or the slot was given up
     1  bad arguments or settings, for example ODDS_API_KEY is not set, or
        the files could not be written
     2  validation failed
-    3  the provider refused the request (401, 429)
+    3  the provider refused a request (401, 429)
     4  the provider could not be reached, or its answer could not be read
 
-Each sport is taken on its own: fetched, built, validated and written before
-the next one is started. For a sport that fails nothing is written, and what
-was written for another sport stays. The exit status is that of the first
-failure.
+Each sport is taken on its own, in two steps. The first is the daily work,
+which is due once a day, in the day's first slot: the games that are over are
+recorded with their final scores and graded. The second is the snapshot. Each
+step is fetched, built, validated and written before the next one is started.
+For a step that fails nothing is written, and what was written for another
+step or another sport stays. The exit status is that of the first failure.
 """
 
 import argparse
@@ -27,7 +29,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 
-from pipeline import config, oddsapi, schedule, snapshot, store, validate
+from pipeline import config, oddsapi, results, schedule, snapshot, store, validate
+from pipeline.timestamps import parse_utc
 
 DONE, USAGE, INVALID, REFUSED, UNREACHABLE = 0, 1, 2, 3, 4
 KEY_VARIABLE = "ODDS_API_KEY"
@@ -37,9 +40,9 @@ Clock = Callable[[], datetime]
 
 class _Stop(Exception):
     """
-    Ends one sport's part in the run, or the run as a whole, with an exit
-    status and a message. Raised before anything of that sport is written,
-    or because writing it failed.
+    Ends one step of a sport, or the run as a whole, with an exit status and
+    a message. Raised before anything of that step is written, or because
+    writing it failed.
     """
 
     def __init__(self, status: int, *lines: str):
@@ -56,6 +59,21 @@ class _Slot:
     next_due: str  # the id of the slot after it
     in_time: bool  # whether a run that starts now may still ask for this slot
     run_started: datetime
+    daily: str  # the id of the slot the daily work belongs to: this one, or the last such before it
+
+    @property
+    def is_daily(self) -> bool:
+        return self.id == self.daily
+
+
+@dataclass(frozen=True)
+class _Graded:
+    """One sport's daily work, validated and ready to be written."""
+
+    sport: config.Sport
+    response: oddsapi.OddsResponse
+    built: results.Results
+    files: dict[str, str]  # path in the data directory -> new content
 
 
 @dataclass(frozen=True)
@@ -72,10 +90,20 @@ class _Capture:
 class _Run:
     """What a run has done so far. The step outputs and the exit status are made from it."""
 
-    captures: list[_Capture] = field(default_factory=list)  # taken, and written unless a dry run
-    failed: list[config.Sport] = field(default_factory=list)
+    # The steps that were taken, in order, and written unless this is a dry run.
+    done: list[_Graded | _Capture] = field(default_factory=list)
+    failed: list[config.Sport] = field(default_factory=list)  # a step of theirs failed
     given_up: list[config.Sport] = field(default_factory=list)  # too late to ask for their slot
+    results_given_up: list[config.Sport] = field(default_factory=list)  # or for its daily work
     status: int = DONE  # the status of the first failure
+
+    @property
+    def graded(self) -> list[_Graded]:
+        return [step for step in self.done if isinstance(step, _Graded)]
+
+    @property
+    def captures(self) -> list[_Capture]:
+        return [step for step in self.done if isinstance(step, _Capture)]
 
 
 def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
@@ -98,6 +126,7 @@ def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
         next_due=schedule.slot_id(following),
         in_time=schedule.in_time(current, now),
         run_started=now,
+        daily=schedule.slot_id(schedule.last_daily(now)),
     )
     run = _Run()
     try:
@@ -112,9 +141,8 @@ def main(argv: list[str] | None = None, *, clock: Clock | None = None) -> int:
 
 def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
     """
-    Takes the snapshot of every sport that is due, one sport after the other,
-    and notes in `run` what came of it. A sport that fails does not stop the
-    others.
+    Does what is due for every sport, one sport after the other, and notes in
+    `run` what came of it. A step that fails does not stop the others.
     """
     try:
         _take_what_is_due(args, slot, clock, run)
@@ -122,18 +150,28 @@ def _snapshot(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) ->
         # Bad arguments or settings. Nothing was started for any sport.
         _fail(run, None, stop)
     if run.status != DONE:
-        if run.captures and not args.dry_run:
-            _complain(f"Nothing was written for {_names(run.failed)}.")
-        else:
+        graded = [] if args.dry_run else [step.sport for step in run.graded]
+        captured = [] if args.dry_run else [step.sport for step in run.captures]
+        nothing = [sport for sport in run.failed if sport not in graded + captured]
+        if not graded + captured:
             _complain("Nothing was written.")
+        elif nothing:
+            _complain(f"Nothing was written for {_names(nothing)}.")
+        # A sport that failed and has one of its two steps written failed in the other.
+        no_results = [sport for sport in run.failed if sport in captured and sport not in graded]
+        no_snapshot = [sport for sport in run.failed if sport in graded and sport not in captured]
+        if no_results:
+            _complain(f"The results for {_names(no_results)} were not recorded.")
+        if no_snapshot:
+            _complain(f"The snapshot for {_names(no_snapshot)} was not taken.")
 
 
 def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: _Run) -> None:
     """
     Sorts the selected sports into those whose slot is recorded, those it is
-    too late for and those that are due, and takes the ones that are due.
-    Raises _Stop only for what concerns the run as a whole: the arguments
-    and the key.
+    too late for and those of which a step is due, and takes the steps that
+    are due. Raises _Stop only for what concerns the run as a whole: the
+    arguments and the key.
     """
     data_dir = args.data_dir
     sports = _selected(args, slot)
@@ -150,17 +188,26 @@ def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: 
         except _Stop as stop:
             _fail(run, sport, stop)
             continue
-        if args.force:
-            due.append(sport)
-        elif not _is_due(slot, previous[sport]):
-            recorded.append(sport)
-        elif slot.in_time:
-            due.append(sport)
-        else:
-            # The slot is not recorded and it is too late to ask for it. This
-            # is what keeps a failure that lasts from being paid for at every
-            # trigger: see ATTEMPT_WINDOW in schedule.py.
+        slot_open = _is_due(slot, previous[sport])
+        results_open = _results_are_due(slot, previous[sport])
+        # A step that is not recorded may be asked for only by a run that
+        # starts in time. This is what keeps a failure that lasts from being
+        # paid for at every trigger: see ATTEMPT_WINDOW in schedule.py. The
+        # daily work belongs to the day's first slot, so a run is in time for
+        # it when it is in time for that slot. --force lifts the limit for
+        # both steps and takes a snapshot that is on record again. It does
+        # not repeat daily work that is on record: a game is recorded once,
+        # so a second scores request the same day would find nothing to add.
+        snapshot_due = args.force or (slot_open and slot.in_time)
+        results_due = results_open and (args.force or (slot.is_daily and slot.in_time))
+        if slot_open and not snapshot_due:
             run.given_up.append(sport)
+        if results_open and slot.is_daily and not results_due:
+            run.results_given_up.append(sport)
+        if results_due or snapshot_due:
+            due.append((sport, results_due, snapshot_due))
+        elif not slot_open:
+            recorded.append(sport)
 
     if not due:
         if recorded:
@@ -171,21 +218,119 @@ def _take_what_is_due(args: argparse.Namespace, slot: _Slot, clock: Clock, run: 
                 f"Slot {slot.id} for {_names(run.given_up)} was not recorded in time; "
                 f"the next slot starts at {slot.next_due}."
             )
+        if run.results_given_up:
+            _say(
+                f"The results that were due in slot {slot.id} were not recorded in time for "
+                f"{_names(run.results_given_up)}; the next daily run reaches back three days."
+            )
         return
 
     api_key = _api_key()
     _say(f"Slot {slot.id}.", _next(slot))
-    for sport in due:
-        try:
-            capture = _take(
-                data_dir, sport, previous[sport], api_key, slot, clock, dry_run=args.dry_run
-            )
-        except _Stop as stop:
-            _fail(run, sport, stop)
-        else:
-            run.captures.append(capture)
-    if args.dry_run and run.captures:
+    unforeseen = None
+    for sport, results_due, snapshot_due in due:
+        state = previous[sport]
+        if results_due:
+            try:
+                graded = _grade(data_dir, sport, state, api_key, slot, clock, dry_run=args.dry_run)
+            except _Stop as stop:
+                _fail(run, sport, stop)
+            except Exception as error:
+                # A bug in the daily work. A snapshot cannot be taken later,
+                # so the ones that are due are taken first, for this sport
+                # and the others, and the error is raised when that is done.
+                unforeseen = unforeseen or error
+                run.failed.append(sport)
+            else:
+                run.done.append(graded)
+                state = graded.built.state
+        if snapshot_due:
+            try:
+                capture = _take(data_dir, sport, state, api_key, slot, clock, dry_run=args.dry_run)
+            except _Stop as stop:
+                _fail(run, sport, stop)
+            else:
+                run.done.append(capture)
+    if args.dry_run and run.done:
         _say("Dry run: nothing was written.")
+    if unforeseen:
+        raise unforeseen
+
+
+def _grade(
+    data_dir: Path,
+    sport: config.Sport,
+    previous: dict | None,
+    api_key: str,
+    slot: _Slot,
+    clock: Clock,
+    *,
+    dry_run: bool,
+) -> _Graded:
+    """
+    One sport's daily work from its request to its files on disk: every game
+    that is over and not yet recorded gets a result line with its final score
+    and the verdict on its last line from before the start, and the record is
+    rebuilt. Raises _Stop when something fails, and nothing of the daily work
+    is written then.
+    """
+    # As in _take, what will be added to is checked before the request.
+    before = _results_on_disk(data_dir, sport)
+    try:
+        response = oddsapi.fetch_scores(sport.key, api_key)
+    except oddsapi.Refused as error:
+        raise _Stop(
+            REFUSED, f"The provider refused the scores request for {sport.key}: {error}."
+        ) from None
+    except oddsapi.Unreachable as error:
+        raise _Stop(
+            UNREACHABLE,
+            f"The provider gave no usable answer to the scores request for {sport.key}: {error}.",
+        ) from None
+
+    recorded = [line for content in before.values() for line in store.from_ndjson(content)]
+    built = results.build(
+        response.events,
+        previous,
+        recorded,
+        clock(),
+        sport=sport.key,
+        slot=slot.daily,
+        credits={"remaining": response.remaining, "used": response.used, "last": response.last},
+    )
+    after = dict(before)
+    for line in built.lines:
+        path = store.results_path(sport.prefix, parse_utc(line["commence_time"]).date())
+        after[path] = after.get(path, "") + store.to_ndjson([line])
+
+    found = validate.results_problems(before, after)
+    if not found:
+        # The recounts take every line to be sound, so they come after the check of the lines.
+        every_line = recorded + built.lines
+        found = validate.record_problems(built.record, every_line)
+        found += validate.board_problems(built.state["results"]["record"], every_line)
+    found += validate.state_problems(built.state)
+    if found:
+        raise _Stop(
+            INVALID, f"Validation failed for the results of {sport.key}:", *_indented(found)
+        )
+
+    # The state is listed last, for the reason given in _capture: if the
+    # moves were interrupted, the daily work would not be on record and the
+    # next run would do it again. It would find the games that were written
+    # already recorded, add none of them twice and rebuild the record.
+    files = {path: content for path, content in after.items() if content != before.get(path)}
+    files[store.record_path(sport.prefix)] = store.to_json(built.record)
+    files[store.state_path(sport.prefix)] = store.to_json(built.state)
+    graded = _Graded(sport=sport, response=response, built=built, files=files)
+    _say(_results_summary(graded))
+    for reason in built.dropped:
+        _say(f"  dropped {reason}")
+    for reason in built.refused:
+        _say(f"  not graded {reason}")
+    if not dry_run:
+        _write(data_dir, sport, files, "results")
+    return graded
 
 
 def _take(
@@ -199,8 +344,8 @@ def _take(
     dry_run: bool,
 ) -> _Capture:
     """
-    One sport from its request to its files on disk. Raises _Stop when a step
-    fails, and nothing of this sport is written then.
+    One sport's snapshot from its request to its files on disk. Raises _Stop
+    when something fails, and nothing of the snapshot is written then.
     """
     # Whatever can be checked without the provider is checked before the
     # request: the state file by the caller, the key, and here the history
@@ -212,22 +357,27 @@ def _take(
     for reason in capture.built.dropped:
         _say(f"  dropped {reason}")
     if not dry_run:
-        try:
-            store.write(data_dir, capture.files)
-        except OSError as error:
-            # The status of a setting that cannot be used, which is the
-            # likeliest cause: a data directory that cannot be written to.
-            raise _Stop(
-                USAGE, f"The files for {sport.key} could not be written: {_os_error(error)}."
-            ) from None
-        _say(f"Wrote {', '.join(capture.files)}.")
+        _write(data_dir, sport, capture.files, "files")
     return capture
 
 
+def _write(data_dir: Path, sport: config.Sport, files: dict[str, str], what: str) -> None:
+    """Writes the files of one step and says so. Raises _Stop when they cannot be written."""
+    try:
+        store.write(data_dir, files)
+    except OSError as error:
+        # The status of a setting that cannot be used, which is the likeliest
+        # cause: a data directory that cannot be written to.
+        raise _Stop(
+            USAGE, f"The {what} for {sport.key} could not be written: {_os_error(error)}."
+        ) from None
+    _say(f"Wrote {', '.join(files)}.")
+
+
 def _fail(run: _Run, sport: config.Sport | None, stop: _Stop) -> None:
-    """Reports that a sport failed, or the run as a whole when there is no sport to name."""
+    """Reports that a step of a sport failed, or the run as a whole when there is no sport."""
     _complain(*stop.lines)
-    if sport is not None:
+    if sport is not None and sport not in run.failed:
         run.failed.append(sport)
     if run.status == DONE:
         run.status = stop.status
@@ -328,8 +478,32 @@ def _history_on_disk(data_dir: Path, sport: config.Sport, moment: datetime) -> t
     return path, content
 
 
+def _results_on_disk(data_dir: Path, sport: config.Sport) -> dict[str, str]:
+    """The path and the content of every results file of a sport, checked line by line."""
+    before = {}
+    for path in store.results_paths(data_dir, sport.prefix):
+        try:
+            before[path] = store.read_text(data_dir, path)
+        except ValueError:
+            raise _Stop(INVALID, f"{path} is not UTF-8 text.") from None
+    found = validate.results_problems(before, before)
+    if found:
+        raise _Stop(
+            INVALID,
+            f"The results in {sport.prefix}/results/ cannot be added to:",
+            *_indented(found),
+        )
+    return before
+
+
 def _is_due(slot: _Slot, previous: dict | None) -> bool:
     return schedule.is_due(slot.id, previous["last_slot"] if previous else None)
+
+
+def _results_are_due(slot: _Slot, previous: dict | None) -> bool:
+    """Whether the daily work of the last daily slot is still to be recorded."""
+    noted = previous.get("results") if previous else None
+    return schedule.is_due(slot.daily, noted["last_slot"] if noted else None)
 
 
 def _api_key() -> str:
@@ -354,37 +528,66 @@ def _summary(capture: _Capture) -> str:
     )
 
 
+def _results_summary(graded: _Graded) -> str:
+    response, built = graded.response, graded.built
+    return (
+        f"{graded.sport.key} -> {graded.sport.prefix}/: {_results(graded)}, "
+        f"{_not_graded(graded)} not graded, {len(built.dropped)} dropped. "
+        f"Credits: {_known(response.remaining)} remaining, {_known(response.used)} used, "
+        f"{_known(response.last)} spent on this call."
+    )
+
+
 def _outputs(run: _Run, slot: _Slot, *, dry_run: bool) -> dict:
     """
     The step outputs. `changed` says whether anything was written, and
-    `written` gives the count for each prefix that was, for the message of
-    the commit: "v1 12 games, v1-dryrun 3 games". The other counts are totals
-    over the sports taken in this run, and the credits remaining and used are
-    those of the last response. `failed` and `given_up` name sports, and are
-    left out when there is none to name.
+    `written` gives the counts for each prefix that was, for the message of
+    the commit: "v1 9 results and 12 games, v1-dryrun 3 games". The other
+    counts are totals over the sports of which that step was taken in this
+    run, and the credits remaining and used are those of the last response.
+    `failed`, `given_up` and `results_given_up` name sports, and are left out
+    when there is none to name.
     """
-    captures = run.captures
-    outputs = {"changed": "true" if captures and not dry_run else "false", "slot": slot.id}
+    graded, captures = run.graded, run.captures
+    outputs = {"changed": "true" if run.done and not dry_run else "false", "slot": slot.id}
+    if graded:
+        outputs |= {
+            "results": sum(len(step.built.lines) for step in graded),
+            "results_not_graded": sum(_not_graded(step) for step in graded),
+            "results_dropped": sum(len(step.built.dropped) for step in graded),
+        }
     if captures:
-        costs = [capture.response.last for capture in captures if capture.response.last is not None]
-        last = captures[-1].response
         outputs |= {
             "games": sum(len(capture.built.slate["games"]) for capture in captures),
             "with_line": sum(len(capture.built.history) for capture in captures),
             "dropped": sum(len(capture.built.dropped) for capture in captures),
+        }
+    if run.done:
+        costs = [step.response.last for step in run.done if step.response.last is not None]
+        last = run.done[-1].response
+        outputs |= {
             "credits_remaining": _known(last.remaining, otherwise=""),
             "credits_used": _known(last.used, otherwise=""),
             "credits_spent": sum(costs) if costs else "",
         }
         if not dry_run:
-            outputs["written"] = ", ".join(
-                f"{capture.sport.prefix} {_games(capture)}" for capture in captures
-            )
+            outputs["written"] = _written(run)
     if run.failed:
         outputs["failed"] = _names(run.failed)
     if run.given_up:
         outputs["given_up"] = _names(run.given_up)
+    if run.results_given_up:
+        outputs["results_given_up"] = _names(run.results_given_up)
     return outputs
+
+
+def _written(run: _Run) -> str:
+    """What each prefix got, in the order it was written: "v1 9 results and 12 games"."""
+    counts = {}
+    for step in run.done:
+        count = _results(step) if isinstance(step, _Graded) else _games(step)
+        counts.setdefault(step.sport.prefix, []).append(count)
+    return ", ".join(f"{prefix} {' and '.join(said)}" for prefix, said in counts.items())
 
 
 def _write_outputs(outputs: dict) -> None:
@@ -415,6 +618,16 @@ def _games(capture: _Capture) -> str:
     """The number of games on a sport's board, in words: "1 game", "12 games"."""
     count = len(capture.built.slate["games"])
     return f"{count} {'game' if count == 1 else 'games'}"
+
+
+def _results(graded: _Graded) -> str:
+    """The number of results a daily run recorded, in words: "1 result", "9 results"."""
+    count = len(graded.built.lines)
+    return f"{count} {'result' if count == 1 else 'results'}"
+
+
+def _not_graded(graded: _Graded) -> int:
+    return sum(line["market"] is None for line in graded.built.lines)
 
 
 def _next(slot: _Slot) -> str:
@@ -452,13 +665,16 @@ class _Parser(argparse.ArgumentParser):
 
 
 def _parser() -> argparse.ArgumentParser:
-    parser = _Parser(prog="python -m pipeline", description="Odds snapshots for NBA games.")
+    parser = _Parser(
+        prog="python -m pipeline", description="Odds snapshots and results of NBA games."
+    )
     commands = parser.add_subparsers(dest="command", required=True, metavar="command")
     command = commands.add_parser(
         "snapshot",
         help="record the sportsbook consensus for the upcoming games",
         description=(
-            "Record the sportsbook consensus for the upcoming games, if a snapshot is due. "
+            "Record the sportsbook consensus for the upcoming games, if a snapshot is due, "
+            "and before it the final scores of the games that are over, if the daily work is. "
             f"The key for The Odds API is read from the environment variable {KEY_VARIABLE}."
         ),
     )
@@ -489,7 +705,8 @@ def _parser() -> argparse.ArgumentParser:
         action="store_true",
         help=(
             "take a snapshot even if the current slot is already recorded, "
-            "or is too old to be asked for"
+            "or is too old to be asked for; the daily work is done as well "
+            "if that of the last daily slot is not on record"
         ),
     )
     command.add_argument(

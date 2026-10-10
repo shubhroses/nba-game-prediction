@@ -74,6 +74,7 @@ class Result:
     err: str
     outputs: dict  # what the command wrote to GITHUB_OUTPUT
     requests: int  # how many requests the fake server received during the run
+    asked: list  # what each of them asked for, in order: "odds" or "scores"
 
 
 @pytest.fixture
@@ -106,7 +107,8 @@ def run(api, data_dir, tmp_path, monkeypatch, capsys):
         for text in (printed.out, printed.err, written, *tree(data_dir).values()):
             assert KEY not in text
         outputs = dict(line.split("=", 1) for line in written.splitlines())
-        return Result(status, printed.out, printed.err, outputs, len(api.requests) - before)
+        asked = [received.endpoint for received in api.requests[before:]]
+        return Result(status, printed.out, printed.err, outputs, len(asked), asked)
 
     return run
 
@@ -496,8 +498,11 @@ def test_a_dry_run_in_a_recorded_slot_makes_no_request_unless_it_is_forced(run, 
 
     assert run("--all", "--dry-run", now=a_little_later).requests == 0
 
+    # Forced, it asks for the odds, and before them for the scores, because
+    # the daily work of this morning is not on record.
     forced = run("--all", "--dry-run", "--force", now=a_little_later)
-    assert (forced.status, forced.requests, forced.outputs["changed"]) == (0, 1, "false")
+    assert (forced.status, forced.asked) == (0, ["scores", "odds"])
+    assert forced.outputs["changed"] == "false"
     assert tree(data_dir) == after_first_run
 
 
@@ -506,11 +511,17 @@ def test_force_takes_another_snapshot_in_a_slot_that_is_already_recorded(run, da
 
     result = run("--all", "--force", now=EVENING + timedelta(minutes=5))
 
-    assert (result.status, result.requests, result.outputs["changed"]) == (0, 1, "true")
+    assert (result.status, result.outputs["changed"]) == (0, "true")
+    assert result.asked[-1] == "odds"
     assert [line["at"] for line in history(data_dir)] == ["2026-10-20T22:10:41Z"] * 2 + [
         "2026-10-20T22:15:41Z"
     ] * 2
     assert read(data_dir, "v1/state.json")["games"][EARLY]["first"]["at"] == "2026-10-20T22:10:41Z"
+
+    # And another, as often as it is forced.
+    again = run("--all", "--force", now=EVENING + timedelta(minutes=10))
+    assert (again.asked, again.outputs["changed"]) == (["odds"], "true")
+    assert len(history(data_dir)) == 6
 
 
 def leave_a_staging_directory(data_dir):
@@ -605,7 +616,8 @@ def test_a_slot_that_is_given_up_leaves_the_files_of_the_slot_before_untouched(r
 def test_force_takes_a_slot_that_is_too_old_to_be_asked_for(run, data_dir):
     result = run("--all", "--force", now=TOO_LATE)
 
-    assert (result.status, result.requests, result.outputs["changed"]) == (0, 1, "true")
+    assert (result.status, result.outputs["changed"]) == (0, "true")
+    assert result.asked[-1] == "odds"
     assert read(data_dir, "v1/state.json")["last_slot"] == EVENING_SLOT
     assert "given_up" not in result.outputs
 
@@ -616,7 +628,8 @@ def test_a_dry_run_in_a_slot_that_is_too_old_makes_no_request_unless_it_is_force
     assert "was not recorded in time" in unforced.out
 
     forced = run("--all", "--dry-run", "--force", now=TOO_LATE)
-    assert (forced.status, forced.requests, forced.outputs["changed"]) == (0, 1, "false")
+    assert (forced.status, forced.asked) == (0, ["scores", "odds"])
+    assert forced.outputs["changed"] == "false"
     assert not data_dir.exists()
 
 
@@ -719,10 +732,14 @@ class TestAll:
             "basketball_test",
         ]
 
-        # 09:10 UTC on the 18th is 05:10 on the 18th in New York.
+        # 09:10 UTC on the 18th is 05:10 on the 18th in New York. It is the
+        # day's first slot, so the one sport is asked for its scores as well.
         api.requests.clear()
         run("--all", now=datetime(2026, 10, 18, 9, 10, 0, tzinfo=timezone.utc))
-        assert [received.sport for received in api.requests] == ["basketball_nba"]
+        assert [(received.endpoint, received.sport) for received in api.requests] == [
+            ("scores", "basketball_nba"),
+            ("odds", "basketball_nba"),
+        ]
 
     def test_a_sport_that_was_written_stays_written_when_a_later_one_fails(
         self, run, api, data_dir
