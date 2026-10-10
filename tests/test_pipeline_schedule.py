@@ -7,7 +7,7 @@ changes from -04:00 to -05:00 between the first day's last slot and the
 second day's first.
 """
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timedelta, timezone
 
 import pytest
 
@@ -175,3 +175,45 @@ def test_due_means_different_from_the_recorded_slot_not_later_than_it():
     # If the state names a slot that is still to come, the current one is taken all the same.
     assert schedule.is_due("2026-10-31T18:10-04:00", "2026-11-02T05:10-05:00")
     assert not schedule.is_due("2026-10-31T18:10-04:00", "2026-10-31T18:10-04:00")
+
+
+def test_the_daily_slot_is_the_first_slot_of_the_new_york_day():
+    assert schedule.DAILY_SLOT == time(5, 10)
+    assert schedule.DAILY_SLOT == min(schedule.SLOT_TIMES)
+
+
+@pytest.mark.parametrize(("slot", "start"), SLOTS)
+def test_the_most_recent_daily_slot_is_the_first_slot_of_the_same_new_york_day(slot, start):
+    first_of_the_day = f"{slot[:10]}T05:10{slot[16:]}"
+
+    for moment in (utc(start), utc(start) + timedelta(minutes=74), utc(start) + timedelta(hours=2)):
+        assert schedule.slot_id(schedule.last_daily(moment)) == first_of_the_day
+        assert schedule.last_daily(moment).utcoffset() == timedelta(0)
+
+
+def test_the_daily_slot_lasts_from_05_10_until_05_10_the_next_morning():
+    # 1 November 2026 has 25 hours. Its daily slot starts at 10:10 UTC, an
+    # hour later than the one of the day before.
+    assert schedule.last_daily(utc("2026-10-31 09:10")) == utc("2026-10-31 09:10")
+    assert schedule.last_daily(utc("2026-11-01 10:09")) == utc("2026-10-31 09:10")
+    assert schedule.last_daily(utc("2026-11-01 10:10")) == utc("2026-11-01 10:10")
+    assert schedule.last_daily(utc("2026-11-02 10:09")) == utc("2026-11-01 10:10")
+    # Just before the day's first slot, the daily slot is the one of the day before.
+    assert schedule.slot_id(schedule.last_daily(utc("2026-10-31 09:09"))) == (
+        "2026-10-30T05:10-04:00"
+    )
+
+
+def test_a_run_is_in_the_daily_slot_when_that_slot_is_the_current_one():
+    in_the_daily_slot = [utc("2026-10-31 09:10"), utc("2026-10-31 13:09")]
+    in_a_later_slot = [utc("2026-10-31 13:10"), utc("2026-11-01 01:10"), utc("2026-11-01 10:09")]
+
+    for moment in in_the_daily_slot:
+        assert schedule.current_and_next(moment)[0] == schedule.last_daily(moment)
+    for moment in in_a_later_slot:
+        assert schedule.current_and_next(moment)[0] > schedule.last_daily(moment)
+
+
+def test_the_daily_slot_of_a_time_without_a_zone_is_refused():
+    with pytest.raises(ValueError, match="time zone"):
+        schedule.last_daily(datetime(2026, 11, 1, 5, 30))

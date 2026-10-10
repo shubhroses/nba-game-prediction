@@ -6,6 +6,10 @@ out which slot it is in and compares that slot's id with the last one recorded
 in the state file. Once a slot is recorded, no later trigger asks for it. As
 long as it is not, a trigger may ask for it only if it starts within
 ATTEMPT_WINDOW of the slot's start. After that the slot is given up.
+
+The first slot of a day is also the daily slot, in which the final scores of
+the games that are over are recorded. That work is due once for each daily
+slot and follows the same two rules.
 """
 
 from datetime import datetime, time, timedelta, timezone
@@ -16,6 +20,12 @@ ZONE = ZoneInfo("America/New_York")
 # Wall-clock times in ZONE. None of them lies between 01:00 and 03:00, the
 # hours that a change to or from daylight saving time repeats or skips.
 SLOT_TIMES = (time(5, 10), time(9, 10), time(12, 10), time(15, 10), time(18, 10), time(21, 10))
+
+# The slot in which a day's results are recorded: the first of the day,
+# hours after an evening's games in North America have ended. A game that is
+# not marked as completed by then is recorded by the daily slot of the day
+# after, because the scores reach back three days.
+DAILY_SLOT = SLOT_TIMES[0]
 
 # A slot may be attempted only by a run that starts less than this long after
 # the slot's start. This is what bounds the cost of a failure that does not
@@ -54,6 +64,18 @@ def current_and_next(now: datetime) -> tuple[datetime, datetime]:
     current = max(start for start in starts if start <= now)
     following = min(start for start in starts if start > now)
     return current, following
+
+
+def last_daily(now: datetime) -> datetime:
+    """The start of the most recent daily slot (at or before now), in UTC."""
+    if now.tzinfo is None:
+        raise ValueError("now must carry a time zone")
+    today = now.astimezone(ZONE).date()
+    starts = (
+        datetime.combine(day, DAILY_SLOT, tzinfo=ZONE).astimezone(timezone.utc)
+        for day in (today - timedelta(days=1), today)
+    )
+    return max(start for start in starts if start <= now)
 
 
 def slot_id(start: datetime) -> str:
