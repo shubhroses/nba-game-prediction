@@ -68,10 +68,27 @@ def test_the_api_key_is_given_to_one_step():
     assert "github.token" not in step
 
 
+def test_the_checkout_keeps_no_credentials():
+    # Left to its default, the action stores the token in the git
+    # configuration of the workspace. It would then be on disk for every
+    # later step, the one that has the API key included.
+    _, *steps = re.split(r"\n      - name: ", PIPELINE)
+    (checkout,) = [step for step in steps if "uses: actions/checkout@" in step]
+
+    assert "\n          persist-credentials: false\n" in checkout
+
+
 def test_runs_wait_for_each_other_and_none_is_cancelled():
     # A run that is cancelled after its request has spent a credit and
     # recorded nothing, and the next run would ask again.
     assert "\nconcurrency:\n  group: odds-snapshot\n  cancel-in-progress: false\n" in PIPELINE
+
+
+def test_the_job_is_limited_to_10_minutes():
+    # The request has no limit of its own: its 20 seconds are for each wait
+    # for data. This is what ends a run that hangs, and the next run waits
+    # for it.
+    assert re.findall(r"^ +timeout-minutes: (\S+)", PIPELINE, flags=re.MULTILINE) == ["10"]
 
 
 def step_named(name):
