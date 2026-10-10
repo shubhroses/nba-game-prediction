@@ -1,8 +1,9 @@
 """
 Tests for pipeline/validate.py.
 
-Each test starts from a snapshot that the builder produced and that passes,
-breaks one thing in it, and expects that one thing to be named.
+Each test starts from something that passes, a snapshot that the builder
+produced or a result and the record built from it, breaks one thing in it,
+and expects that one thing to be named.
 """
 
 import copy
@@ -11,7 +12,7 @@ from datetime import datetime, timezone
 import pytest
 
 from fake_odds_api import event
-from pipeline import snapshot, store, validate
+from pipeline import record, snapshot, store, validate
 
 NOW = datetime(2026, 10, 20, 22, 10, 41, tzinfo=timezone.utc)
 GAME = "e" * 32
@@ -275,3 +276,309 @@ def test_a_history_file_that_was_cut_off_is_not_added_to():
 )
 def test_each_added_history_line_must_be_a_complete_record(added, problem):
     assert validate.history_problems(OLD_LINE, OLD_LINE + added) == [problem]
+
+
+# A result as the daily run writes it: the home team was at 0.532 and won.
+RESULT = {
+    "id": GAME,
+    "commence_time": "2026-10-20T23:00:00Z",
+    "home": "BOS",
+    "away": "NYK",
+    "home_pts": 112,
+    "away_pts": 104,
+    "recorded_at": "2026-10-21T09:10:07Z",
+    "market": {"p_home": 0.532, "lo": 0.52, "hi": 0.55, "n": 3, "at": "2026-10-20T22:10:41Z"},
+    "market_verdict": "favorite_won",
+}
+OCTOBER, NOVEMBER = "v1/results/2026-10.ndjson", "v1/results/2026-11.ndjson"
+
+
+def result(**changes):
+    """The result above with some of its fields replaced. `market` may be a dict of changes."""
+    changed = copy.deepcopy(RESULT)
+    market = changes.pop("market", {})
+    changed.update(changes)
+    if isinstance(market, dict) and isinstance(changed["market"], dict):
+        changed["market"].update(market)
+    else:
+        changed["market"] = market
+    return changed
+
+
+def other_results():
+    """Three more games of the same month: an upset, a toss-up and a game without a line."""
+    return [
+        result(id="b" * 32, home_pts=99, away_pts=101, market_verdict="upset"),
+        result(
+            id="c" * 32, market={"p_home": 0.505, "lo": 0.5, "hi": 0.51}, market_verdict="toss_up"
+        ),
+        result(id="d" * 32, market=None, market_verdict="not_graded"),
+    ]
+
+
+def as_file(*lines):
+    return store.to_ndjson(list(lines))
+
+
+def test_a_result_as_the_daily_run_writes_it_passes():
+    assert validate.result_problems(RESULT, "result") == []
+    for line in other_results():
+        assert validate.result_problems(line, "result") == []
+    assert validate.results_problems({}, {OCTOBER: as_file(RESULT, *other_results())}) == []
+
+
+@pytest.mark.parametrize(
+    ("home_pts", "away_pts"),
+    [
+        (104, 104),
+        (0, 0),
+        (-1, 104),
+        (112, -104),
+        ("112", 104),
+        (112.0, 104),
+        (None, 104),
+        (True, 0),
+    ],
+)
+def test_the_two_scores_are_whole_numbers_that_are_not_negative_and_not_equal(home_pts, away_pts):
+    assert validate.result_problems(result(home_pts=home_pts, away_pts=away_pts), "result") == [
+        "result: home_pts and away_pts must be whole numbers that are not negative "
+        f"and not equal, got {home_pts!r} and {away_pts!r}"
+    ]
+
+
+@pytest.mark.parametrize("captured", ["2026-10-20T23:00:00Z", "2026-10-20T23:00:01Z"])
+def test_a_line_captured_at_or_after_the_start_is_refused(captured):
+    # The game started at 23:00:00. A line from that second on is not a line
+    # from before the game.
+    assert validate.result_problems(result(market={"at": captured}), "result") == [
+        f"result: the line was captured at {captured}, "
+        "which is not before the start at 2026-10-20T23:00:00Z"
+    ]
+    assert validate.result_problems(result(market={"at": "2026-10-20T22:59:59Z"}), "result") == []
+
+
+@pytest.mark.parametrize("recorded_at", ["2026-10-20T23:00:00Z", "2026-10-20T09:10:07Z"])
+def test_a_result_is_recorded_after_the_start_of_its_game(recorded_at):
+    assert validate.result_problems(result(recorded_at=recorded_at), "result") == [
+        f"result: recorded at {recorded_at}, which is not after the start at 2026-10-20T23:00:00Z"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("changes", "verdict", "expected"),
+    [
+        ({}, "upset", "favorite_won"),
+        ({}, "toss_up", "favorite_won"),
+        ({}, "not_graded", "favorite_won"),
+        ({"home_pts": 99, "away_pts": 101}, "favorite_won", "upset"),
+        ({"market": {"p_home": 0.505, "lo": 0.5}}, "favorite_won", "toss_up"),
+        ({"market": {"p_home": 0.468, "lo": 0.45}}, "favorite_won", "upset"),
+        ({"market": None}, "favorite_won", "not_graded"),
+        ({"market": None}, "toss_up", "not_graded"),
+    ],
+)
+def test_the_verdict_is_the_one_that_the_line_and_the_score_make(changes, verdict, expected):
+    assert validate.result_problems(result(**changes, market_verdict=verdict), "result") == [
+        f"result: market_verdict is {verdict!r}, but the line and the score make it {expected!r}"
+    ]
+
+
+@pytest.mark.parametrize("verdict", ["win", "", None, 1, ["upset"]])
+def test_the_verdict_is_one_of_the_four(verdict):
+    assert validate.result_problems(result(market_verdict=verdict), "result") == [
+        f"result: market_verdict is {verdict!r}, "
+        "which is not one of favorite_won, upset, toss_up, not_graded"
+    ]
+
+
+def test_the_line_of_a_result_is_held_to_the_rules_of_every_line():
+    assert validate.result_problems(result(market={"p_home": 1.0}), "result") == [
+        "result market: p_home, lo and hi must be numbers between 0 and 1, got 1.0, 0.52, 0.55"
+    ]
+    assert validate.result_problems(result(market={"n": 0}), "result") == [
+        "result market: n must be a whole number of at least 1, got 0"
+    ]
+    assert validate.result_problems(result(market="0.532"), "result") == [
+        "result market: not a JSON object"
+    ]
+
+
+def test_the_game_of_a_result_has_an_id_two_teams_and_two_times():
+    assert validate.result_problems(result(id=""), "result") == ["result: id is not a string"]
+    assert validate.result_problems(result(home="Boston Celtics"), "result") == [
+        "result: home is 'Boston Celtics', which is not one of the 30 team codes"
+    ]
+    assert validate.result_problems(result(commence_time="2026-10-20 23:00"), "result") == [
+        "result: commence_time is not a UTC timestamp"
+    ]
+    assert validate.result_problems(result(recorded_at=None), "result") == [
+        "result: recorded_at is not a UTC timestamp"
+    ]
+
+
+def test_a_result_that_lacks_a_field_or_is_not_an_object_is_described_without_an_error():
+    incomplete = {key: value for key, value in RESULT.items() if key not in ("away_pts", "market")}
+
+    assert validate.result_problems(incomplete, "result") == ["result: missing away_pts, market"]
+    for line in (None, [], "text", 7):
+        assert validate.result_problems(line, "result") == ["result: not a JSON object"]
+
+
+def test_results_may_only_grow():
+    old, added = as_file(RESULT), as_file(*other_results())
+    refusal = [f"{OCTOBER}: lines that are already in the file would be changed or removed"]
+
+    assert validate.results_problems({OCTOBER: old}, {OCTOBER: old + added}) == []
+    assert validate.results_problems({OCTOBER: old}, {OCTOBER: old}) == []
+    assert validate.results_problems({OCTOBER: old}, {}) == []
+    assert validate.results_problems({}, {}) == []
+    # Replaced, edited, reordered or emptied: each time the old content is no longer the start.
+    assert validate.results_problems({OCTOBER: old}, {OCTOBER: added}) == refusal
+    assert validate.results_problems({OCTOBER: old}, {OCTOBER: added + old}) == refusal
+    assert validate.results_problems({OCTOBER: old}, {OCTOBER: ""}) == refusal
+    rescored = as_file(result(home_pts=113))
+    assert validate.results_problems({OCTOBER: old}, {OCTOBER: rescored + added}) == refusal
+
+
+def test_a_results_file_that_was_cut_off_is_not_added_to():
+    cut_off = as_file(RESULT).rstrip("\n")
+
+    assert validate.results_problems({OCTOBER: cut_off}, {OCTOBER: cut_off}) == [
+        f"{OCTOBER}: the existing file does not end with a newline"
+    ]
+    assert validate.results_problems({}, {OCTOBER: cut_off}) == [
+        f"{OCTOBER}: the added lines do not end with a newline"
+    ]
+
+
+def test_every_line_of_every_results_file_is_checked_the_old_ones_too():
+    # The record is rebuilt from all the lines, so a line that is already on
+    # disk has to be as sound as one that is added.
+    on_disk = {
+        OCTOBER: as_file(RESULT, result(id="b" * 32, home_pts=104)),
+        NOVEMBER: "not json\n",
+    }
+
+    assert validate.results_problems(on_disk, on_disk) == [
+        f"{OCTOBER} line 2: home_pts and away_pts must be whole numbers that are not negative "
+        "and not equal, got 104 and 104",
+        f"{NOVEMBER} line 1: not JSON",
+    ]
+
+
+def test_the_fields_of_a_results_line_come_in_one_order_and_more_may_follow():
+    in_another_order = {"commence_time": RESULT["commence_time"], **RESULT}
+    with_more = {**RESULT, "model": {"p_home": 0.61}, "model_verdict": "favorite_won"}
+    order = (
+        "the fields must begin with id, commence_time, home, away, home_pts, away_pts, "
+        "recorded_at, market, market_verdict, in that order"
+    )
+
+    assert validate.results_problems({}, {OCTOBER: as_file(in_another_order)}) == [
+        f"{OCTOBER} line 1: {order}"
+    ]
+    assert validate.results_problems({}, {OCTOBER: "[]\n"}) == [f"{OCTOBER} line 1: {order}"]
+    # A later version may add fields to new lines. They come after these.
+    assert validate.results_problems({}, {OCTOBER: as_file(with_more)}) == []
+
+
+def test_a_result_is_in_the_file_of_the_month_its_game_started_in():
+    in_november = result(id="b" * 32, commence_time="2026-11-01T00:30:00Z", recorded_at=None)
+    in_november["recorded_at"] = "2026-11-01T10:10:07Z"
+    in_november["market"]["at"] = "2026-10-31T22:10:41Z"
+
+    assert validate.results_problems({}, {NOVEMBER: as_file(in_november)}) == []
+    assert validate.results_problems({}, {OCTOBER: as_file(RESULT, in_november)}) == [
+        f"{OCTOBER} line 2: the game started in 2026-11, not 2026-10"
+    ]
+
+
+def test_a_game_is_recorded_once():
+    again = result(home_pts=120)
+
+    assert validate.results_problems({}, {OCTOBER: as_file(RESULT, again)}) == [
+        f"{OCTOBER} line 2: the game is already recorded in {OCTOBER} line 1"
+    ]
+    # Also when the second record of it is in another file.
+    moved = result(commence_time="2026-11-01T00:30:00Z", recorded_at="2026-11-01T10:10:07Z")
+    assert validate.results_problems({OCTOBER: as_file(RESULT)}, {NOVEMBER: as_file(moved)}) == [
+        f"{NOVEMBER} line 1: the game is already recorded in {OCTOBER} line 1"
+    ]
+
+
+def record_of(lines):
+    return record.build(lines, sport="basketball_nba")
+
+
+def test_the_record_that_is_built_from_the_lines_passes():
+    lines = [RESULT, *other_results()]
+
+    assert validate.record_problems(record_of(lines), lines) == []
+    assert validate.record_problems(record_of([]), []) == []
+
+
+@pytest.mark.parametrize(
+    ("path", "name", "recount"),
+    [
+        (["games"], "games", 4),
+        (["market", "games"], "market.games", 2),
+        (["market", "wins"], "market.wins", 1),
+        (["market", "losses"], "market.losses", 1),
+        (["market", "toss_ups"], "market.toss_ups", 1),
+        (["market", "not_graded"], "market.not_graded", 1),
+        (["market", "with_line"], "market.with_line", 3),
+        (["baseline_home", "games"], "baseline_home.games", 4),
+        (["baseline_home", "wins"], "baseline_home.wins", 3),
+        (["market", "bands", 0, "games"], "the sum of games over the bands", 2),
+        (["market", "bands", 4, "wins"], "the sum of wins over the bands", 1),
+        (["by_day", 0, "games"], "the sum of games over the days", 4),
+        (["by_day", 0, "market", "wins"], "the sum of wins over the days", 1),
+        (["by_day", 0, "market", "losses"], "the sum of losses over the days", 1),
+        (["by_day", 0, "market", "toss_ups"], "the sum of toss_ups over the days", 1),
+        (["by_day", 0, "market", "not_graded"], "the sum of not_graded over the days", 1),
+    ],
+)
+def test_a_total_of_the_record_that_differs_from_a_recount_of_the_lines_is_named(
+    path, name, recount
+):
+    # Four games: a favorite that won, an upset, a toss-up and a game without
+    # a line. Each count of the record in turn is made one too many.
+    lines = [RESULT, *other_results()]
+    built = record_of(lines)
+    holder = built
+    for key in path[:-1]:
+        holder = holder[key]
+    holder[path[-1]] += 1
+
+    assert validate.record_problems(built, lines) == [
+        f"record: {name} is {recount + 1}, and a recount of the result lines gives {recount}"
+    ]
+
+
+def test_the_accuracy_of_the_record_is_the_share_of_wins():
+    lines = [RESULT, *other_results()]
+    built = record_of(lines)
+    built["market"]["accuracy"] = 0.6
+
+    assert validate.record_problems(built, lines) == [
+        "record: market.accuracy is 0.6, and 1 wins in 2 games give 0.5"
+    ]
+
+
+def test_a_record_of_other_lines_is_refused():
+    lines = [RESULT, *other_results()]
+
+    found = validate.record_problems(record_of(lines[:3]), lines)
+
+    assert "record: games is 3, and a recount of the result lines gives 4" in found
+    assert "record: market.not_graded is 0, and a recount of the result lines gives 1" in found
+
+
+def test_a_record_of_the_wrong_shape_is_described_without_an_error():
+    assert validate.record_problems(None, []) == ["record: not a JSON object"]
+    found = validate.record_problems({"schema": 2, "market": [], "by_day": "x"}, [RESULT])
+
+    assert found[0] == "record: schema is 2, expected 1"
+    assert "record: games is None, and a recount of the result lines gives 1" in found
+    assert "record: market.accuracy is None, and 1 wins in 1 games give 1.0" in found
