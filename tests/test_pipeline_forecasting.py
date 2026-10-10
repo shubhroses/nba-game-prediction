@@ -793,6 +793,76 @@ def test_a_sport_written_under_a_prefix_of_the_callers_choice_is_not_forecast(
     ]
 
 
+def as_before_the_models(data_dir):
+    """
+    Rewrites a data directory to what the job left in it before the models
+    were added: result lines of nine fields, a state and a board that know
+    the record of the sportsbooks alone, and no file of the models. Returns
+    the content of the results file.
+    """
+    lines = [dict(list(line.items())[:9]) for line in results_in(data_dir)]
+    (data_dir / OCTOBER).write_text(store.to_ndjson(lines))
+    (data_dir / "v1/record.json").write_text(store.to_json(record.build(lines, sport=NBA)))
+    (data_dir / "v1/model.json").unlink()
+    for path in (data_dir / "v1/predictions").iterdir():
+        path.unlink()
+    (data_dir / "v1/predictions").rmdir()
+    state, slate = read(data_dir, "v1/state.json"), read(data_dir, "v1/slate.json")
+    del state["models"], slate["models"]
+    state["results"]["record"] = slate["record"] = {"market": slate["record"]["market"]}
+    state["results"]["recent"] = slate["recent_results"] = lines
+    for game in slate["games"]:
+        del game["elo"], game["points_rest"]
+    (data_dir / "v1/state.json").write_text(store.to_json(state))
+    (data_dir / "v1/slate.json").write_text(store.to_json(slate))
+    return store.to_ndjson(lines)
+
+
+@pytest.mark.usefixtures("tuesday_played")
+def test_files_from_before_the_models_are_continued_from(run, api, data_dir):
+    # The data branch was started by the job as it was before the models
+    # were added, and the job as it is now has to go on from those files.
+    assert run(now=WEDNESDAY_MORNING).status == 0
+    old_lines = as_before_the_models(data_dir)
+    assert [list(line)[-1] for line in results_in(data_dir)] == ["market_verdict"] * 2
+
+    # A snapshot comes first, at 18:10 on Wednesday. No daily run has built
+    # the models yet, so the board has no forecast to show, and it shows the
+    # record that it was left.
+    result = run(now=WEDNESDAY_MORNING + timedelta(hours=13))
+
+    assert (result.status, result.asked) == (0, ["odds"])
+    slate = read(data_dir, "v1/slate.json")
+    assert slate["models"] is None and read(data_dir, "v1/state.json")["models"] is None
+    assert [(game["elo"], game["points_rest"]) for game in slate["games"]] == [(None, None)] * 2
+    assert slate["record"] == {"market": {"wins": 0, "losses": 2}}
+
+    # The daily run of the next morning adds to the old lines and does not
+    # touch them, and it replays both models through every result of the
+    # season, the two that the old lines hold among them.
+    api.scores = {NBA: scores(TUESDAY + WEDNESDAY)}
+    result = run(now=THURSDAY_MORNING)
+
+    assert (result.status, result.asked) == (0, ["scores", "odds"])
+    assert (result.outputs["results"], result.outputs["models"]) == ("2", "ok")
+    assert (data_dir / OCTOBER).read_text().startswith(old_lines)
+    lines = results_in(data_dir)
+    assert [len(line) for line in lines] == [9, 9, 13, 13]
+    # Nothing was frozen on Wednesday morning, so neither model is graded for its games.
+    assert [(line["elo"], line["elo_verdict"]) for line in lines[2:]] == [(None, "not_graded")] * 2
+    built = read(data_dir, "v1/record.json")
+    assert (built["games"], built["market"]["games"]) == (4, 4)
+    assert (built["elo"]["not_graded"], built["points_rest"]["not_graded"]) == (4, 4)
+    rebuilt = read(data_dir, "v1/model.json")
+    assert (rebuilt["status"], rebuilt["games"]) == ("ok", 4)
+    assert rebuilt["results_through"] == "2026-10-21"
+    # Boston lost on Tuesday, which an old line says, and on Wednesday.
+    assert rebuilt["teams"]["BOS"] == {"wins": 0, "losses": 2}
+    ratings = rebuilt["elo"]["ratings"]
+    assert (ratings["NYK"]["rating"], ratings["GSW"]["rating"]) == (1727, 1479)
+    assert read(data_dir, "v1/slate.json")["record"]["elo"] == {"wins": 0, "losses": 0}
+
+
 @pytest.mark.usefixtures("tuesday_played")
 def test_a_fault_in_the_models_does_not_cost_the_results_of_the_night(
     run, data_dir, tmp_path, monkeypatch
