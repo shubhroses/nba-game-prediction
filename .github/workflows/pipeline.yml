@@ -118,6 +118,10 @@ jobs:
           options=()
           if [ "$FORCE" = "true" ]; then options+=(--force); fi
           if [ "$DRY_RUN" = "true" ]; then options+=(--dry-run); fi
+          # The commit of main that was checked out, which is the code this
+          # step runs. The model file and the forecasts name it.
+          PIPELINE_COMMIT="$(git rev-parse HEAD)"
+          export PIPELINE_COMMIT
           python -m pipeline snapshot --all --data-dir "$DATA_DIR" "${options[@]}"
 
       # This step also runs when the step before it failed, as long as that

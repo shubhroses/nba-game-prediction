@@ -171,6 +171,22 @@ def test_the_summary_says_whether_both_models_were_built_or_elo_alone():
     assert summary.count("Games forecast today: $FORECASTS.") == 2
 
 
+def test_the_pipeline_is_told_which_commit_of_main_it_runs():
+    # The model file and the forecasts name the commit of the code that made
+    # them. The checkout is of main, whatever the run was started from, so
+    # the commit is read from the checkout and not from the event.
+    step = step_named("Take the snapshot")
+    lines = [line.strip() for line in step.splitlines()]
+
+    assert command.COMMIT_VARIABLE == "PIPELINE_COMMIT"
+    told = lines.index('PIPELINE_COMMIT="$(git rev-parse HEAD)"')
+    assert lines[told + 1] == "export PIPELINE_COMMIT"
+    assert lines[told + 2].startswith("python -m pipeline snapshot ")
+    assert "github.sha" not in PIPELINE
+    (checkout,) = [text for text in re.split(r"\n      - name: ", PIPELINE) if "ref: main" in text]
+    assert "uses: actions/checkout@" in checkout
+
+
 def test_a_step_that_fails_fails_the_job():
     # That is what tells the owner. Nothing lets a failed step pass.
     assert "continue-on-error" not in PIPELINE
