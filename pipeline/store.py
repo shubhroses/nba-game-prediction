@@ -77,7 +77,7 @@ def to_ndjson(lines: list[dict]) -> str:
 
 
 def from_ndjson(content: str) -> list[dict]:
-    """The lines of a file that to_ndjson wrote. Call this only with content that has been checked."""
+    """The lines of a file that to_ndjson wrote. Call this only with content that was checked."""
     return [json.loads(line) for line in content.splitlines()]
 
 
