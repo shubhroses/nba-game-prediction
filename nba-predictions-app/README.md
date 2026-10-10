@@ -57,7 +57,7 @@ When the board cannot be loaded, the page shows one sentence that says why and a
 
 ## Run locally
 
-Requires Node.js 20, 22, or 24 and later. No key and no `.env` file are needed.
+Requires Node.js 20.19 or later, 22.13 or later, or 24 and later, which is the range the lint and test tools accept. CI uses Node 22. No key and no `.env` file are needed.
 
 ```bash
 npm ci

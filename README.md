@@ -182,7 +182,7 @@ pandas is capped below 3 because `predict_past.ipynb` relies on pandas 2 behavio
 
 ### Web app
 
-Requires Node.js 20, 22, or 24 and later. No API key is needed.
+Requires Node.js 20.19 or later, 22.13 or later, or 24 and later (the range the app's lint and test tools accept). No API key is needed.
 
 ```bash
 cd nba-predictions-app
