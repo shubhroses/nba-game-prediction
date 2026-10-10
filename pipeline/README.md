@@ -25,6 +25,7 @@ With `--all` there can be more than one sport. The state files of all of them ar
 | `teams.py` | The 30 team names as the provider spells them, with the NBA's three-letter codes. |
 | `feed.py` | What is read from every event the provider lists: its id, its start and its two teams. |
 | `consensus.py` | The margin-free home probability of one sportsbook, and the median across sportsbooks. |
+| `grading.py` | Which side a line favors, and what became of the line once the game is over. |
 | `snapshot.py` | Builds the board, the state and the history lines from a response and the previous state. A pure function. |
 | `validate.py` | The checks on the three files. |
 | `store.py` | Reads the previous files, writes the new ones, and removes the temporary directory of a run that was killed while it wrote. |
@@ -396,6 +397,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | --- | --- |
 | `tests/test_pipeline_teams.py` | The team table against the web app's logo table, the scoreboard fixture and `nba_api`'s list of teams. The last check is skipped when `nba_api` is not installed. |
 | `tests/test_pipeline_consensus.py` | The margin-free share, the median, the range and the count, and every way a sportsbook's quote can be unusable. |
+| `tests/test_pipeline_grading.py` | The favorite from 52% on, the toss-up between 48% and 52%, and the four verdicts. |
 | `tests/test_pipeline_schedule.py` | The slot table on 31 October, 1 November and 2 November 2026, across the end of daylight saving time, the cron triggers walked over those three days, and the 75 minutes: which triggers of a slot start in time. |
 | `tests/test_pipeline_timestamps.py` | The timestamp format. |
 | `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
