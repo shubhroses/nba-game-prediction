@@ -5,10 +5,12 @@ The workflow cannot be run here. These tests read it as text and hold it to
 the few things that other files, or the safety of the key, depend on.
 """
 
+import inspect
 import re
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from pipeline import __main__ as command
 from pipeline import schedule
 
 WORKFLOWS = Path(__file__).resolve().parent.parent / ".github" / "workflows"
@@ -116,12 +118,44 @@ def test_what_was_written_is_pushed_although_the_snapshot_step_failed():
 
 
 def test_the_commit_message_gives_the_count_for_each_prefix():
-    # The pipeline puts the counts together ("v1 12 games, v1-dryrun 3 games")
-    # and the step puts the slot in front of them.
+    # The pipeline puts the counts together ("v1 12 games, v1-dryrun 3 games",
+    # or "v1 9 results and 12 games" after the daily work) and the step puts
+    # the slot in front of them.
     push = step_named("Commit the snapshot and push it to the data branch")
 
     assert "          WRITTEN: ${{ steps.snapshot.outputs.written }}\n" in push
     assert re.findall(r"git commit.*", push) == ['git commit --quiet -m "Snapshot $SLOT: $WRITTEN"']
+
+
+def test_every_output_the_workflow_reads_is_one_the_command_writes():
+    # A name that the command does not write reads as an empty string, and
+    # the summary would leave its line out without a word.
+    read = set(re.findall(r"steps\.snapshot\.outputs\.(\w+)", PIPELINE))
+    source = inspect.getsource(command._outputs)
+    written = set(re.findall(r'"(\w+)": ', source)) | set(re.findall(r'outputs\["(\w+)"\]', source))
+
+    assert len(written) == 15
+    assert read <= written
+    # All of them but `written`, which is for the message of the commit, are in the summary.
+    summary = step_named("Write the job summary")
+    in_the_summary = set(re.findall(r"steps\.snapshot\.outputs\.(\w+)", summary))
+    assert in_the_summary == written - {"changed", "written"}
+
+
+def test_the_summary_gives_the_results_of_a_run_that_did_the_daily_work():
+    summary = step_named("Write the job summary")
+    results_line = (
+        'echo "- Results: $RESULTS recorded, of which $RESULTS_NOT_GRADED not graded. '
+        'Dropped: $RESULTS_DROPPED."'
+    )
+
+    # The line is written when the command reports results, also when the
+    # run took no snapshot, and the line on the games only when it took one.
+    assert f'if [ -n "$RESULTS" ]; then\n                {results_line}\n' in summary
+    assert 'elif [ -n "$RESULTS$GAMES" ]; then\n' in summary
+    assert 'if [ -n "$GAMES" ]; then\n                echo "- Games: $GAMES,' in summary
+    # A run that was too late for the daily work says so.
+    assert 'if [ -n "$RESULTS_GIVEN_UP" ]; then\n' in summary
 
 
 def test_a_step_that_fails_fails_the_job():

@@ -1,7 +1,9 @@
 name: Odds snapshot
 
-# Records what US sportsbooks imply about each upcoming NBA game and commits
-# it to the data branch. pipeline/README.md describes the job and its files.
+# Records what US sportsbooks imply about each upcoming NBA game and, once a
+# day, how the games that are over ended and whether the sportsbooks' favorite
+# won. Commits both to the data branch. pipeline/README.md describes the job
+# and its files.
 
 on:
   schedule:
@@ -117,10 +119,10 @@ jobs:
           python -m pipeline snapshot --all --data-dir "$DATA_DIR" "${options[@]}"
 
       # This step also runs when the step before it failed, as long as that
-      # step wrote something. The pipeline takes each sport on its own, and a
-      # sport that was written is pushed although another one failed, so that
-      # the next run does not ask for it again. The failed step still fails
-      # the job.
+      # step wrote something. The pipeline takes each sport on its own, the
+      # daily work and the snapshot one after the other, and what was written
+      # is pushed although something else failed, so that the next run does
+      # not ask for it again. The failed step still fails the job.
       - name: Commit the snapshot and push it to the data branch
         id: push
         if: ${{ !cancelled() && steps.snapshot.outputs.changed == 'true' && !inputs.dry_run }}
@@ -133,6 +135,8 @@ jobs:
           git add --all
           # The message gives the count for each prefix that was written:
           # "Snapshot 2026-10-20T18:10-04:00: v1 12 games, v1-dryrun 3 games".
+          # A run that did the daily work puts the results it added first:
+          # "Snapshot 2026-10-21T05:10-04:00: v1 9 results and 12 games".
           git commit --quiet -m "Snapshot $SLOT: $WRITTEN"
           # Never forced, and never to main. The push is refused if the data
           # branch on GitHub has moved since this run fetched it.
@@ -148,6 +152,10 @@ jobs:
           SLOT: ${{ steps.snapshot.outputs.slot }}
           FAILED: ${{ steps.snapshot.outputs.failed }}
           GIVEN_UP: ${{ steps.snapshot.outputs.given_up }}
+          RESULTS_GIVEN_UP: ${{ steps.snapshot.outputs.results_given_up }}
+          RESULTS: ${{ steps.snapshot.outputs.results }}
+          RESULTS_NOT_GRADED: ${{ steps.snapshot.outputs.results_not_graded }}
+          RESULTS_DROPPED: ${{ steps.snapshot.outputs.results_dropped }}
           GAMES: ${{ steps.snapshot.outputs.games }}
           WITH_LINE: ${{ steps.snapshot.outputs.with_line }}
           DROPPED: ${{ steps.snapshot.outputs.dropped }}
@@ -160,9 +168,14 @@ jobs:
             echo
             if [ "$SNAPSHOT" != "success" ] && [ "$SNAPSHOT" != "failure" ]; then
               echo "The snapshot step did not run."
-            elif [ -n "$GAMES" ]; then
+            elif [ -n "$RESULTS$GAMES" ]; then
               echo "- Slot: \`$SLOT\`"
-              echo "- Games: $GAMES, of which $WITH_LINE with a line. Dropped: $DROPPED."
+              if [ -n "$RESULTS" ]; then
+                echo "- Results: $RESULTS recorded, of which $RESULTS_NOT_GRADED not graded. Dropped: $RESULTS_DROPPED."
+              fi
+              if [ -n "$GAMES" ]; then
+                echo "- Games: $GAMES, of which $WITH_LINE with a line. Dropped: $DROPPED."
+              fi
               echo "- API credits: ${CREDITS_SPENT:-unknown} spent, ${CREDITS_REMAINING:-unknown} remaining, ${CREDITS_USED:-unknown} used."
               if [ "$SNAPSHOT" = "failure" ]; then
                 echo "- The step failed${FAILED:+ for $FAILED}, so the figures above are not complete. The log of the step says why."
@@ -170,14 +183,20 @@ jobs:
               if [ "$PUSH" = "success" ]; then
                 echo "- Pushed to the data branch as commit \`$COMMIT\`."
               elif [ "$PUSH" = "failure" ]; then
-                echo "- The push to the data branch failed, so this snapshot is not recorded. The next run takes it again, unless the slot is too old by then."
+                echo "- The push to the data branch failed, so what this run wrote is not recorded. The next run takes it again, unless the slot is too old by then."
               else
                 echo "- Dry run: nothing was written or pushed."
               fi
             elif [ "$SNAPSHOT" = "failure" ]; then
-              echo "The snapshot for slot \`${SLOT:-unknown}\` failed${FAILED:+ for $FAILED} and nothing was written. The log of the step says why."
-            elif [ -n "$GIVEN_UP" ]; then
-              echo "Slot \`$SLOT\` was not recorded in time for $GIVEN_UP and is given up. No request was made."
+              echo "The run for slot \`${SLOT:-unknown}\` failed${FAILED:+ for $FAILED} and nothing was written. The log of the step says why."
+            elif [ -n "$GIVEN_UP$RESULTS_GIVEN_UP" ]; then
+              if [ -n "$GIVEN_UP" ]; then
+                echo "Slot \`$SLOT\` was not recorded in time for $GIVEN_UP and is given up."
+              fi
+              if [ -n "$RESULTS_GIVEN_UP" ]; then
+                echo "The results that were due in slot \`$SLOT\` were not recorded in time for $RESULTS_GIVEN_UP. The next daily run reaches back three days."
+              fi
+              echo "No request was made."
             else
               echo "Not due: slot \`$SLOT\` is already recorded. No request was made."
             fi
