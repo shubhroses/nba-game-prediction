@@ -1,0 +1,48 @@
+{
+  "model": "Elo with FiveThirtyEight's rule for NBA games and a home court of 40 points",
+  "season": "2026-27",
+  "constants": {
+    "k": 20,
+    "home_court": 40,
+    "mean": 1505,
+    "reversion": 0.25
+  },
+  "provenance": [
+    "The starting point is each team's last rating in FiveThirtyEight's NBA Elo file (nba_elo.csv), which ends with the finals of June 2023. FiveThirtyEight published its data under the Creative Commons Attribution 4.0 International License (CC BY 4.0).",
+    "Those ratings were carried through the 3,962 games of 2023-24, 2024-25 and 2025-26 with the rule in elo.py and the constants above, giving up 25% of their distance to 1505 before each of the three seasons.",
+    "The ratings below are the result after one more such step, for the start of 2026-27, rounded to whole numbers.",
+    "The results of those three seasons are not in this repository."
+  ],
+  "ratings": {
+    "ATL": 1531,
+    "BKN": 1324,
+    "BOS": 1607,
+    "CHA": 1594,
+    "CHI": 1385,
+    "CLE": 1578,
+    "DAL": 1394,
+    "DEN": 1597,
+    "DET": 1614,
+    "GSW": 1451,
+    "HOU": 1572,
+    "IND": 1379,
+    "LAC": 1527,
+    "LAL": 1568,
+    "MEM": 1335,
+    "MIA": 1520,
+    "MIL": 1390,
+    "MIN": 1559,
+    "NOP": 1432,
+    "NYK": 1720,
+    "OKC": 1684,
+    "ORL": 1549,
+    "PHI": 1532,
+    "PHX": 1525,
+    "POR": 1523,
+    "SAC": 1375,
+    "SAS": 1702,
+    "TOR": 1545,
+    "UTA": 1348,
+    "WAS": 1289
+  }
+}

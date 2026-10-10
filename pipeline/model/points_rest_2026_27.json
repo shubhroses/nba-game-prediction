@@ -1,0 +1,208 @@
+{
+ "model": "points-and-rest v1 (dynamic rating in points + six schedule terms)",
+ "season": "2026-27",
+ "built_from": "games of 2004-05..2025-26 (28382 games); coefficients fitted on 25749 games of 2006-07..2025-26",
+ "season_first_day": "2026-10-20",
+ "regular_season_last_day": "2027-04-11",
+ "constants": {
+  "sigma": 12.0,
+  "q_per_day": 0.06,
+  "cap": 22.0,
+  "alpha": 0.0003333333333333333,
+  "beta": 0.001,
+  "rho": 0.8,
+  "tau2": 7.0
+ },
+ "coef": {
+  "home": -0.6330870699923978,
+  "b2b_home": -1.3519135235917659,
+  "b2b_away": 1.7055210806388843,
+  "games7_diff": -0.31935558963892724,
+  "altitude_km": 0.7415769699822093,
+  "playoff_home": 1.8120902681643856
+ },
+ "kappa": 0.9445730382002541,
+ "state": {
+  "home_court": 1.7252145201684306,
+  "r": 0.962735852551762,
+  "teams": {
+   "Atlanta Hawks": {
+    "rating": 1.4443152066308036,
+    "var": 9.90876674467546
+   },
+   "Boston Celtics": {
+    "rating": 5.11824066147992,
+    "var": 9.834185788225605
+   },
+   "New Orleans Pelicans": {
+    "rating": -2.038380447313104,
+    "var": 9.79543018606002
+   },
+   "Chicago Bulls": {
+    "rating": -4.387525581409854,
+    "var": 9.704567586771294
+   },
+   "Cleveland Cavaliers": {
+    "rating": 2.4630246353911205,
+    "var": 9.79508239980052
+   },
+   "Dallas Mavericks": {
+    "rating": -3.9477299272868978,
+    "var": 9.712912962315542
+   },
+   "Denver Nuggets": {
+    "rating": 3.6051621649629007,
+    "var": 9.89875875108323
+   },
+   "Detroit Pistons": {
+    "rating": 5.2579563646551915,
+    "var": 9.786144764438554
+   },
+   "Golden State Warriors": {
+    "rating": -1.647351604154477,
+    "var": 9.749859247662467
+   },
+   "Houston Rockets": {
+    "rating": 2.9394391284730697,
+    "var": 9.845514354804319
+   },
+   "Indiana Pacers": {
+    "rating": -4.807181709825685,
+    "var": 9.72571870653263
+   },
+   "Los Angeles Clippers": {
+    "rating": 1.2577219440276661,
+    "var": 9.726486204003486
+   },
+   "Los Angeles Lakers": {
+    "rating": 2.3312947446721086,
+    "var": 9.893819862347664
+   },
+   "Miami Heat": {
+    "rating": 1.0724607318400532,
+    "var": 9.744621583465884
+   },
+   "Milwaukee Bucks": {
+    "rating": -4.4593122397865805,
+    "var": 9.65466240851643
+   },
+   "Minnesota Timberwolves": {
+    "rating": 2.2739288361586163,
+    "var": 9.91229340412208
+   },
+   "Brooklyn Nets": {
+    "rating": -7.062681854356652,
+    "var": 9.671099685123087
+   },
+   "New York Knicks": {
+    "rating": 8.056831131619612,
+    "var": 10.217758552321003
+   },
+   "Orlando Magic": {
+    "rating": 1.217215121782704,
+    "var": 9.74331579827643
+   },
+   "Philadelphia 76ers": {
+    "rating": 0.8457921310705109,
+    "var": 9.759673292566834
+   },
+   "Phoenix Suns": {
+    "rating": 0.9381611387991559,
+    "var": 9.801045023749012
+   },
+   "Portland Trail Blazers": {
+    "rating": 1.0139512976632665,
+    "var": 9.857084125385706
+   },
+   "Sacramento Kings": {
+    "rating": -5.359184514217681,
+    "var": 9.782029699873444
+   },
+   "San Antonio Spurs": {
+    "rating": 8.545260712491864,
+    "var": 9.949960033708983
+   },
+   "Oklahoma City Thunder": {
+    "rating": 7.96872541298821,
+    "var": 10.053002785339466
+   },
+   "Utah Jazz": {
+    "rating": -6.1501526001220155,
+    "var": 9.738405219423669
+   },
+   "Washington Wizards": {
+    "rating": -8.645699176230329,
+    "var": 9.652153027477446
+   },
+   "Toronto Raptors": {
+    "rating": 1.7005723505278134,
+    "var": 9.882040815465025
+   },
+   "Memphis Grizzlies": {
+    "rating": -5.896693225073559,
+    "var": 9.655134789641302
+   },
+   "Charlotte Hornets": {
+    "rating": 3.7661156244217966,
+    "var": 9.772116345661157
+   }
+  }
+ },
+ "arena_altitude_km": {
+  "Atlanta Hawks": 0.32,
+  "Boston Celtics": 0.01,
+  "New Orleans Pelicans": 0.002,
+  "Chicago Bulls": 0.181,
+  "Cleveland Cavaliers": 0.199,
+  "Dallas Mavericks": 0.131,
+  "Denver Nuggets": 1.609,
+  "Detroit Pistons": 0.19,
+  "Golden State Warriors": 0.005,
+  "Houston Rockets": 0.015,
+  "Indiana Pacers": 0.218,
+  "Los Angeles Clippers": 0.04,
+  "Los Angeles Lakers": 0.09,
+  "Miami Heat": 0.002,
+  "Milwaukee Bucks": 0.188,
+  "Minnesota Timberwolves": 0.256,
+  "Brooklyn Nets": 0.01,
+  "New York Knicks": 0.01,
+  "Orlando Magic": 0.03,
+  "Philadelphia 76ers": 0.01,
+  "Phoenix Suns": 0.331,
+  "Portland Trail Blazers": 0.015,
+  "Sacramento Kings": 0.009,
+  "San Antonio Spurs": 0.198,
+  "Oklahoma City Thunder": 0.366,
+  "Utah Jazz": 1.288,
+  "Washington Wizards": 0.01,
+  "Toronto Raptors": 0.076,
+  "Memphis Grizzlies": 0.08,
+  "Charlotte Hornets": 0.229
+ },
+ "neutral_games": [
+  {
+   "day": "2026-11-07",
+   "home_team": "Indiana Pacers",
+   "away_team": "Denver Nuggets",
+   "site": "Mexico City"
+  },
+  {
+   "day": "2027-01-14",
+   "home_team": "San Antonio Spurs",
+   "away_team": "New Orleans Pelicans",
+   "site": "Paris"
+  },
+  {
+   "day": "2027-01-17",
+   "home_team": "New Orleans Pelicans",
+   "away_team": "San Antonio Spurs",
+   "site": "Manchester"
+  }
+ ],
+ "notes": {
+  "units": "ratings, home court and coefficients are in points; variances in points squared",
+  "state": "ratings and variances as of opening day, after the between-season step (rho, tau2)",
+  "residual_sd_points": 11.217835506227242
+ }
+}
