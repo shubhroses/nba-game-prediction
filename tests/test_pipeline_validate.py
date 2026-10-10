@@ -582,3 +582,111 @@ def test_a_record_of_the_wrong_shape_is_described_without_an_error():
     assert found[0] == "record: schema is 2, expected 1"
     assert "record: games is None, and a recount of the result lines gives 1" in found
     assert "record: market.accuracy is None, and 1 wins in 1 games give 1.0" in found
+
+
+# What the daily run notes in the state after it has recorded the result above.
+NOTED = {
+    "last_slot": "2026-10-21T05:10-04:00",
+    "last_run_at": "2026-10-21T09:10:07Z",
+    "record": {"market": {"wins": 1, "losses": 0}},
+    "recent": [RESULT],
+}
+HEADLINE_PROBLEM = "market must hold whole numbers for wins and losses"
+
+
+def test_a_state_passes_with_the_notes_of_the_daily_work_and_without_them(built):
+    built.state["results"] = copy.deepcopy(NOTED)
+    assert validate.state_problems(built.state) == []
+
+    # Null until the daily work has been done once.
+    built.state["results"] = None
+    assert validate.state_problems(built.state) == []
+
+    # A state from before there was any daily work does not have the field.
+    del built.state["results"]
+    assert validate.state_problems(built.state) == []
+
+
+@pytest.mark.parametrize(
+    ("change", "problem"),
+    [
+        ({"last_slot": None}, "state results: last_slot is not a string"),
+        ({"last_run_at": "this morning"}, "state results: last_run_at is not a UTC timestamp"),
+        ({"record": None}, f"state results record: {HEADLINE_PROBLEM}"),
+        ({"record": {"market": {"wins": 1}}}, f"state results record: {HEADLINE_PROBLEM}"),
+        ({"recent": None}, "state results recent: not a list"),
+        ({"recent": ["text"]}, "state results recent None: not a JSON object"),
+        (
+            {"recent": [RESULT, result(id="b" * 32, market_verdict="upset")]},
+            f"state results recent '{'b' * 32}': market_verdict is 'upset', "
+            "but the line and the score make it 'favorite_won'",
+        ),
+    ],
+)
+def test_each_note_of_the_daily_work_is_checked(built, change, problem):
+    built.state["results"] = {**copy.deepcopy(NOTED), **change}
+
+    assert validate.state_problems(built.state) == [problem]
+
+
+def test_notes_that_are_not_an_object_are_described_without_an_error(built):
+    for notes in ([], "text", 7):
+        built.state["results"] = notes
+        assert validate.state_problems(built.state) == ["state results: not a JSON object"]
+
+
+def test_a_state_from_before_the_first_snapshot_names_no_slot_and_no_time(built):
+    # The daily work can be recorded before a snapshot ever is.
+    built.state.update(last_slot=None, last_run_at=None, games={})
+    assert validate.state_problems(built.state) == []
+
+    # One of the two without the other is not such a state.
+    built.state.update(last_slot=None, last_run_at="2026-10-20T22:10:41Z")
+    assert validate.state_problems(built.state) == ["state: last_slot is not a string"]
+    built.state.update(last_slot="2026-10-20T18:10-04:00", last_run_at=None)
+    assert validate.state_problems(built.state) == ["state: last_run_at is not a UTC timestamp"]
+
+    # And a state that lacks the two fields is not one either.
+    del built.state["last_slot"], built.state["last_run_at"]
+    assert validate.state_problems(built.state) == [
+        "state: last_slot is not a string",
+        "state: last_run_at is not a UTC timestamp",
+    ]
+
+
+def test_a_board_passes_with_a_record_and_recent_results(built):
+    built.slate["record"] = {"market": {"wins": 1, "losses": 0}}
+    built.slate["recent_results"] = [copy.deepcopy(RESULT), *other_results()]
+
+    assert validate.slate_problems(built.slate) == []
+
+
+@pytest.mark.parametrize(
+    "headline",
+    [
+        {},
+        {"market": None},
+        {"market": {"wins": 1}},
+        {"market": {"wins": "1", "losses": 0}},
+        {"market": {"wins": -1, "losses": 0}},
+        {"market": {"wins": 1.0, "losses": 0}},
+        {"market": {"wins": True, "losses": 0}},
+        [],
+        "41-19",
+    ],
+)
+def test_the_record_on_the_board_is_null_or_holds_wins_and_losses(built, headline):
+    built.slate["record"] = headline
+
+    assert validate.slate_problems(built.slate) == [f"slate record: {HEADLINE_PROBLEM}"]
+
+
+def test_the_recent_results_on_the_board_are_a_list_of_results(built):
+    built.slate["recent_results"] = [RESULT, result(id="b" * 32, home_pts=104)]
+    assert validate.slate_problems(built.slate) == [
+        f"slate recent_results '{'b' * 32}': home_pts and away_pts must be whole numbers "
+        "that are not negative and not equal, got 104 and 104"
+    ]
+
+    del built.slate["recent_results"]
+    assert validate.slate_problems(built.slate) == ["slate recent_results: not a list"]

@@ -175,6 +175,8 @@ The board: the upcoming games as of the latest snapshot. Replaced by every snaps
   ],
   "generated_at": "2026-10-20T22:10:41Z",
   "next_due": "2026-10-20T21:10-04:00",
+  "recent_results": [],
+  "record": null,
   "schema": 1,
   "slot": "2026-10-20T18:10-04:00",
   "sport": "basketball_nba"
@@ -194,6 +196,8 @@ The board: the upcoming games as of the latest snapshot. Replaced by every snaps
 | `games[].home`, `games[].away` | Team codes. |
 | `games[].line` | The consensus in this snapshot: `p_home`, `lo`, `hi`, `n`, `books` and `captured_at`. `books` is the sorted list of the sportsbooks' names, or an empty list when `lo` equals `hi`, as it does when `n` is 1. `null` when no sportsbook quoted both teams in this snapshot. |
 | `games[].open` | The opening line: `p_home` and `at` of the first snapshot in which the game had a line. `null` if it never had one. |
+| `record` | The record so far, as the state carries it. `null` until a daily run has noted one. |
+| `recent_results` | The results of the games that started less than eight days before `generated_at`, in order of start, as the state carries them. Empty until a daily run has noted one. |
 
 ### `{prefix}/state.json`
 
@@ -233,6 +237,7 @@ What the job remembers between runs.
   },
   "last_run_at": "2026-10-20T22:10:41Z",
   "last_slot": "2026-10-20T18:10-04:00",
+  "results": null,
   "schema": 1
 }
 ```
@@ -247,6 +252,7 @@ What the job remembers between runs.
 | `games.{id}.commence_time`, `home`, `away` | As in the board, as of the last snapshot that listed the game. |
 | `games.{id}.first` | The opening line: `p_home` and `at`. `null` until the game has a line. |
 | `games.{id}.latest` | The most recent line: `p_home`, `lo`, `hi`, `n` and `at`. `null` until the game has a line. |
+| `results` | What a daily run notes: `last_slot` and `last_run_at` of that run, the `record` as the board shows it and the `recent` results. `null` until a daily run has noted them, and not there in a state file from before the field existed. |
 
 The rules the state follows:
 
@@ -254,6 +260,7 @@ The rules the state follows:
 - `latest` is replaced only by a snapshot taken before the game starts, and only when the game has a line in that snapshot. Once a game has started, `latest` is its last line from before the start, which is what grading needs.
 - A game stays until 14 days after its start and is then removed.
 - A game that is missing from a response stays as it is.
+- `results` is carried from one snapshot to the next. A result leaves `recent` eight days after the start of its game.
 
 ### `{prefix}/history/YYYY-MM-DD.ndjson`
 
@@ -402,7 +409,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | `tests/test_pipeline_record.py` | The record's arithmetic against figures worked out by hand: the Wilson interval of 41 wins in 60 games, a Brier score and a log loss of four games, which band a favorite falls in, the New York day of a game, the three biggest upsets, and that the same lines give the same bytes in any order. |
 | `tests/test_pipeline_schedule.py` | The slot table on 31 October, 1 November and 2 November 2026, across the end of daylight saving time, the cron triggers walked over those three days, the 75 minutes: which triggers of a slot start in time, and which slot is the daily one at each moment of those days. |
 | `tests/test_pipeline_timestamps.py` | The timestamp format. |
-| `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
+| `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported, and what a daily run noted is carried over and shown on the board for eight days. |
 | `tests/test_pipeline_validate.py` | Each check, by breaking one thing in a valid snapshot, in a valid result, in a results file or in the record that was built from the results. |
 | `tests/test_pipeline_store.py` | The file formats on disk, that a write which fails before any file is moved leaves the data directory as it was, the order of the moves, and that the temporary directory of a killed run is removed. |
 | `tests/test_pipeline_oddsapi.py` | The two requests against the fake server, for odds and for scores: the parameters of each, and for both of them that a request is sent once whatever comes of it, the refusals, a redirect, a body that is nested too deep, and that no error message or traceback holds the key or the URL. |

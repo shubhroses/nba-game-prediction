@@ -19,6 +19,10 @@ SCHEMA = 1
 # step can still find the last line taken before the start.
 RETENTION = timedelta(days=14)
 
+# The board lists the results of the games that started less than this long
+# ago: a full week of them, whatever the time of day the board is read at.
+RECENT = timedelta(days=8)
+
 
 @dataclass(frozen=True)
 class Snapshot:
@@ -54,6 +58,9 @@ def build(
     - A game's latest line is replaced only by a snapshot taken before the
       game starts. A snapshot in which the game has no line leaves it alone.
     - A game leaves the state 14 days after its start.
+    - What the last daily run noted in the state is carried over, and the
+      board shows it: the record so far and the recent results. A result
+      leaves that list eight days after the start of its game.
     """
     at = format_utc(now)
     games = copy.deepcopy(previous["games"]) if previous else {}
@@ -109,6 +116,8 @@ def build(
         if parse_utc(game["commence_time"]) > oldest_kept
     }
 
+    noted = previous.get("results") if previous else None
+    results = noted and {**noted, "recent": recent(noted["recent"], now)}
     slate = {
         "schema": SCHEMA,
         "sport": sport,
@@ -116,6 +125,8 @@ def build(
         "slot": slot,
         "next_due": next_due,
         "games": board,
+        "record": copy.deepcopy(results["record"]) if results else None,
+        "recent_results": copy.deepcopy(results["recent"]) if results else [],
     }
     state = {
         "schema": SCHEMA,
@@ -123,8 +134,16 @@ def build(
         "last_run_at": at,
         "credits": dict(credits),
         "games": games,
+        "results": copy.deepcopy(results),
     }
     return Snapshot(slate=slate, state=state, history=history, dropped=dropped)
+
+
+def recent(lines: list[dict], now: datetime) -> list[dict]:
+    """The result lines of the games that started less than eight days before now, by start."""
+    oldest_kept = now - RECENT
+    kept = [line for line in lines if parse_utc(line["commence_time"]) > oldest_kept]
+    return sorted(kept, key=lambda line: (line["commence_time"], line["id"]))
 
 
 def published(probability: float) -> float:

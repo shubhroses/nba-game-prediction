@@ -100,6 +100,9 @@ def test_the_board_lists_the_upcoming_games_in_order_of_start():
                 "open": None,
             },
         ],
+        # No daily run has recorded a result yet.
+        "record": None,
+        "recent_results": [],
     }
     assert built.dropped == []
 
@@ -135,6 +138,7 @@ def test_the_state_records_the_run_and_every_game():
                 "latest": None,
             },
         },
+        "results": None,
     }
 
 
@@ -510,3 +514,102 @@ def test_an_empty_response_gives_an_empty_board():
 )
 def test_probabilities_are_written_with_four_decimals_and_never_as_0_or_1(probability, written):
     assert snapshot.published(probability) == written
+
+
+def result_line(game_id, start, verdict="favorite_won"):
+    """A result as the daily run writes it, for a game that the home team won 112 to 104."""
+    lines = {"favorite_won": 0.532, "upset": 0.468, "toss_up": 0.505, "not_graded": None}
+    line = lines[verdict] and {
+        "p_home": lines[verdict],
+        "lo": lines[verdict],
+        "hi": lines[verdict],
+        "n": 1,
+        "at": "2026-10-01T22:10:41Z",
+    }
+    return {
+        "id": game_id,
+        "commence_time": start,
+        "home": "BOS",
+        "away": "NYK",
+        "home_pts": 112,
+        "away_pts": 104,
+        "recorded_at": "2026-10-20T09:10:07Z",
+        "market": line,
+        "market_verdict": verdict,
+    }
+
+
+def noted_by_the_daily_run(recent):
+    """A state in which the daily run of this morning has noted its work."""
+    state = build([EARLY_GAME]).state
+    state["results"] = {
+        "last_slot": "2026-10-20T05:10-04:00",
+        "last_run_at": "2026-10-20T09:10:07Z",
+        "record": {"market": {"wins": 41, "losses": 19}},
+        "recent": recent,
+    }
+    return state
+
+
+def test_what_the_daily_run_noted_is_carried_over_and_shown_on_the_board():
+    yesterday = result_line("1" * 32, "2026-10-19T23:00:00Z")
+    the_day_before = result_line("2" * 32, "2026-10-18T23:00:00Z", "upset")
+    previous = noted_by_the_daily_run([the_day_before, yesterday])
+
+    built = build([EARLY_GAME], previous=previous)
+
+    assert built.state["results"] == previous["results"]
+    assert built.slate["record"] == {"market": {"wins": 41, "losses": 19}}
+    assert built.slate["recent_results"] == [the_day_before, yesterday]
+    assert validate.slate_problems(built.slate) == []
+    assert validate.state_problems(built.state) == []
+
+
+def test_a_result_leaves_the_board_eight_days_after_the_start_of_its_game():
+    # NOW is 22:10:41 on 20 October. Eight days before it is 22:10:41 on 12 October.
+    eight_days_old = result_line("1" * 32, "2026-10-12T22:10:41Z")
+    one_second_short = result_line("2" * 32, "2026-10-12T22:10:42Z")
+    previous = noted_by_the_daily_run([eight_days_old, one_second_short])
+
+    built = build([], previous=previous)
+
+    assert built.slate["recent_results"] == [one_second_short]
+    assert built.state["results"]["recent"] == [one_second_short]
+    # The record is of every game, not of the recent ones.
+    assert built.slate["record"] == {"market": {"wins": 41, "losses": 19}}
+    assert built.state["results"]["last_slot"] == "2026-10-20T05:10-04:00"
+
+
+def test_the_recent_results_are_listed_in_order_of_start_and_then_of_id():
+    starts = [("3" * 32, "2026-10-19T23:00:00Z"), ("2" * 32, "2026-10-18T23:00:00Z")]
+    starts += [("1" * 32, "2026-10-19T23:00:00Z")]
+    previous = noted_by_the_daily_run([result_line(game_id, start) for game_id, start in starts])
+
+    listed = build([], previous=previous).slate["recent_results"]
+
+    assert [line["id"] for line in listed] == ["2" * 32, "1" * 32, "3" * 32]
+
+
+def test_a_state_from_before_there_was_any_daily_work_is_continued_from():
+    previous = build([EARLY_GAME]).state
+    del previous["results"]
+
+    built = build([EARLY_GAME], previous=previous, now=NOW + timedelta(minutes=30))
+
+    assert built.state["results"] is None
+    assert (built.slate["record"], built.slate["recent_results"]) == (None, [])
+    assert built.state["games"][EARLY]["first"] == {"p_home": 0.6214, "at": AT}
+
+
+def test_the_board_and_the_state_do_not_share_what_they_carry():
+    previous = noted_by_the_daily_run([result_line("1" * 32, "2026-10-19T23:00:00Z")])
+    untouched = copy.deepcopy(previous)
+
+    built = build([], previous=previous)
+    built.slate["record"]["market"]["wins"] = 0
+    built.slate["recent_results"][0]["market"]["p_home"] = 0.9
+    built.state["results"]["recent"][0]["home_pts"] = 0
+
+    assert built.state["results"]["record"] == {"market": {"wins": 41, "losses": 19}}
+    assert built.state["results"]["recent"][0]["market"]["p_home"] == 0.532
+    assert previous == untouched

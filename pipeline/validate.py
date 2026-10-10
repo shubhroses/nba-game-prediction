@@ -83,6 +83,9 @@ def slate_problems(slate: object) -> list[str]:
                         "and none when n is 1 or lo equals hi"
                     )
         found += _opening_problems(game.get("open"), f"{where} open")
+    if slate.get("record") is not None:
+        found += _headline_problems(slate["record"], "slate record")
+    found += _recent_problems(slate.get("recent_results"), "slate recent_results")
     return found
 
 
@@ -90,10 +93,12 @@ def state_problems(state: object) -> list[str]:
     if not isinstance(state, dict):
         return ["state: not a JSON object"]
     found = _schema_problems(state, "state")
-    if not isinstance(state.get("last_slot"), str):
-        found.append("state: last_slot is not a string")
-    if _time(state.get("last_run_at")) is None:
-        found.append("state: last_run_at is not a UTC timestamp")
+    # Both are null in a state that the daily work wrote before the first snapshot.
+    if not _both_null(state, "last_slot", "last_run_at"):
+        if not isinstance(state.get("last_slot"), str):
+            found.append("state: last_slot is not a string")
+        if _time(state.get("last_run_at")) is None:
+            found.append("state: last_run_at is not a UTC timestamp")
     credits = state.get("credits")
     if not isinstance(credits, dict) or not all(
         credits.get(key) is None or type(credits.get(key)) is int
@@ -115,7 +120,7 @@ def state_problems(state: object) -> list[str]:
         found += _opening_problems(game.get("first"), f"{where} first")
         if game.get("latest") is not None:
             found += _line_problems(game["latest"], f"{where} latest", time_field="at")
-    return found
+    return found + _noted_problems(state.get("results"))
 
 
 def history_problems(before: str, after: str) -> list[str]:
@@ -346,6 +351,54 @@ def _opening_problems(opening: object, where: str) -> list[str]:
     if _time(opening.get("at")) is None:
         found.append(f"{where}: at is not a UTC timestamp")
     return found
+
+
+def _noted_problems(noted: object) -> list[str]:
+    """
+    What the daily work notes in the state: the slot it was done for, when,
+    and what the board shows of it. Null until it has been done once, and not
+    there at all in a state from before there was any daily work.
+    """
+    if noted is None:
+        return []
+    if not isinstance(noted, dict):
+        return ["state results: not a JSON object"]
+    found = []
+    if not isinstance(noted.get("last_slot"), str):
+        found.append("state results: last_slot is not a string")
+    if _time(noted.get("last_run_at")) is None:
+        found.append("state results: last_run_at is not a UTC timestamp")
+    return (
+        found
+        + _headline_problems(noted.get("record"), "state results record")
+        + _recent_problems(noted.get("recent"), "state results recent")
+    )
+
+
+def _headline_problems(headline: object, where: str) -> list[str]:
+    """The record as the board carries it: the wins and the losses of the sportsbooks' favorite."""
+    market = headline.get("market") if isinstance(headline, dict) else None
+    if not isinstance(market, dict) or not all(
+        _is_score(market.get(count)) for count in ("wins", "losses")
+    ):
+        return [f"{where}: market must hold whole numbers for wins and losses"]
+    return []
+
+
+def _recent_problems(lines: object, where: str) -> list[str]:
+    """The recent results, each of which is a result line."""
+    if not isinstance(lines, list):
+        return [f"{where}: not a list"]
+    found = []
+    for line in lines:
+        game_id = line.get("id") if isinstance(line, dict) else None
+        found += result_problems(line, f"{where} {game_id!r}")
+    return found
+
+
+def _both_null(document: dict, first: str, second: str) -> bool:
+    """Whether two fields are both there and both null."""
+    return first in document and second in document and document[first] is document[second] is None
 
 
 def _is_probability(value: object) -> bool:

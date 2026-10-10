@@ -166,6 +166,9 @@ def test_the_first_run_writes_the_three_files_and_reports_a_change(run, data_dir
         "generated_at": at,
         "slot": EVENING_SLOT,
         "next_due": NIGHT_SLOT,
+        # No daily run has recorded a result yet.
+        "record": None,
+        "recent_results": [],
     }
     assert [(game["id"], game["home"], game["away"]) for game in slate["games"]] == [
         (EARLY, "BOS", "NYK"),
@@ -189,6 +192,7 @@ def test_the_first_run_writes_the_three_files_and_reports_a_change(run, data_dir
     assert state["last_run_at"] == at
     assert state["credits"] == {"remaining": 499, "used": 1, "last": 1}
     assert sorted(state["games"]) == sorted([EARLY, LATE, UNPRICED])
+    assert state["results"] is None
 
     assert history(data_dir) == [
         {"id": EARLY, "at": at, "p_home": 0.6214, "lo": 0.6, "hi": 0.6429, "n": 2},
