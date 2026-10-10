@@ -26,6 +26,7 @@ With `--all` there can be more than one sport. The state files of all of them ar
 | `feed.py` | What is read from every event the provider lists: its id, its start and its two teams. |
 | `consensus.py` | The margin-free home probability of one sportsbook, and the median across sportsbooks. |
 | `grading.py` | Which side a line favors, and what became of the line once the game is over. |
+| `record.py` | What the results add up to: wins and losses, accuracy with its interval, Brier score and log loss, the bands, the days and the biggest upsets. A pure function. |
 | `snapshot.py` | Builds the board, the state and the history lines from a response and the previous state. A pure function. |
 | `validate.py` | The checks on the three files. |
 | `store.py` | Reads the previous files, writes the new ones, and removes the temporary directory of a run that was killed while it wrote. |
@@ -398,6 +399,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | `tests/test_pipeline_teams.py` | The team table against the web app's logo table, the scoreboard fixture and `nba_api`'s list of teams. The last check is skipped when `nba_api` is not installed. |
 | `tests/test_pipeline_consensus.py` | The margin-free share, the median, the range and the count, and every way a sportsbook's quote can be unusable. |
 | `tests/test_pipeline_grading.py` | The favorite from 52% on, the toss-up between 48% and 52%, and the four verdicts. |
+| `tests/test_pipeline_record.py` | The record's arithmetic against figures worked out by hand: the Wilson interval of 41 wins in 60 games, a Brier score and a log loss of four games, which band a favorite falls in, the New York day of a game, the three biggest upsets, and that the same lines give the same bytes in any order. |
 | `tests/test_pipeline_schedule.py` | The slot table on 31 October, 1 November and 2 November 2026, across the end of daylight saving time, the cron triggers walked over those three days, the 75 minutes: which triggers of a slot start in time, and which slot is the daily one at each moment of those days. |
 | `tests/test_pipeline_timestamps.py` | The timestamp format. |
 | `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
