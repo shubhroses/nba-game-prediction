@@ -563,6 +563,41 @@ def test_a_forecast_published_after_the_start_the_scores_give_is_not_graded(run,
         assert built[name]["brier_against_market"]["games"] == 1
 
 
+def test_daily_work_done_by_hand_in_the_evening_forecasts_what_is_left_of_that_day(
+    run, api, data_dir
+):
+    # Nothing ran on Tuesday morning. The daily work is done by hand at
+    # 21:30 in New York, which is Wednesday already in UTC. The game in
+    # Boston has started, and the one in Los Angeles has not.
+    run(now=MONDAY_NIGHT)
+    by_hand = datetime(2026, 10, 21, 1, 30, 0, tzinfo=timezone.utc)
+
+    result = run("--force", now=by_hand)
+
+    assert (result.status, result.asked) == (0, ["scores", "odds"])
+    assert result.out.splitlines()[2] == (
+        "basketball_nba -> v1/: Elo and points-and-rest from 0 results, "
+        "1 game forecast for 2026-10-20."
+    )
+    frozen = read(data_dir, TUESDAYS_FORECASTS)
+    assert (frozen["day"], frozen["published_at"]) == ("2026-10-20", "2026-10-21T01:30:00Z")
+    assert [game["id"] for game in frozen["games"]] == [LAL_GSW.id]
+    # Wednesday's games are not forecast the evening before, when the
+    # results of the night are not in: they are forecast on their own morning.
+    assert not (data_dir / WEDNESDAYS_FORECASTS).exists()
+    assert read(data_dir, "v1/state.json")["results"]["last_slot"] == TUESDAY_SLOT
+
+    api.scores[NBA] = scores(TUESDAY, not_over=WEDNESDAY)
+    assert run(now=WEDNESDAY_MORNING).status == 0
+    today = read(data_dir, WEDNESDAYS_FORECASTS)
+    assert [game["id"] for game in today["games"]] == [DET_BOS.id, HOU_SAS.id]
+    assert (today["published_at"], today["results_through"]) == (
+        PUBLISHED_ON_WEDNESDAY,
+        "2026-10-20",
+    )
+    assert (data_dir / TUESDAYS_FORECASTS).read_bytes() == store.to_json(frozen).encode()
+
+
 def test_a_game_that_was_never_forecast_is_not_graded_for_the_models(run, api, data_dir):
     # The job starts on Tuesday evening: there was no daily run that morning.
     run(now=TUESDAY_EVENING)
