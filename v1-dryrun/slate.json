@@ -1,0 +1,214 @@
+{
+  "games": [
+    {
+      "away": "LAC",
+      "commence_time": "2026-10-10T22:30:00Z",
+      "home": "TOR",
+      "id": "ccad04e9302a94b1995325b02135885a",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.628,
+        "lo": 0.5995,
+        "n": 7,
+        "p_home": 0.6223
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.6223
+      }
+    },
+    {
+      "away": "DET",
+      "commence_time": "2026-10-10T23:00:00Z",
+      "home": "WAS",
+      "id": "42ee1e0fa899f373863ec8c250275670",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.422,
+        "lo": 0.3599,
+        "n": 7,
+        "p_home": 0.4015
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.4015
+      }
+    },
+    {
+      "away": "ATL",
+      "commence_time": "2026-10-10T23:00:00Z",
+      "home": "IND",
+      "id": "9b12ab21e4683e6519e33f36354c0f40",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.5793,
+        "lo": 0.5506,
+        "n": 7,
+        "p_home": 0.5711
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.5711
+      }
+    },
+    {
+      "away": "PHI",
+      "commence_time": "2026-10-11T00:00:00Z",
+      "home": "BOS",
+      "id": "090ad8d367d6edd32a92c4d7bf3641a1",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.6766,
+        "lo": 0.6455,
+        "n": 7,
+        "p_home": 0.6628
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.6628
+      }
+    },
+    {
+      "away": "MIN",
+      "commence_time": "2026-10-11T00:00:00Z",
+      "home": "MIA",
+      "id": "de535aa83f19e316b37964ccb63dcc06",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.4562,
+        "lo": 0.4256,
+        "n": 7,
+        "p_home": 0.4359
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.4359
+      }
+    },
+    {
+      "away": "SAC",
+      "commence_time": "2026-10-11T00:30:00Z",
+      "home": "GSW",
+      "id": "8dea2b274de47f2afae60901126cb75b",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.6766,
+        "lo": 0.6492,
+        "n": 7,
+        "p_home": 0.6636
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.6636
+      }
+    },
+    {
+      "away": "SAS",
+      "commence_time": "2026-10-11T02:30:00Z",
+      "home": "PHX",
+      "id": "fe1fcaddeec9d7348d7e90485e267747",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "BetUS",
+          "Bovada",
+          "DraftKings",
+          "FanDuel",
+          "MyBookie.ag"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.3462,
+        "lo": 0.3191,
+        "n": 7,
+        "p_home": 0.3303
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.3303
+      }
+    },
+    {
+      "away": "DAL",
+      "commence_time": "2026-10-11T10:00:00Z",
+      "home": "HOU",
+      "id": "4f9b60975b000e6d46c5a0cd174c34aa",
+      "line": {
+        "books": [
+          "BetOnline.ag",
+          "BetRivers",
+          "DraftKings",
+          "FanDuel"
+        ],
+        "captured_at": "2026-10-10T19:18:44Z",
+        "hi": 0.5527,
+        "lo": 0.5379,
+        "n": 4,
+        "p_home": 0.5511
+      },
+      "open": {
+        "at": "2026-10-10T19:18:44Z",
+        "p_home": 0.5511
+      }
+    }
+  ],
+  "generated_at": "2026-10-10T19:18:44Z",
+  "next_due": "2026-10-10T18:10-04:00",
+  "schema": 1,
+  "slot": "2026-10-10T15:10-04:00",
+  "sport": "basketball_nba_preseason"
+}
