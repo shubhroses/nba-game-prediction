@@ -1,11 +1,13 @@
 """
 The small checks that the checks on the files are made of: what a time, a
-probability, a score, a pair of teams and a line have to be.
+probability, a score, a number of points, a pair of teams and a line have to
+be.
 
 Like the functions that use them, they raise on nothing. A value that is not
 what it should be is a problem to be named, or simply not what was asked for.
 """
 
+import math
 from datetime import datetime
 
 from pipeline import teams
@@ -62,6 +64,15 @@ def is_probability(value: object) -> bool:
 def is_score(value: object) -> bool:
     """A whole number that is not negative. True and False are not scores."""
     return type(value) is int and value >= 0
+
+
+def is_points(value: object) -> bool:
+    """
+    A number of points, which the files give to two decimals: a float whose
+    hundredths can be counted. Infinity and NaN, which Python also reads from
+    JSON, are not, and neither is a number that is too large to count them.
+    """
+    return type(value) is float and math.isfinite(value * 100)
 
 
 def as_object(value: object) -> dict:

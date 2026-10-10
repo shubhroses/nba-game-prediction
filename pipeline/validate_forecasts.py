@@ -14,6 +14,7 @@ from pathlib import PurePosixPath
 from pipeline import model, teams
 from pipeline.checks import (
     as_object,
+    is_points,
     is_probability,
     line_problems,
     schema_problems,
@@ -82,7 +83,9 @@ def forecasts_problems(document: object, where: str, *, day: str | None = None) 
     if not isinstance(games, list):
         return found + [f"{where}: games is not a list"]
 
+    # An id that is not a string is named below, and is not looked for twice.
     ids = [game.get("id") for game in games if isinstance(game, dict)]
+    ids = [game_id for game_id in ids if isinstance(game_id, str)]
     if len(set(ids)) != len(ids):
         found.append(f"{where}: a game is listed twice")
     for game in games:
@@ -303,7 +306,10 @@ def _elo_forecast_problems(forecast: object, neutral: object, where: str) -> lis
         return [f"{where}: home_rating and away_rating must be whole numbers"]
     if type(court) not in (int, float) or court < 0 or (neutral is True and court != 0):
         return [f"{where}: home_court must be a number, and 0 on a neutral floor"]
-    chance = published(elo.win_probability(home, away, court))
+    try:
+        chance = published(elo.win_probability(home, away, court))
+    except OverflowError:
+        return [f"{where}: home_rating, away_rating and home_court are too large to give a chance"]
     if forecast.get("p_home") != chance:
         return [
             f"{where}: p_home is {forecast.get('p_home')!r}, "
@@ -325,7 +331,7 @@ def _points_rest_forecast_problems(forecast: object, where: str) -> list[str]:
             f"{where}: p_home must be a number between 0 and 1, got {forecast.get('p_home')!r}"
         )
     points = [forecast.get(key) for key in POINTS_REST_NUMBERS[1:]]
-    if not all(type(number) is float for number in points):
+    if not all(is_points(number) for number in points):
         found.append(f"{where}: {', '.join(POINTS_REST_NUMBERS[1:])} must be numbers of points")
     else:
         margin, *parts = (round(number * 100) for number in points)

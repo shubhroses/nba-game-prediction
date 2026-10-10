@@ -353,6 +353,15 @@ def test_a_forecast_names_its_game_by_an_id_and_two_of_the_30_teams(predictions)
     ]
 
 
+@pytest.mark.parametrize("game_id", [["a"], {"a": 1}, 7, None])
+def test_an_id_that_is_not_a_string_is_named_and_not_looked_for_twice(predictions, game_id):
+    # A list or an object cannot be put into a set to see whether a game is
+    # listed twice. Such an id is a problem to be named like any other.
+    first_game(predictions)["id"] = game_id
+
+    assert forecasts_problems(predictions) == [f"predictions game {game_id!r}: id is not a string"]
+
+
 def test_a_forecast_is_for_a_game_that_had_not_started_when_it_was_published(predictions):
     # The first game starts at 23:00:00 UTC, and the second an hour later.
     predictions["published_at"] = "2026-10-21T23:00:00Z"
@@ -408,6 +417,16 @@ def test_elos_chance_must_be_the_one_its_ratings_and_the_home_court_give(predict
     first_game(predictions)["elo"] = 0.5502
     assert forecasts_problems(predictions) == [
         f"predictions game '{DET_BOS}' elo: not a JSON object"
+    ]
+
+
+def test_ratings_too_large_to_give_a_chance_are_refused(predictions):
+    # Ten to the power of a quarter of 10 ^ 28 is more than a float holds.
+    first_game(predictions)["elo"]["away_rating"] = 10**30
+
+    assert forecasts_problems(predictions) == [
+        f"predictions game '{DET_BOS}' elo: "
+        "home_rating, away_rating and home_court are too large to give a chance"
     ]
 
 
@@ -467,6 +486,20 @@ def test_the_margin_of_points_and_rest_is_the_sum_of_its_three_parts_as_written(
         ),
         (
             {"margin": None},
+            "margin, rating_edge, home_court, rest_edge must be numbers of points",
+        ),
+        # Python reads Infinity and NaN from JSON. Neither is a number of
+        # points, and neither is a number whose hundredths cannot be counted.
+        (
+            {"margin": float("inf")},
+            "margin, rating_edge, home_court, rest_edge must be numbers of points",
+        ),
+        (
+            {"rest_edge": float("nan")},
+            "margin, rating_edge, home_court, rest_edge must be numbers of points",
+        ),
+        (
+            {"home_court": 1e308},
             "margin, rating_edge, home_court, rest_edge must be numbers of points",
         ),
     ],
