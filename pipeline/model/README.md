@@ -54,7 +54,8 @@ Every team has a **rating** and a **variance**. The league has one **home-court 
 variance     = the team's variance + 0.06 x the days since its last game
 rating edge  = home rating - away rating
 home court   = league value + home constant
-               + altitude term x the kilometres the home arena lies above the visitors'
+               + altitude term x the kilometres the home arena lies above the visitors',
+                 and nothing when it lies lower
                + playoff term, after the regular season
                (all of it is 0 on a neutral floor)
 rest edge    = home back-to-back term, if the home team played yesterday
