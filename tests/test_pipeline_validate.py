@@ -693,16 +693,21 @@ def test_the_recent_results_on_the_board_are_a_list_of_results(built):
 
 
 def test_the_wins_and_losses_for_the_board_are_held_to_a_recount_of_the_lines_too():
-    # Four games: a favorite that won, an upset, a toss-up and a game without a line.
-    lines = [RESULT, *other_results()]
+    # Five games: two favorites that won, an upset, a toss-up and a game without a line.
+    lines = [RESULT, result(id="f" * 32), *other_results()]
     where = "state results record"
 
-    assert validate.board_problems({"market": {"wins": 1, "losses": 1}}, lines) == []
-    assert validate.board_problems({"market": {"wins": 2, "losses": 1}}, lines) == [
-        f"{where}: wins is 2, and a recount of the result lines gives 1"
+    assert validate.board_problems({"market": {"wins": 2, "losses": 1}}, lines) == []
+    assert validate.board_problems({"market": {"wins": 3, "losses": 1}}, lines) == [
+        f"{where}: wins is 3, and a recount of the result lines gives 2"
     ]
-    assert validate.board_problems({"market": {"wins": 1, "losses": 0}}, lines) == [
+    assert validate.board_problems({"market": {"wins": 2, "losses": 0}}, lines) == [
         f"{where}: losses is 0, and a recount of the result lines gives 1"
+    ]
+    # The wins and the losses the wrong way round.
+    assert validate.board_problems({"market": {"wins": 1, "losses": 2}}, lines) == [
+        f"{where}: wins is 1, and a recount of the result lines gives 2",
+        f"{where}: losses is 2, and a recount of the result lines gives 1",
     ]
     assert validate.board_problems({"market": {"wins": 0, "losses": 0}}, []) == []
     assert validate.board_problems(None, lines) == [f"{where}: {HEADLINE_PROBLEM}"]
