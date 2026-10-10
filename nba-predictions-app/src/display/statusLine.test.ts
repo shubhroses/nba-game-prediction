@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Board, BoardGame } from '../data/board';
-import { age, clockTime, nextUpdateNote, snapshotNote } from './statusLine';
+import { age, clockTime, nextUpdateNote, snapshotAge, snapshotTime } from './statusLine';
 
 const NEW_YORK = 'America/New_York';
 const MINUTE = 60_000;
@@ -73,36 +73,59 @@ describe('age', () => {
   });
 });
 
-describe('snapshotNote', () => {
-  it('says when the odds were taken, how long ago and from how many sportsbooks at most', () => {
-    const note = snapshotNote(board([game(6), game(1), game(0)]), AT_1502, NEW_YORK);
-
-    expect(note).toBe('Odds as of 12:12 PM (2 h 50 min ago), the median of up to 6 sportsbooks.');
-  });
-
-  it('says so when no game has more than one sportsbook', () => {
-    expect(snapshotNote(board([game(1), game(0)]), AT_1502, NEW_YORK)).toBe(
-      'Odds as of 12:12 PM (2 h 50 min ago), from 1 sportsbook.',
-    );
-  });
-
-  it('counts no sportsbooks when no game has a line', () => {
-    expect(snapshotNote(board([game(0)]), AT_1502, NEW_YORK)).toBe('Odds as of 12:12 PM (2 h 50 min ago).');
-    expect(snapshotNote(board([]), AT_1502, NEW_YORK)).toBe('Odds as of 12:12 PM (2 h 50 min ago).');
-  });
-
-  it('does not count a game that has started', () => {
-    const started = game(6, '2026-10-20T19:00:00Z');
-
-    expect(snapshotNote(board([started, game(4)]), AT_1502, NEW_YORK)).toBe(
-      'Odds as of 12:12 PM (2 h 50 min ago), the median of up to 4 sportsbooks.',
-    );
+describe('snapshotTime', () => {
+  it('says when the odds were taken, in the time zone asked for', () => {
+    expect(snapshotTime(board([]), AT_1502, NEW_YORK)).toBe('Odds as of 12:12 PM');
+    expect(snapshotTime(board([]), AT_1502, 'America/Los_Angeles')).toBe('Odds as of 9:12 AM');
   });
 
   it('gives the date of odds that are from another day', () => {
     const twoDaysLater = Date.parse('2026-10-22T17:12:00Z');
 
-    expect(snapshotNote(board([]), twoDaysLater, NEW_YORK)).toBe('Odds as of 12:12 PM on Oct 20 (2 days ago).');
+    expect(snapshotTime(board([]), twoDaysLater, NEW_YORK)).toBe('Odds as of 12:12 PM on Oct 20');
+  });
+
+  it('stays as it is while the same odds get older and their games start', () => {
+    const games = [game(6, '2026-10-20T19:30:00Z'), game(4)];
+    const atFirst = snapshotTime(board(games), AT_1502, NEW_YORK);
+
+    expect(snapshotTime(board(games), AT_1502 + MINUTE, NEW_YORK)).toBe(atFirst);
+    expect(snapshotTime(board(games), AT_1502 + 8 * HOUR, NEW_YORK)).toBe(atFirst);
+  });
+
+  it('changes when a newer snapshot arrives', () => {
+    const newer = { ...board([]), generated_at: '2026-10-20T19:11:00Z' };
+
+    expect(snapshotTime(newer, AT_1502 + 10 * MINUTE, NEW_YORK)).toBe('Odds as of 3:11 PM');
+  });
+});
+
+describe('snapshotAge', () => {
+  it('says how long ago the odds were taken and from how many sportsbooks at most', () => {
+    expect(snapshotAge(board([game(6), game(1), game(0)]), AT_1502)).toBe(
+      '(2 h 50 min ago), the median of up to 6 sportsbooks.',
+    );
+  });
+
+  it('says so when no game has more than one sportsbook', () => {
+    expect(snapshotAge(board([game(1), game(0)]), AT_1502)).toBe('(2 h 50 min ago), from 1 sportsbook.');
+  });
+
+  it('counts no sportsbooks when no game has a line', () => {
+    expect(snapshotAge(board([game(0)]), AT_1502)).toBe('(2 h 50 min ago).');
+    expect(snapshotAge(board([]), AT_1502)).toBe('(2 h 50 min ago).');
+  });
+
+  it('does not count a game that has started', () => {
+    const started = game(6, '2026-10-20T19:00:00Z');
+
+    expect(snapshotAge(board([started, game(4)]), AT_1502)).toBe('(2 h 50 min ago), the median of up to 4 sportsbooks.');
+  });
+
+  it('counts in days once the odds are that old', () => {
+    const twoDaysLater = Date.parse('2026-10-22T17:12:00Z');
+
+    expect(snapshotAge(board([]), twoDaysLater)).toBe('(2 days ago).');
   });
 });
 

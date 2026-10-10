@@ -26,9 +26,17 @@ export function age(milliseconds: number): string {
   return days === 1 ? '1 day ago' : `${days} days ago`;
 }
 
-/** When the odds were taken and from how many sportsbooks, counting the games that have not started. */
-export function snapshotNote(board: Board, now: number, timeZone?: string): string {
-  const taken = Date.parse(board.generated_at);
+/**
+ * When the odds were taken. This is the part of the status line that a newer
+ * snapshot changes. The clock changes it once, at midnight, when the date is
+ * added.
+ */
+export function snapshotTime(board: Board, now: number, timeZone?: string): string {
+  return `Odds as of ${clockTime(Date.parse(board.generated_at), now, timeZone)}`;
+}
+
+/** How old the odds are and from how many sportsbooks, counting the games that have not started. */
+export function snapshotAge(board: Board, now: number): string {
   const most = Math.max(
     0,
     ...board.games.filter((game) => Date.parse(game.commence_time) > now).map((game) => game.line?.n ?? 0),
@@ -37,7 +45,7 @@ export function snapshotNote(board: Board, now: number, timeZone?: string): stri
   let source = '';
   if (most === 1) source = ', from 1 sportsbook';
   if (most >= 2) source = `, the median of up to ${most} sportsbooks`;
-  return `Odds as of ${clockTime(taken, now, timeZone)} (${age(now - taken)})${source}.`;
+  return `(${age(now - Date.parse(board.generated_at))})${source}.`;
 }
 
 /** When the next snapshot is due, or that it is overdue. */
