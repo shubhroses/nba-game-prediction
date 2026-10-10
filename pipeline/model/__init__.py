@@ -12,3 +12,8 @@ of the season so far, and the files a season starts them from.
 # The models by the names they have in the published files, in the order
 # they are written in.
 NAMES = ("elo", "points_rest")
+
+# What the model file and the forecasts of a day say of themselves: that both
+# models were built, or that the results of the season did not pass the
+# checks and Elo is published alone.
+OK, DEGRADED = "ok", "degraded"

@@ -67,6 +67,10 @@ class Season:
         game = self.game(start, home, away)
         return Final(game.day, home, away, game.neutral, home_pts, away_pts)
 
+    def elo_home_court(self, game: Game) -> float:
+        """What Elo gives the home team of a game: nothing on a neutral floor."""
+        return 0 if game.neutral else self.elo["constants"]["home_court"]
+
 
 def game_day(start: datetime) -> date:
     """The day a game belongs to: its tip-off time minus ten hours, as a UTC date."""
