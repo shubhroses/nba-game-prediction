@@ -752,8 +752,8 @@ def test_a_record_that_validation_refuses_is_not_written_and_the_snapshot_is_sti
 ):
     build = record.build
 
-    def build_with_a_win_too_many(lines, *, sport):
-        built = build(lines, sport=sport)
+    def build_with_a_win_too_many(lines, **options):
+        built = build(lines, **options)
         built["market"]["wins"] += 1
         return built
 
@@ -820,7 +820,9 @@ def test_wins_and_losses_for_the_board_that_differ_from_a_recount_are_refused(
     run, data_dir, monkeypatch
 ):
     # A bug in what the state notes for the board: the wins and the losses change places.
-    monkeypatch.setattr(record, "headline", lambda built: {"market": {"wins": 1, "losses": 2}})
+    monkeypatch.setattr(
+        record, "headline", lambda built, models=(): {"market": {"wins": 1, "losses": 2}}
+    )
 
     result = run(now=MORNING)
 

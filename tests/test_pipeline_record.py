@@ -5,6 +5,7 @@ Every game, line and score here is invented. The arithmetic is checked
 against figures worked out by hand, which the comments show.
 """
 
+import math
 import random
 
 import pytest
@@ -365,3 +366,341 @@ def test_the_board_carries_the_wins_and_the_losses():
     lines = [game(1, 0.7, HOME_WIN), game(2, 0.7, HOME_WIN), game(3, 0.7, HOME_LOSS)]
 
     assert record.headline(built(lines)) == {"market": {"wins": 2, "losses": 1}}
+
+
+# From here on: a sport that the two models forecast. Its result lines carry
+# what each model said on the morning of the game, and the record gives each
+# model what it gives the sportsbooks' line.
+MODELS = ("elo", "points_rest")
+MORNING = "2026-10-20T09:10:07Z"
+
+
+def forecast(
+    number,
+    market,
+    elo,
+    points=HOME_WIN,
+    points_rest=None,
+    start="2026-10-20T23:00:00Z",
+    published_at=MORNING,
+    **teams,
+):
+    """
+    A result line with the chance that each source gave the home team, or
+    None for a source that gave none. A forecast that was not published
+    before the start is in the line and is not graded.
+    """
+    line = game(number, market, points, start, **teams)
+    for name, p_home in (("elo", elo), ("points_rest", points_rest)):
+        counts = p_home is not None and published_at < start
+        margin = {"margin": 1.5} if name == "points_rest" else {}
+        line[name] = p_home and {"p_home": p_home, **margin, "published_at": published_at}
+        line[f"{name}_verdict"] = grading.verdict(p_home if counts else None, *points)
+    return line
+
+
+def forecast_record(lines):
+    return record.build(lines, sport="basketball_nba", models=MODELS)
+
+
+# Five games with a line and a forecast by Elo.
+#
+#   line   Elo    home won   the line's pick   Elo's pick      Elo's squared distance
+#   0.6    0.7    yes        home, right       home, right     0.09
+#   0.6    0.45   no         home, wrong       away, right     0.2025
+#   0.3    0.55   no         away, right       home, wrong     0.3025
+#   0.7    0.51   yes        home, right       none            0.2401
+#   0.4    0.2    yes        away, wrong       away, wrong     0.64
+#
+#   Elo's Brier score: 1.4751 / 5 = 0.29502. The line's: 1.06 / 5 = 0.212.
+#   Elo's log loss: -(ln 0.7 + ln 0.55 + ln 0.45 + ln 0.51 + ln 0.2) / 5 = 0.80716.
+FIVE_FORECASTS = [
+    forecast(1, 0.6, 0.7, HOME_WIN),
+    forecast(2, 0.6, 0.45, HOME_LOSS),
+    forecast(3, 0.3, 0.55, HOME_LOSS),
+    forecast(4, 0.7, 0.51, HOME_WIN),
+    forecast(5, 0.4, 0.2, HOME_WIN),
+]
+
+
+def test_a_model_is_given_the_figures_that_the_sportsbooks_line_is_given():
+    built = forecast_record(FIVE_FORECASTS)
+
+    elo = built["elo"]
+    assert (elo["games"], elo["wins"], elo["losses"]) == (4, 2, 2)
+    assert (elo["toss_ups"], elo["not_graded"], elo["with_line"]) == (1, 0, 5)
+    assert (elo["accuracy"], elo["accuracy_interval"]) == (0.5, [0.15, 0.85])
+    assert (elo["brier"], elo["log_loss"]) == (0.295, 0.8072)
+    # The bands are those of the side that Elo picked.
+    assert [(band["band"], band["games"], band["wins"]) for band in elo["bands"]] == [
+        ("52-59", 2, 1),
+        ("60-69", 0, 0),
+        ("70-79", 1, 1),
+        ("80-89", 1, 0),
+        ("90+", 0, 0),
+    ]
+    assert [upset["p_favorite"] for upset in elo["biggest_upsets"]] == [0.8, 0.55]
+    # The sportsbooks' figures are what they are without the models.
+    assert built["market"] == built_without_models(FIVE_FORECASTS)["market"]
+    assert (built["market"]["wins"], built["market"]["losses"], built["market"]["brier"]) == (
+        3,
+        2,
+        0.212,
+    )
+
+
+def built_without_models(lines):
+    return record.build(lines, sport="basketball_nba")
+
+
+def test_the_wilson_interval_of_two_wins_in_four_games():
+    # Half of four: centre 0.5, reach 1.96 x sqrt(0.0625 + 0.0600) / 1.9604 = 0.35.
+    low, high = record.wilson(2, 4)
+
+    assert (round(low, 4), round(high, 4)) == (0.15, 0.85)
+
+
+def test_a_model_without_a_forecast_for_a_game_is_not_graded_for_it():
+    lines = [forecast(1, 0.6, 0.7, HOME_WIN, points_rest=0.65), forecast(2, 0.6, None, HOME_WIN)]
+
+    built = forecast_record(lines)
+
+    assert (built["elo"]["games"], built["elo"]["not_graded"], built["elo"]["with_line"]) == (
+        1,
+        1,
+        1,
+    )
+    rest = built["points_rest"]
+    assert (rest["games"], rest["wins"], rest["not_graded"], rest["brier"]) == (1, 1, 1, 0.1225)
+    assert (built["elo"]["late"], rest["late"]) == (0, 0)
+
+
+def test_a_line_from_before_the_models_were_added_counts_as_not_graded_for_them():
+    lines = [game(1, 0.6, HOME_WIN), forecast(2, 0.6, 0.7, HOME_WIN)]
+
+    built = forecast_record(lines)
+
+    assert (built["games"], built["market"]["wins"]) == (2, 2)
+    assert (built["elo"]["wins"], built["elo"]["not_graded"], built["elo"]["late"]) == (1, 1, 0)
+    assert built["by_day"][0]["elo"] == {"wins": 1, "losses": 0, "toss_ups": 0, "not_graded": 1}
+    assert built["elo"]["brier_against_market"]["games"] == 1
+
+
+def test_a_forecast_that_came_too_late_is_counted_as_late_and_scored_nowhere():
+    on_time = forecast(1, 0.6, 0.7, HOME_WIN, points_rest=0.7)
+    # Published at the second the game started.
+    late = forecast(2, 0.6, 0.9, HOME_LOSS, points_rest=0.9, published_at="2026-10-20T23:00:00Z")
+    assert (late["elo"]["p_home"], late["elo_verdict"]) == (0.9, "not_graded")
+
+    built = forecast_record([on_time, late])
+
+    for name in MODELS:
+        model = built[name]
+        assert (model["late"], model["not_graded"], model["with_line"]) == (1, 1, 1)
+        assert (model["games"], model["wins"], model["losses"]) == (1, 1, 0)
+        # The one forecast that counts: (1 - 0.7)^2. The late one would have added 0.81.
+        assert model["brier"] == 0.09
+        assert model["picks_against_market"]["differ"] == 0
+        assert model["brier_against_market"]["games"] == 1
+    assert built["market"]["with_line"] == 2
+
+
+def test_the_games_in_which_a_model_and_the_sportsbooks_picked_different_winners():
+    picks = forecast_record(FIVE_FORECASTS)["elo"]["picks_against_market"]
+
+    # The second and the third game. In the fourth Elo made no pick.
+    assert (picks["differ"], picks["model_right"], picks["market_right"]) == (2, 1, 1)
+    assert picks["latest"] == [
+        {
+            "id": f"{3:032x}",
+            "commence_time": "2026-10-20T23:00:00Z",
+            "home": "BOS",
+            "away": "NYK",
+            "home_pts": 104,
+            "away_pts": 112,
+            "pick": "BOS",
+            "market_pick": "NYK",
+            "right": "market",
+        },
+        {
+            "id": f"{2:032x}",
+            "commence_time": "2026-10-20T23:00:00Z",
+            "home": "BOS",
+            "away": "NYK",
+            "home_pts": 104,
+            "away_pts": 112,
+            "pick": "NYK",
+            "market_pick": "BOS",
+            "right": "model",
+        },
+    ]
+
+
+def test_a_game_without_a_pick_by_either_is_not_one_they_differed_in():
+    lines = [
+        forecast(1, 0.5, 0.3, HOME_WIN),  # the line was a toss-up, and Elo picked the away team
+        forecast(2, 0.3, 0.5, HOME_WIN),  # Elo's forecast was a toss-up
+        forecast(3, None, 0.7, HOME_WIN),  # no line
+        forecast(4, 0.7, None, HOME_WIN),  # no forecast
+        forecast(5, 0.7, 0.6, HOME_LOSS),  # both picked the home team
+    ]
+
+    picks = forecast_record(lines)["elo"]["picks_against_market"]
+
+    assert picks == {"differ": 0, "model_right": 0, "market_right": 0, "latest": []}
+
+
+def test_the_ten_latest_games_with_different_picks_are_listed_the_latest_first():
+    lines = [
+        forecast(day, 0.4, 0.6, HOME_WIN, start=f"2026-11-{day:02d}T23:00:00Z")
+        for day in range(1, 15)
+    ]
+
+    picks = forecast_record(lines)["elo"]["picks_against_market"]
+
+    assert (picks["differ"], picks["model_right"], picks["market_right"]) == (14, 14, 0)
+    assert [game["commence_time"][8:10] for game in picks["latest"]] == [
+        f"{day:02d}" for day in range(14, 4, -1)
+    ]
+
+
+def test_the_difference_in_brier_score_is_taken_game_by_game_over_the_games_both_forecast():
+    # The differences of the five games are -0.07, -0.1575, 0.2125, 0.1501
+    # and 0.28. They add up to 0.4151, and a fifth of that is 0.08302.
+    lines = [*FIVE_FORECASTS, forecast(6, None, 0.9, HOME_WIN), forecast(7, 0.9, None, HOME_WIN)]
+
+    against = forecast_record(lines)["elo"]["brier_against_market"]
+
+    assert against == {"games": 5, "difference": 0.083, "interval": None}
+    # It is the one Brier score minus the other when both are over the same games.
+    built = forecast_record(FIVE_FORECASTS)
+    assert against["difference"] == round(built["elo"]["brier"] - built["market"]["brier"], 4)
+
+
+def test_the_difference_has_no_interval_before_thirty_games():
+    one_short = [forecast(n, 0.6, 0.7, HOME_WIN) for n in range(29)]
+
+    assert forecast_record(one_short)["elo"]["brier_against_market"] == {
+        "games": 29,
+        "difference": -0.07,
+        "interval": None,
+    }
+    enough = forecast_record([*one_short, forecast(29, 0.6, 0.7, HOME_WIN)])
+    # Thirty times the same difference: every resample has that mean.
+    assert enough["elo"]["brier_against_market"] == {
+        "games": 30,
+        "difference": -0.07,
+        "interval": [-0.07, -0.07],
+    }
+    assert enough["points_rest"]["brier_against_market"] == {
+        "games": 0,
+        "difference": None,
+        "interval": None,
+    }
+
+
+def test_the_interval_is_about_two_standard_errors_either_side_of_the_difference():
+    # Forty games. In half of them Elo was nearer by 0.07 and in the other
+    # half the line was, by 0.07: the mean is 0, the standard deviation 0.07
+    # and the standard error 0.07 / sqrt(40) = 0.0111.
+    lines = [forecast(n, 0.6, 0.7, HOME_WIN) for n in range(20)]
+    lines += [forecast(n, 0.7, 0.6, HOME_WIN) for n in range(20, 40)]
+
+    against = forecast_record(lines)["elo"]["brier_against_market"]
+
+    low, high = against["interval"]
+    assert (against["games"], against["difference"]) == (40, 0.0)
+    assert -0.025 < low < -0.019 and 0.019 < high < 0.025
+
+
+def test_the_interval_comes_from_10000_resamples_with_a_fixed_seed():
+    differences = [math.sin(n) / 10 for n in range(45)]
+
+    low, high = record.bootstrap_interval(differences)
+
+    # The same resampling, written out: each of the 10,000 draws 45 of the
+    # values with replacement, and the interval runs from the 251st to the
+    # 9,750th of the means in order.
+    draw = random.Random(20261020).random
+    means = sorted(
+        math.fsum([differences[int(draw() * 45)] for _ in range(45)]) / 45 for _ in range(10_000)
+    )
+    assert (low, high) == (means[250], means[9749])
+    assert means[249] < low < 0 < high < means[9750]
+    assert record.bootstrap_interval(differences) == (low, high)
+    assert (record.RESAMPLES, record.SEED) == (10_000, 20261020)
+
+
+def test_each_day_has_a_tally_for_each_model():
+    lines = [
+        forecast(1, 0.6, 0.7, HOME_WIN, points_rest=0.5),
+        forecast(2, 0.6, 0.7, HOME_LOSS, start="2026-10-21T23:00:00Z"),
+    ]
+
+    assert forecast_record(lines)["by_day"] == [
+        {
+            "day": "2026-10-20",
+            "games": 1,
+            "market": {"wins": 1, "losses": 0, "toss_ups": 0, "not_graded": 0},
+            "elo": {"wins": 1, "losses": 0, "toss_ups": 0, "not_graded": 0},
+            "points_rest": {"wins": 0, "losses": 0, "toss_ups": 1, "not_graded": 0},
+        },
+        {
+            "day": "2026-10-21",
+            "games": 1,
+            "market": {"wins": 0, "losses": 1, "toss_ups": 0, "not_graded": 0},
+            "elo": {"wins": 0, "losses": 1, "toss_ups": 0, "not_graded": 0},
+            "points_rest": {"wins": 0, "losses": 0, "toss_ups": 0, "not_graded": 1},
+        },
+    ]
+
+
+def test_the_record_of_a_forecast_sport_before_the_first_game():
+    built = forecast_record([])
+
+    for name in MODELS:
+        assert built[name] == {
+            **built["market"],
+            "late": 0,
+            "picks_against_market": {
+                "differ": 0,
+                "model_right": 0,
+                "market_right": 0,
+                "latest": [],
+            },
+            "brier_against_market": {"games": 0, "difference": None, "interval": None},
+        }
+    assert built_without_models([]).keys() == built.keys() - set(MODELS)
+
+
+def test_the_record_with_models_gives_the_same_bytes_whatever_order_the_lines_come_in():
+    shuffle = random.Random(2026).shuffle
+    chances = [(0.7, 0.6, 0.55), (0.31, 0.6, 0.4), (0.5, 0.45, 0.7), (None, 0.8, None)]
+    lines = [
+        forecast(
+            n,
+            market,
+            elo,
+            HOME_WIN if n % 3 else HOME_LOSS,
+            points_rest=rest,
+            start=f"2026-10-{20 + n % 9}T23:00:00Z",
+        )
+        for n, (market, elo, rest) in enumerate(chances * 12)
+    ]
+    first = store.to_json(forecast_record(lines))
+
+    assert '"interval": [' in first
+    for _ in range(3):
+        shuffle(lines)
+        assert store.to_json(forecast_record(lines)) == first
+
+
+def test_the_board_carries_the_wins_and_the_losses_of_each_model():
+    built = forecast_record(FIVE_FORECASTS)
+
+    assert record.headline(built, MODELS) == {
+        "market": {"wins": 3, "losses": 2},
+        "elo": {"wins": 2, "losses": 2},
+        "points_rest": {"wins": 0, "losses": 0},
+    }
+    assert record.headline(built) == {"market": {"wins": 3, "losses": 2}}

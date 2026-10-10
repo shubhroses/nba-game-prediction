@@ -138,8 +138,8 @@ def validation_refuses_the_files(api, monkeypatch):
     monkeypatch.setattr(snapshot, "published", lambda probability: 1.0)
     build = record.build
 
-    def build_with_a_win_too_many(lines, *, sport):
-        built = build(lines, sport=sport)
+    def build_with_a_win_too_many(lines, **options):
+        built = build(lines, **options)
         built["market"]["wins"] += 1
         return built
 
