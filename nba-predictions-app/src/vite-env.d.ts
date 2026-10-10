@@ -1,10 +1,10 @@
 /// <reference types="vite/client" />
 
 interface ImportMetaEnv {
-  readonly VITE_ODDS_API_KEY: string;
-  // Add other env variables as needed
+  /** Replaces the address of the published files. See src/data/fetchBoard.ts. */
+  readonly VITE_DATA_BASE_URL?: string;
 }
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
-} 
+}
