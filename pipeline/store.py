@@ -39,11 +39,28 @@ def record_path(prefix: str) -> str:
     return f"{prefix}/record.json"
 
 
+def model_path(prefix: str) -> str:
+    return f"{prefix}/model.json"
+
+
+def predictions_path(prefix: str, day: date) -> str:
+    """The file of the forecasts for the games of one day."""
+    return f"{prefix}/predictions/{day.isoformat()}.json"
+
+
 def results_paths(data_dir: Path, prefix: str) -> list[str]:
     """The results files of a sport that are on disk, in order of name and so of month."""
     directory = data_dir / prefix / "results"
     return sorted(
         f"{prefix}/results/{file.name}" for file in directory.glob("*.ndjson") if file.is_file()
+    )
+
+
+def predictions_paths(data_dir: Path, prefix: str) -> list[str]:
+    """The predictions files of a sport that are on disk, in order of name and so of day."""
+    directory = data_dir / prefix / "predictions"
+    return sorted(
+        f"{prefix}/predictions/{file.name}" for file in directory.glob("*.json") if file.is_file()
     )
 
 
@@ -79,6 +96,11 @@ def to_ndjson(lines: list[dict]) -> str:
 def from_ndjson(content: str) -> list[dict]:
     """The lines of a file that to_ndjson wrote. Call this only with content that was checked."""
     return [json.loads(line) for line in content.splitlines()]
+
+
+def from_json(content: str) -> object:
+    """The document of a file that to_json wrote. Call this only with content that was checked."""
+    return json.loads(content)
 
 
 def write(data_dir: Path, files: dict[str, str]) -> None:

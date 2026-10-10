@@ -64,6 +64,42 @@ def test_a_sport_without_results_has_no_results_files(tmp_path):
     assert not missing.exists()
 
 
+def test_the_paths_of_the_model_file_and_of_the_forecasts_of_a_day():
+    assert store.model_path("v1") == "v1/model.json"
+    assert store.predictions_path("v1", date(2026, 10, 20)) == "v1/predictions/2026-10-20.json"
+    assert store.predictions_path("v1", date(2027, 1, 3)) == "v1/predictions/2027-01-03.json"
+
+
+def test_the_predictions_files_on_disk_are_listed_in_order_of_day(tmp_path):
+    for path in (
+        "v1/predictions/2027-01-03.json",
+        "v1/predictions/2026-10-20.json",
+        "v1/predictions/2026-10-21.json",
+        "v1/predictions/notes.txt",
+        "v1/predictions/2026-10-22.json/a-directory-not-a-file",
+        "v1/results/2026-10.ndjson",
+        "v1/model.json",
+        "v1-dryrun/predictions/2026-10-20.json",
+    ):
+        (tmp_path / path).parent.mkdir(parents=True, exist_ok=True)
+        (tmp_path / path).write_text("")
+
+    assert store.predictions_paths(tmp_path, "v1") == [
+        "v1/predictions/2026-10-20.json",
+        "v1/predictions/2026-10-21.json",
+        "v1/predictions/2027-01-03.json",
+    ]
+    missing = tmp_path / "not" / "created" / "yet"
+    assert store.predictions_paths(missing, "v1") == []
+    assert not missing.exists()
+
+
+def test_a_document_is_read_back_as_it_was_written():
+    document = {"day": "2026-10-20", "games": [{"id": "g", "elo": {"p_home": 0.5672}}]}
+
+    assert store.from_json(store.to_json(document)) == document
+
+
 def test_a_data_directory_that_does_not_exist_yet_reads_as_empty(tmp_path):
     missing = tmp_path / "not" / "created" / "yet"
 
