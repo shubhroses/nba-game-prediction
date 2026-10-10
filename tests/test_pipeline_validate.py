@@ -469,7 +469,7 @@ def test_every_line_of_every_results_file_is_checked_the_old_ones_too():
 
 def test_the_fields_of_a_results_line_come_in_one_order_and_more_may_follow():
     in_another_order = {"commence_time": RESULT["commence_time"], **RESULT}
-    with_more = {**RESULT, "model": {"p_home": 0.61}, "model_verdict": "favorite_won"}
+    with_more = {**RESULT, "another": {"p_home": 0.61}, "another_verdict": "favorite_won"}
     order = (
         "the fields must begin with id, commence_time, home, away, home_pts, away_pts, "
         "recorded_at, market, market_verdict, in that order"
@@ -479,8 +479,29 @@ def test_the_fields_of_a_results_line_come_in_one_order_and_more_may_follow():
         f"{OCTOBER} line 1: {order}"
     ]
     assert validate.results_problems({}, {OCTOBER: "[]\n"}) == [f"{OCTOBER} line 1: {order}"]
-    # A later version may add fields to new lines. They come after these.
-    assert validate.results_problems({}, {OCTOBER: as_file(with_more)}) == []
+    # A later version may add fields to the lines it writes, after these. A
+    # line that is in the file with such fields is taken as it is.
+    on_disk = {OCTOBER: as_file(with_more)}
+    assert validate.results_problems(on_disk, on_disk) == []
+
+
+def test_a_line_that_is_added_has_the_nine_fields_and_no_other():
+    with_more = {**RESULT, "another": {"p_home": 0.61}, "another_verdict": "favorite_won"}
+    nine = (
+        "the fields must be id, commence_time, home, away, home_pts, away_pts, "
+        "recorded_at, market, market_verdict, in that order"
+    )
+
+    assert validate.results_problems({}, {OCTOBER: as_file(with_more)}) == [
+        f"{OCTOBER} line 1: {nine}"
+    ]
+    # The first line is on disk and the second is added.
+    on_disk = as_file(with_more)
+    added = result(id="b" * 32)
+    assert validate.results_problems({OCTOBER: on_disk}, {OCTOBER: on_disk + as_file(added)}) == []
+    assert validate.results_problems(
+        {OCTOBER: on_disk}, {OCTOBER: on_disk + as_file({**added, "another": None})}
+    ) == [f"{OCTOBER} line 2: {nine}"]
 
 
 def test_a_result_is_in_the_file_of_the_month_its_game_started_in():
@@ -711,3 +732,316 @@ def test_the_wins_and_losses_for_the_board_are_held_to_a_recount_of_the_lines_to
     ]
     assert validate.board_problems({"market": {"wins": 0, "losses": 0}}, []) == []
     assert validate.board_problems(None, lines) == [f"{where}: {HEADLINE_PROBLEM}"]
+
+
+# From here on: a sport that the two models forecast. Its result lines carry
+# each model's forecast of the morning of the game and the verdict on it.
+MORNING = "2026-10-20T09:10:07Z"
+# Boston won 112 to 104. Elo had given it 39.65%, so its favorite lost, and
+# the points-and-rest model 55%, so its favorite won.
+FORECAST_RESULT = {
+    **RESULT,
+    "elo": {"p_home": 0.3965, "published_at": MORNING},
+    "elo_verdict": "upset",
+    "points_rest": {"p_home": 0.55, "margin": 1.42, "published_at": MORNING},
+    "points_rest_verdict": "favorite_won",
+}
+MODELS = ("elo", "points_rest")
+THIRTEEN = (
+    "the fields must be id, commence_time, home, away, home_pts, away_pts, recorded_at, "
+    "market, market_verdict, elo, elo_verdict, points_rest, points_rest_verdict, in that order"
+)
+
+
+def forecast_result(**changes):
+    """The result above with some fields replaced. A model's field may be a dict of changes."""
+    changed = copy.deepcopy(FORECAST_RESULT)
+    for name in MODELS:
+        made = changes.pop(name, {})
+        if isinstance(made, dict) and made:
+            changed[name].update(made)
+        elif made != {}:
+            changed[name] = made
+    changed.update(changes)
+    return changed
+
+
+def other_forecast_results():
+    """Three more games: one that neither model forecast, a late forecast and Elo alone."""
+    nothing = {"elo": None, "elo_verdict": "not_graded"}
+    nothing |= {"points_rest": None, "points_rest_verdict": "not_graded"}
+    late = {"published_at": "2026-10-20T23:00:00Z"}
+    return [
+        forecast_result(id="b" * 32, **nothing),
+        forecast_result(
+            id="c" * 32,
+            elo=late,
+            points_rest=late,
+            elo_verdict="not_graded",
+            points_rest_verdict="not_graded",
+        ),
+        forecast_result(
+            id="d" * 32,
+            home_pts=99,
+            away_pts=101,
+            market_verdict="upset",
+            elo_verdict="favorite_won",
+            points_rest=None,
+            points_rest_verdict="not_graded",
+        ),
+    ]
+
+
+def test_a_result_of_a_forecast_sport_as_the_daily_run_writes_it_passes():
+    lines = [FORECAST_RESULT, *other_forecast_results()]
+
+    for line in lines:
+        assert validate.result_problems(line, "result") == []
+    assert validate.results_problems({}, {OCTOBER: as_file(*lines)}, forecast=True) == []
+
+
+def test_a_line_that_is_added_in_a_forecast_sport_has_the_thirteen_fields_and_no_other():
+    # The nine alone, the four of the models in another order, and one field more.
+    swapped = {**RESULT}
+    for name in ("points_rest", "points_rest_verdict", "elo", "elo_verdict"):
+        swapped[name] = FORECAST_RESULT[name]
+    for line in (RESULT, swapped, {**FORECAST_RESULT, "another": None}):
+        assert validate.results_problems({}, {OCTOBER: as_file(line)}, forecast=True) == [
+            f"{OCTOBER} line 1: {THIRTEEN}"
+        ]
+
+    # And a sport that is not forecast gets no fields of the models.
+    assert len(validate.results_problems({}, {OCTOBER: as_file(FORECAST_RESULT)})) == 1
+
+
+def test_a_line_from_before_the_models_stays_as_it_is_in_a_forecast_sport():
+    on_disk = as_file(RESULT)
+    added = forecast_result(id="b" * 32)
+
+    assert (
+        validate.results_problems(
+            {OCTOBER: on_disk}, {OCTOBER: on_disk + as_file(added)}, forecast=True
+        )
+        == []
+    )
+
+
+def test_the_fields_of_the_models_come_together():
+    without_one = {key: value for key, value in FORECAST_RESULT.items() if key != "elo_verdict"}
+
+    assert validate.result_problems(without_one, "result") == [
+        "result: the fields of the models must be elo, elo_verdict, points_rest, "
+        "points_rest_verdict"
+    ]
+
+
+@pytest.mark.parametrize(
+    ("change", "complaint"),
+    [
+        ({"elo": 0.3965}, "result elo: not a JSON object"),
+        (
+            {"elo": {"p_home": 1.0}},
+            "result elo: p_home must be a number between 0 and 1, got 1.0",
+        ),
+        (
+            {"elo": {"published_at": "this morning"}},
+            "result elo: published_at is not a UTC timestamp",
+        ),
+        (
+            {"points_rest": {"margin": None}},
+            "result points_rest: margin is not a number of points",
+        ),
+        (
+            {"points_rest": {"margin": 1}},
+            "result points_rest: margin is not a number of points",
+        ),
+        (
+            {"points_rest_verdict": "won"},
+            "result: points_rest_verdict is 'won', "
+            "which is not one of favorite_won, upset, toss_up, not_graded",
+        ),
+    ],
+)
+def test_what_a_result_carries_of_a_model_is_a_forecast_or_null_and_a_verdict(change, complaint):
+    assert validate.result_problems(forecast_result(**change), "result") == [complaint]
+
+
+@pytest.mark.parametrize(
+    ("change", "expected"),
+    [
+        ({"elo_verdict": "favorite_won"}, "upset"),
+        ({"elo_verdict": "not_graded"}, "upset"),
+        ({"elo": {"p_home": 0.5}}, "toss_up"),
+        ({"elo": None}, "not_graded"),
+    ],
+)
+def test_the_verdict_on_a_model_is_the_one_its_forecast_and_the_score_make(change, expected):
+    line = forecast_result(**change)
+
+    assert validate.result_problems(line, "result") == [
+        f"result: elo_verdict is {line['elo_verdict']!r}, but the forecast, "
+        f"the time it was published at and the score make it {expected!r}"
+    ]
+
+
+@pytest.mark.parametrize("published_at", ["2026-10-20T23:00:00Z", "2026-10-20T23:00:01Z"])
+def test_a_forecast_published_at_or_after_the_start_must_not_be_graded(published_at):
+    # The game started at 23:00:00.
+    graded = forecast_result(points_rest={"published_at": published_at})
+    assert validate.result_problems(graded, "result") == [
+        "result: points_rest_verdict is 'favorite_won', but the forecast, "
+        "the time it was published at and the score make it 'not_graded'"
+    ]
+
+    not_graded = forecast_result(
+        points_rest={"published_at": published_at}, points_rest_verdict="not_graded"
+    )
+    assert validate.result_problems(not_graded, "result") == []
+    in_time = forecast_result(points_rest={"published_at": "2026-10-20T22:59:59Z"})
+    assert validate.result_problems(in_time, "result") == []
+
+
+def forecast_record_of(lines):
+    return record.build(lines, sport="basketball_nba", models=MODELS)
+
+
+def test_the_record_of_a_forecast_sport_passes_for_the_lines_it_was_built_from():
+    lines = [FORECAST_RESULT, *other_forecast_results()]
+
+    assert validate.record_problems(forecast_record_of(lines), lines, models=MODELS) == []
+    assert validate.record_problems(forecast_record_of([]), [], models=MODELS) == []
+    # Lines from before the models, with the lines that have them.
+    mixed = [RESULT, forecast_result(id="b" * 32)]
+    assert validate.record_problems(forecast_record_of(mixed), mixed, models=MODELS) == []
+
+
+@pytest.mark.parametrize(
+    ("path", "name", "recount"),
+    [
+        (["elo", "games"], "elo.games", 2),
+        (["elo", "wins"], "elo.wins", 1),
+        (["elo", "losses"], "elo.losses", 1),
+        (["points_rest", "toss_ups"], "points_rest.toss_ups", 0),
+        (["elo", "not_graded"], "elo.not_graded", 2),
+        (["points_rest", "not_graded"], "points_rest.not_graded", 3),
+        (["elo", "with_line"], "elo.with_line", 2),
+        (["elo", "late"], "elo.late", 1),
+        (["points_rest", "late"], "points_rest.late", 1),
+        (["elo", "bands", 0, "games"], "the sum of elo games over the bands", 2),
+        (["points_rest", "bands", 0, "wins"], "the sum of points_rest wins over the bands", 1),
+        (["by_day", 0, "elo", "wins"], "the sum of elo wins over the days", 1),
+        (["by_day", 0, "elo", "losses"], "the sum of elo losses over the days", 1),
+        (
+            ["by_day", 0, "points_rest", "toss_ups"],
+            "the sum of points_rest toss_ups over the days",
+            0,
+        ),
+        (["by_day", 0, "elo", "not_graded"], "the sum of elo not_graded over the days", 2),
+        (["elo", "picks_against_market", "differ"], "elo.picks_against_market.differ", 2),
+        (
+            ["elo", "picks_against_market", "model_right"],
+            "elo.picks_against_market.model_right",
+            1,
+        ),
+        (
+            ["elo", "picks_against_market", "market_right"],
+            "elo.picks_against_market.market_right",
+            1,
+        ),
+        (
+            ["points_rest", "picks_against_market", "differ"],
+            "points_rest.picks_against_market.differ",
+            0,
+        ),
+        (["elo", "brier_against_market", "games"], "elo.brier_against_market.games", 2),
+        (
+            ["points_rest", "brier_against_market", "games"],
+            "points_rest.brier_against_market.games",
+            1,
+        ),
+    ],
+)
+def test_a_count_of_a_models_record_that_differs_from_a_recount_of_the_lines_is_named(
+    path, name, recount
+):
+    # Four games. In the first the line's favorite won and Elo's lost. One
+    # had no forecast and one a late one. In the last, which the
+    # points-and-rest model sat out, Elo's favorite won and the line's lost.
+    lines = [FORECAST_RESULT, *other_forecast_results()]
+    built = forecast_record_of(lines)
+    holder = built
+    for key in path[:-1]:
+        holder = holder[key]
+    holder[path[-1]] += 1
+
+    assert validate.record_problems(built, lines, models=MODELS) == [
+        f"record: {name} is {recount + 1}, and a recount of the result lines gives {recount}"
+    ]
+
+
+def test_a_game_without_a_line_is_not_one_of_the_games_both_forecast():
+    # Elo is graded in both games. The sportsbooks had a line for the first only.
+    without_a_line = forecast_result(id="b" * 32, market=None, market_verdict="not_graded")
+    lines = [FORECAST_RESULT, without_a_line]
+    built = forecast_record_of(lines)
+
+    assert built["elo"]["brier_against_market"]["games"] == 1
+    assert validate.record_problems(built, lines, models=MODELS) == []
+
+
+def test_the_accuracy_of_a_model_is_the_share_of_its_wins():
+    lines = [FORECAST_RESULT, *other_forecast_results()]
+    built = forecast_record_of(lines)
+    built["elo"]["accuracy"] = 1.0
+
+    assert validate.record_problems(built, lines, models=MODELS) == [
+        "record: elo.accuracy is 1.0, and 1 wins in 2 games give 0.5"
+    ]
+
+
+def test_a_record_without_a_model_that_the_sport_is_forecast_by_is_refused():
+    lines = [FORECAST_RESULT]
+    without = record.build(lines, sport="basketball_nba")
+
+    found = validate.record_problems(without, lines, models=MODELS)
+
+    assert "record: elo.games is None, and a recount of the result lines gives 1" in found
+    assert "record: points_rest.wins is None, and a recount of the result lines gives 1" in found
+    # A sport that is not forecast is not asked for them.
+    assert validate.record_problems(without, lines) == []
+
+
+def test_the_wins_and_losses_of_each_model_for_the_board_are_held_to_a_recount_too():
+    lines = [FORECAST_RESULT, *other_forecast_results()]
+    where = "state results record"
+    headline = {
+        "market": {"wins": 3, "losses": 1},
+        "elo": {"wins": 1, "losses": 1},
+        "points_rest": {"wins": 1, "losses": 0},
+    }
+
+    assert validate.board_problems(headline, lines, models=MODELS) == []
+    wrong = {**headline, "elo": {"wins": 2, "losses": 1}, "points_rest": {"wins": 1, "losses": 1}}
+    assert validate.board_problems(wrong, lines, models=MODELS) == [
+        f"{where}: elo wins is 2, and a recount of the result lines gives 1",
+        f"{where}: points_rest losses is 1, and a recount of the result lines gives 0",
+    ]
+    without = {"market": headline["market"]}
+    assert validate.board_problems(without, lines, models=MODELS) == [
+        f"{where}: elo must hold whole numbers for wins and losses",
+        f"{where}: points_rest must hold whole numbers for wins and losses",
+    ]
+    assert validate.board_problems(without, lines) == []
+
+
+@pytest.mark.parametrize("counts", [None, {"wins": 1}, {"wins": "1", "losses": 0}, 3])
+def test_a_models_wins_and_losses_on_the_board_are_whole_numbers(built, counts):
+    built.slate["record"] = {"market": {"wins": 1, "losses": 0}, "elo": counts}
+    built.state["results"] = {**NOTED, "record": built.slate["record"]}
+
+    assert validate.slate_problems(built.slate) == [
+        "slate record: elo must hold whole numbers for wins and losses"
+    ]
+    assert validate.state_problems(built.state) == [
+        "state results record: elo must hold whole numbers for wins and losses"
+    ]
