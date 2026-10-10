@@ -305,7 +305,9 @@ An event in the response that cannot be used is a different matter. It is left o
 
 No request is repeated within a run, whichever of these it ends with.
 
-Each sport is taken on its own. For a sport that fails nothing is written. A sport that was written stays written when another one fails, before it or after it, and the next trigger then finds it recorded and asks for the failed one only. The run ends with the status of the first failure, its messages name each sport that failed, and it reports `changed=true` because there is something to push.
+Each sport is taken on its own. For a sport that fails nothing is written. A sport that was written stays written when another one fails, before it or after it, and the next trigger then finds it recorded and asks for the failed one only.
+
+There is one way for a failed sport to leave something behind. Its files are moved into place one after the other: the day's history, the board, and the state file last. If a move fails after an earlier one has worked, the files moved before it are already the new ones, although the message says that nothing was written. The state file is still the old one, so the slot is not recorded: a later run in time takes it again and adds its own lines after those in the history. If another sport was written in the same run, the workflow commits the moved files with it. The run ends with the status of the first failure, its messages name each sport that failed, and it reports `changed=true` because there is something to push.
 
 A message never contains the request URL or the key. For a refusal it gives the status and the provider's error code, as in `HTTP 401 (INVALID_KEY)`. An error that nobody foresaw while the answer was fetched and read ends with status 4 as well and is named by its class only, as in `the response could not be read (RecursionError)` for a body that is nested too deep.
 
@@ -397,7 +399,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | `tests/test_pipeline_timestamps.py` | The timestamp format. |
 | `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
 | `tests/test_pipeline_validate.py` | Each check, by breaking one thing in a valid snapshot. |
-| `tests/test_pipeline_store.py` | The file formats on disk, that a failed write leaves the data directory as it was, and that the temporary directory of a killed run is removed. |
+| `tests/test_pipeline_store.py` | The file formats on disk, that a write which fails before any file is moved leaves the data directory as it was, the order of the moves, and that the temporary directory of a killed run is removed. |
 | `tests/test_pipeline_oddsapi.py` | The request against the fake server: its parameters, that it is sent once whatever comes of it, the refusals, a redirect, a body that is nested too deep, and that no error message or traceback holds the key or the URL. |
 | `tests/test_pipeline_cli.py` | The command from end to end: a first run, a second run in the same slot, three slots of one evening, 401, 429 and 503, a validation failure, files that cannot be written, a slot just inside and just outside its 75 minutes, `--dry-run`, `--force`, and `--all` with two sports of which one fails. After every run it looks for the dummy key in the output and in the files. |
 | `tests/test_pipeline_credits.py` | The bound on requests. Every cron trigger of a day is walked through the command, on an ordinary day and on the days of 25 and of 23 hours, once for each way a run can end. The requests are counted for each slot, each sport and the day. |
