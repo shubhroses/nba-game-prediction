@@ -1,5 +1,4 @@
-import React from 'react';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
 const REPOSITORY = 'https://github.com/shubhroses/nba-game-prediction';
 
