@@ -152,19 +152,25 @@ The only build variable the page reads is `VITE_DATA_BASE_URL`, and it is option
 Checked, as of 10 October 2026:
 
 - `npm ci`, the lint, the type check, the unit tests and the build pass from a clean checkout, and so do the two guards: on Node 22 in a Linux container, with the steps taken from the workflow file, and on Node 25 on macOS.
-- 37 behaviours were each broken once in a scratch copy of `src/`, and every time a unit test failed.
+- 37 behaviours were each broken once in a scratch copy of `src/`, and every time a unit test failed. After the wording of the status line was split into two functions, 32 were broken in the same way, and each was caught.
 - Each guard was seen to fail: the first with a request to the provider put back into the code, the second with the whole environment object shown on the page and `envPrefix` removed. With `envPrefix` in place the second guard passed even then.
 - The built files were served locally with the headers of `vercel.json` and loaded in headless Chrome 154, with the request for the board answered inside the browser by an invented board. The cards came in start-time order, a game that had started was left out, and the status line, a toss-up card and a card without a line read as described above. The page made one request for the board and none to any host other than its own and `cdn.nba.com`. Chrome reported no violation of the policy. An inline script, a style attribute written as text, an image from another host and a request to another host were each refused, which shows that the policy was in force.
 - In the same browser, with the page's clock moved forward: a second request after five minutes, none while the tab was marked hidden and one when it was shown again, the board kept on screen through a check that failed, a game dropped from the list once it had started, and the status line turning to `The next update was due at`. A network error was retried once after two seconds. HTTP 404, HTTP 429, a file of another schema and a file that is not JSON were not retried, and each gave its sentence. With rendering made to throw, the page showed the short message of the error boundary and none of the error's text.
+- A second pass left the clock alone and answered nothing inside the browser. Local servers stood in for `raw.githubusercontent.com` and `cdn.nba.com`, and Chrome reached them through its own network stack, with its CORS check and its cache. Thirteen cards, their start times and the status line matched figures worked out by hand in the time zones of Los Angeles, New York and London. The stand-in logos loaded under the policy. At 320 and 390 pixels wide the page had no horizontal scroll.
+- In that pass a page was left open for a quarter of an hour. It asked again five minutes after its first request: Chrome made that request conditional, and the stand-in answered 304. It kept its cards through a check that failed, retry included, and showed a newer board five minutes after that. A game that started in the meantime left the list without a request. The status region changed once in the quarter of an hour, when the newer board arrived.
+- A second page was in a tab behind another tab of its window, which Chrome reports as hidden. It asked for nothing for more than six minutes, twice, and each time it asked at once when it was brought to the front.
 - Under the development server, where React mounts every component twice, the request of the first mount was aborted and the cards were shown once.
 - The board as it was on the `data` branch on 10 October 2026, fetched once, passes the shape check, and the parsed board equals the file field for field. Served to the built page in the same way as the invented one, it gave one card for each of its 46 games.
+- The built page was then opened once against `raw.githubusercontent.com` itself, with that host's certificate checked as usual and the policy in force. It showed the 46 cards, made one request for the board and a second one five minutes later, and Chrome reported no violation.
+- A file that does not exist on the `data` branch, asked for once with `curl`, is answered with HTTP 404 and `Access-Control-Allow-Origin: *`. A browser can read that status, so the page gives the sentence that names it.
 - `vercel.json` validates against Vercel's published schema.
 
 Not checked:
 
 - Vercel has not built this version, and the headers have not been seen on the deployed site. On a preview deployment Vercel may add its toolbar from another origin, which this policy would refuse. The page does not need it.
-- The team logos did not load in headless Chrome: `cdn.nba.com` ends its requests with an HTTP/2 protocol error, while `curl` gets the same file. The checks therefore saw the placeholders, and that the policy lets the logo requests out, but not the logos.
-- The hidden tab was simulated by overriding `document.visibilityState`.
+- The team logos themselves did not load in headless Chrome: `cdn.nba.com` ends its requests with an HTTP/2 protocol error, while `curl` gets the same file. The checks therefore saw the placeholders, stand-in logos from a local server, and that the policy lets the logo requests out, but not the real logos on the page.
+- The hidden tab was a tab of headless Chrome behind another tab. A minimised window, a locked phone and a computer that sleeps were not tried.
+- No screen reader was tried. That the status region is read out when its text changes is what its role asks of a screen reader. It was not heard.
 - No browser other than Chrome was tried.
 
 ## Limitations
@@ -175,4 +181,5 @@ Not checked:
 - The components are not tested in a browser by CI. The checks above were run by hand.
 - The toss-up rule is applied to the probability as the board gives it, to four decimals, while the cards show whole percent. A favourite at 52.3% and a toss-up at 51.8% both show 52%.
 - A team code that is not one of the 30 is shown as the code, with initials in place of a logo.
+- Dates and times are written the American way for every visitor, and the short name of the time zone is the browser's. Chrome 154 writes London's as `GMT+1` in summer and `GMT+0` in winter.
 - The header still calls the page "NBA Game Predictions" and spells "favourites" the British way, while the cards say "Favored". The wording is left for the redesign.
