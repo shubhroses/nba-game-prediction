@@ -24,7 +24,7 @@ That host answers requests from any origin and lets a browser cache the file for
 
 Above the cards:
 
-- One status line, for example `Odds as of 12:12 PM (2 h 50 min ago), the median of up to 6 sportsbooks. Next update about 3:10 PM.` The first time is when the snapshot was taken and the second is the start of the next slot of the job, both in the visitor's time zone. Once that start has passed without a newer snapshot, the line says `The next update was due at 3:10 PM.` A time on another day has its date after it.
+- One status line, for example `Odds as of 12:12 PM (2 h 50 min ago), the median of up to 6 sportsbooks. Next update about 3:10 PM.` The first time is when the snapshot was taken and the second is the start of the next slot of the job, both in the visitor's time zone. Once that start has passed without a newer snapshot, the line says `The next update was due at 3:10 PM.` A time on another day has its date after it. The words `Odds as of 12:12 PM` are a status region (`role="status"`), so a screen reader reads them out when a newer snapshot arrives. The rest of the line is outside that region, because the age changes every minute.
 - One sentence that says what a percentage is.
 
 One card for each game that has not started, the soonest first:
@@ -100,7 +100,7 @@ The server it names has to allow requests from other origins. In a deployment, i
 | `src/data/boardState.test.ts` | Every transition of the reducer, among them that a failed later check keeps the board. |
 | `src/display/teams.test.ts` | 30 teams. The names are the keys of the logo table, and the codes are the ones in `pipeline/teams.py`, which the test reads as text. |
 | `src/display/gameCard.test.ts` | Favourite at home and away, the toss-up at and around 48% and 52%, no line, 1% and 99%, a half point, the range, the order of the list and the games that have started. |
-| `src/display/statusLine.test.ts` | Times in a given time zone, the date on another day, ages from under a minute to days, the count of sportsbooks, a snapshot that is due and one that is overdue. |
+| `src/display/statusLine.test.ts` | Times in a given time zone, the date on another day, that the time of a snapshot stays as it is while the snapshot gets older, ages from under a minute to days, the count of sportsbooks, a snapshot that is due and one that is overdue. |
 | `src/utils/formatters.test.ts` | The start time across the end of daylight saving time, and the logo lookup. |
 
 All numbers in the tests are invented.

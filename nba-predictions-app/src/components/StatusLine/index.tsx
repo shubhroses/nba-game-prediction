@@ -11,7 +11,9 @@ interface StatusLineProps {
 export default function StatusLine({ board, fetchedAt, now }: StatusLineProps) {
   return (
     <p className="text-gray-600 mb-1" title={`This page received these odds at ${clockTime(fetchedAt, now)}`}>
-      {snapshotTime(board, now)} {snapshotAge(board, now)} {nextUpdateNote(board, now)}
+      {/* A screen reader reads a status region out when its text changes. Only the time of the
+          snapshot is in it: the age after it changes every minute. */}
+      <span role="status">{snapshotTime(board, now)}</span> {snapshotAge(board, now)} {nextUpdateNote(board, now)}
     </p>
   );
 }
