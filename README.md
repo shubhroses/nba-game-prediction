@@ -113,7 +113,7 @@ Each snapshot is one commit on the `data` branch, with three files:
 - `v1/state.json`: what the job remembers between runs, including each game's last line from before its start, kept for 14 days.
 - `v1/history/<date>.ndjson`: one line per game per snapshot. Lines are only ever added.
 
-The files hold derived values only, no prices. A game that only one sportsbook quotes is recorded without that sportsbook's name. The API key is a repository secret that is passed to the one step that makes the request. Until 17 October 2026 the job also records preseason games under `v1-dryrun/`, as a rehearsal. The two sports are taken one after the other, and one that fails does not keep the other from being recorded.
+The files hold derived values only, no prices. No sportsbook is named next to a number of its own: a game that only one sportsbook quotes, or on which all of them give the same probability, is recorded without names. The API key is a repository secret that is passed to the one step that makes the request. Until 17 October 2026 the job also records preseason games under `v1-dryrun/`, as a rehearsal. The two sports are taken one after the other, and one that fails does not keep the other from being recorded.
 
 The file formats, the schedule, the credit budget, the exit codes and what has and has not been checked are in [`pipeline/README.md`](pipeline/README.md).
 

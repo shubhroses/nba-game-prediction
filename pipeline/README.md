@@ -45,7 +45,7 @@ For one game:
 - A sportsbook is used when its head-to-head market quotes both teams at a price above 1.
 - The consensus `p_home` is the median of the home shares of the sportsbooks used. With an even number that is the mean of the middle two.
 - `lo` and `hi` are the lowest and the highest home share, and `n` is the number of sportsbooks used.
-- `books` is the sorted list of their names when there are two or more. A single sportsbook is [counted but not named](#what-is-not-published).
+- `books` is the sorted list of their names when `lo` and `hi` differ. When the two are written as the same number, which is always so for a single sportsbook, the sportsbooks are [counted but not named](#what-is-not-published).
 - If no sportsbook can be used the game has no line. That is written as `null`, never as a number.
 
 ## Schedule
@@ -189,7 +189,7 @@ The board: the upcoming games as of the latest snapshot. Replaced by every snaps
 | `games[].id` | The provider's id for the game. |
 | `games[].commence_time` | The scheduled start. |
 | `games[].home`, `games[].away` | Team codes. |
-| `games[].line` | The consensus in this snapshot: `p_home`, `lo`, `hi`, `n`, `books` and `captured_at`. `books` is the sorted list of the sportsbooks' names, or an empty list when `n` is 1. `null` when no sportsbook quoted both teams in this snapshot. |
+| `games[].line` | The consensus in this snapshot: `p_home`, `lo`, `hi`, `n`, `books` and `captured_at`. `books` is the sorted list of the sportsbooks' names, or an empty list when `lo` equals `hi`, as it does when `n` is 1. `null` when no sportsbook quoted both teams in this snapshot. |
 | `games[].open` | The opening line: `p_home` and `at` of the first snapshot in which the game had a line. `null` if it never had one. |
 
 ### `{prefix}/state.json`
@@ -274,7 +274,7 @@ Each line is one JSON object without spaces, with its fields in this order. Line
 
 The provider's [terms](https://the-odds-api.com/terms-and-conditions.html) do not allow its data to be redistributed as a data product, downloadable files included. They do allow values derived from the data to be calculated and displayed. So the files hold derived values only. There is no response and no price in them, and no list of what each sportsbook quoted: the names in `books` say which sportsbooks went into a consensus and nothing more.
 
-When only one sportsbook quotes a game, the consensus is that one sportsbook's probability with its margin removed. The line is published all the same, with `n` set to 1, but `books` is left empty, so that no file puts a number to the name of a single sportsbook. The two prices behind the number are not published and cannot be worked out from it. With two sportsbooks, `lo` and `hi` are their two probabilities and both are named, without saying which is whose.
+When only one sportsbook quotes a game, the consensus is that one sportsbook's probability with its margin removed. The line is published all the same, with `n` set to 1, but `books` is left empty, so that no file puts a number to the name of a single sportsbook. The two prices behind the number are not published and cannot be worked out from it. With two sportsbooks, `lo` and `hi` are their two probabilities and both are named, without saying which is whose. When all the sportsbooks of a game give the same probability, so that `lo` and `hi` are written as the same number, their names would say what each of them gave. `books` is left empty then too, whatever `n` is.
 
 No real odds are in this repository either. The tests and the fake server use invented prices.
 
@@ -283,7 +283,7 @@ No real odds are in this repository either. The tests and the fake server use in
 `validate.py` returns a list of problems. If the list is not empty, that sport's part of the run ends with status 2 and nothing is written for it.
 
 - Every probability is a number strictly between 0 and 1, and `lo <= p_home <= hi`.
-- `n` is a whole number of at least 1. The board names as many sportsbooks as it counts, and none when it counts one.
+- `n` is a whole number of at least 1. The board names as many sportsbooks as it counts, and none when it counts one or when `lo` equals `hi`.
 - Every team code is one of the 30.
 - Every game on the board starts after the snapshot time.
 - History only grows: the content already in the day's file must be the beginning of the new content, the existing file must end with a newline, and every added line must be a complete record with the six fields in order.
@@ -395,7 +395,7 @@ They need pytest and nothing else, make no request to The Odds API, and use a du
 | `tests/test_pipeline_consensus.py` | The margin-free share, the median, the range and the count, and every way a sportsbook's quote can be unusable. |
 | `tests/test_pipeline_schedule.py` | The slot table on 31 October, 1 November and 2 November 2026, across the end of daylight saving time, the cron triggers walked over those three days, and the 75 minutes: which triggers of a slot start in time. |
 | `tests/test_pipeline_timestamps.py` | The timestamp format. |
-| `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
+| `tests/test_pipeline_snapshot.py` | The three outputs for a response, that a single sportsbook is not named and neither are several that all give the same probability, and the state rules: the opening line is kept, a started game's line is never replaced, a game leaves after 14 days, an unusable event is dropped and reported. |
 | `tests/test_pipeline_validate.py` | Each check, by breaking one thing in a valid snapshot. |
 | `tests/test_pipeline_store.py` | The file formats on disk, that a failed write leaves the data directory as it was, and that the temporary directory of a killed run is removed. |
 | `tests/test_pipeline_oddsapi.py` | The request against the fake server: its parameters, that it is sent once whatever comes of it, the refusals, a redirect, a body that is nested too deep, and that no error message or traceback holds the key or the URL. |

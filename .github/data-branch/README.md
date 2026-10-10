@@ -14,4 +14,4 @@ Do not edit the files by hand. The job reads back what it wrote, and it refuses 
 
 The fields of each file, the schedule and the rules the job follows are described in [`pipeline/README.md` on `main`](https://github.com/shubhroses/nba-game-prediction/blob/main/pipeline/README.md).
 
-The files hold derived figures only: for each game the median, the lowest and the highest of the sportsbooks' home win probabilities with each sportsbook's margin removed, the number of sportsbooks, and their names when there are two or more. The responses of the odds provider and the prices in them are not published.
+The files hold derived figures only: for each game the median, the lowest and the highest of the sportsbooks' home win probabilities with each sportsbook's margin removed, the number of sportsbooks, and their names when there are two or more that do not all give the same probability. The responses of the odds provider and the prices in them are not published.
