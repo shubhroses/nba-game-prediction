@@ -59,7 +59,7 @@ jobs:
         run: dbt compile --project-dir nba_dbt --profiles-dir nba_dbt/ci --no-populate-cache --no-introspect
 
   web:
-    name: Web app lint and build
+    name: Web app lint, type check, tests and build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
@@ -83,8 +83,38 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      # The app reads its API key at build time. Any value will do here.
+      - name: Check the types
+        run: npm run typecheck
+
+      - name: Run the unit tests
+        run: npm test
+
+      # The build needs no key and no other setting.
       - name: Build
         run: npm run build
+
+      # The page reads files that the pipeline publishes. Its bundle must not
+      # name the odds provider, hold a request that carries a key, or hold one
+      # of the variables that Vercel adds to a build.
+      - name: Check that the build holds no trace of the odds provider
+        run: |
+          test -f dist/index.html
+          if grep -rEo 'apiKey=|the-odds-api|VITE_VERCEL_' dist; then
+            echo "::error::The built files contain the text listed above."
+            exit 1
+          fi
+
+      # VITE_SPORTS_API_KEY held the API key when the page still asked the
+      # provider itself, and the Vercel project may still define it. Vite can
+      # copy such a variable into the bundle, so this builds with a dummy
+      # value and looks for it in the output.
+      - name: Build with a dummy key in the environment and check that it is not in the output
         env:
-          VITE_SPORTS_API_KEY: dummy-key-for-ci
+          VITE_SPORTS_API_KEY: dummy-key-that-must-not-be-bundled
+        run: |
+          npm run build
+          test -f dist/index.html
+          if grep -rFo -- "$VITE_SPORTS_API_KEY" dist; then
+            echo "::error::The value of VITE_SPORTS_API_KEY is in the built files."
+            exit 1
+          fi
