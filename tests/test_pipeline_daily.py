@@ -799,9 +799,10 @@ def test_result_lines_that_validation_refuses_are_not_written(run, data_dir, mon
 
 @pytest.mark.usefixtures("played")
 def test_notes_for_the_state_that_validation_refuses_are_not_written(run, data_dir, monkeypatch):
-    # A bug in what the state notes: its list of recent results holds a line twice.
+    # A bug in what the state notes: its list of recent results ends with
+    # something that is not a result.
     recent = snapshot.recent
-    monkeypatch.setattr(snapshot, "recent", lambda lines, now: recent(lines, now)[:1] * 2 + [7])
+    monkeypatch.setattr(snapshot, "recent", lambda lines, now: recent(lines, now) + [7])
 
     result = run(now=MORNING)
 
