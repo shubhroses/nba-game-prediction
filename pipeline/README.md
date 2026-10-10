@@ -754,7 +754,7 @@ Checked on 10 October 2026 for the snapshot as it was before the daily work was 
 
 What is known of the job on GitHub, on 10 October 2026:
 
-- The workflow was started by hand once, with `force` and `dry_run`, before the daily work was added. The log of that run shows one odds request for each of the two sports and nothing written: 46 games of the regular season and 8 of the preseason, each with a line, and none dropped.
+- There is the log of a run that was started by hand with `force` and `dry_run` at 18:42 UTC, before the daily work was added. It shows one odds request for each of the two sports and nothing written: 46 games of the regular season and 8 of the preseason, each with a line, and none dropped.
 - By 20:08 UTC there was a `data` branch, so a scheduled run of the snapshot had written and pushed by then. What is on the branch was not looked at for this list.
 
 Not checked:
