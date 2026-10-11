@@ -1,0 +1,144 @@
+{
+  "code_commit": null,
+  "day": "2026-11-02",
+  "games": [
+    {
+      "away": "CHI",
+      "commence_time": "2026-11-03T00:10:00Z",
+      "elo": {
+        "away_rating": 1420,
+        "home_court": 40,
+        "home_rating": 1526,
+        "p_home": 0.6986
+      },
+      "home": "TOR",
+      "id": "63c84df74b6b466cc24105744f0aedca",
+      "market": {
+        "at": "2026-11-02T02:10:51Z",
+        "hi": 0.8513,
+        "lo": 0.8288,
+        "n": 4,
+        "p_home": 0.8446
+      },
+      "neutral": false,
+      "points_rest": null
+    },
+    {
+      "away": "LAC",
+      "commence_time": "2026-11-03T00:10:00Z",
+      "elo": {
+        "away_rating": 1550,
+        "home_court": 40,
+        "home_rating": 1602,
+        "p_home": 0.6294
+      },
+      "home": "CHA",
+      "id": "73dbb4950f85cd7658caaa9ea63d885f",
+      "market": {
+        "at": "2026-11-02T02:10:51Z",
+        "hi": 0.5401,
+        "lo": 0.5183,
+        "n": 4,
+        "p_home": 0.5229
+      },
+      "neutral": false,
+      "points_rest": null
+    },
+    {
+      "away": "ORL",
+      "commence_time": "2026-11-03T00:10:00Z",
+      "elo": {
+        "away_rating": 1537,
+        "home_court": 40,
+        "home_rating": 1546,
+        "p_home": 0.5701
+      },
+      "home": "ATL",
+      "id": "f897686e61c22ea5ac8cc31bf6640e67",
+      "market": {
+        "at": "2026-11-02T02:10:51Z",
+        "hi": 0.5802,
+        "lo": 0.5733,
+        "n": 3,
+        "p_home": 0.578
+      },
+      "neutral": false,
+      "points_rest": null
+    },
+    {
+      "away": "WAS",
+      "commence_time": "2026-11-03T00:40:00Z",
+      "elo": {
+        "away_rating": 1253,
+        "home_court": 40,
+        "home_rating": 1565,
+        "p_home": 0.8835
+      },
+      "home": "BOS",
+      "id": "2be2631182e70a308a68f50ffd5126bc",
+      "market": {
+        "at": "2026-11-02T02:10:51Z",
+        "hi": 0.8541,
+        "lo": 0.8343,
+        "n": 5,
+        "p_home": 0.8417
+      },
+      "neutral": false,
+      "points_rest": null
+    },
+    {
+      "away": "MIL",
+      "commence_time": "2026-11-03T01:40:00Z",
+      "elo": {
+        "away_rating": 1446,
+        "home_court": 40,
+        "home_rating": 1417,
+        "p_home": 0.5158
+      },
+      "home": "DAL",
+      "id": "96eb9f8299c6c8b27c5da43f70dd1851",
+      "market": {
+        "at": "2026-11-02T02:10:51Z",
+        "hi": 0.4396,
+        "lo": 0.4184,
+        "n": 4,
+        "p_home": 0.4264
+      },
+      "neutral": false,
+      "points_rest": null
+    },
+    {
+      "away": "PHI",
+      "commence_time": "2026-11-03T03:10:00Z",
+      "elo": {
+        "away_rating": 1498,
+        "home_court": 40,
+        "home_rating": 1453,
+        "p_home": 0.4928
+      },
+      "home": "GSW",
+      "id": "246ecb42217f3d26caf9a19ac11074e4",
+      "market": {
+        "at": "2026-11-02T02:10:51Z",
+        "hi": 0.787,
+        "lo": 0.7691,
+        "n": 4,
+        "p_home": 0.7786
+      },
+      "neutral": false,
+      "points_rest": null
+    }
+  ],
+  "parameters": {
+    "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
+    "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
+  },
+  "published_at": "2026-11-02T10:10:39Z",
+  "reasons": [
+    "no result for DEN at LAC, which started at 2026-11-02T03:40:00Z (game f2699d4366ea6f7f96b4243432d380a1)"
+  ],
+  "results_through": "2026-11-01",
+  "schema": 1,
+  "sport": "basketball_nba",
+  "status": "degraded"
+}

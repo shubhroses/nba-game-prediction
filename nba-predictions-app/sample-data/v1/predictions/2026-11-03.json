@@ -1,0 +1,259 @@
+{
+  "code_commit": null,
+  "day": "2026-11-03",
+  "games": [
+    {
+      "away": "DET",
+      "commence_time": "2026-11-04T00:10:00Z",
+      "elo": {
+        "away_rating": 1585,
+        "home_court": 40,
+        "home_rating": 1492,
+        "p_home": 0.4243
+      },
+      "home": "PHI",
+      "id": "97b46ec656aa7b9b030f1eeb837dfc8e",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.2941,
+        "lo": 0.2707,
+        "n": 4,
+        "p_home": 0.2851
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.18,
+        "margin": -5.08,
+        "p_home": 0.3308,
+        "rating_edge": -4.59,
+        "rest_edge": -1.67
+      }
+    },
+    {
+      "away": "HOU",
+      "commence_time": "2026-11-04T00:10:00Z",
+      "elo": {
+        "away_rating": 1537,
+        "home_court": 40,
+        "home_rating": 1532,
+        "p_home": 0.5502
+      },
+      "home": "ORL",
+      "id": "e1779871656e85418d78a9e7b59ee6f3",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.6581,
+        "lo": 0.6359,
+        "n": 5,
+        "p_home": 0.65
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.19,
+        "margin": -1.05,
+        "p_home": 0.4643,
+        "rating_edge": -0.57,
+        "rest_edge": -1.67
+      }
+    },
+    {
+      "away": "MIN",
+      "commence_time": "2026-11-04T00:40:00Z",
+      "elo": {
+        "away_rating": 1542,
+        "home_court": 40,
+        "home_rating": 1595,
+        "p_home": 0.6307
+      },
+      "home": "CLE",
+      "id": "3d51767692cbbb5798ec647c285a3915",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.5393,
+        "lo": 0.5377,
+        "n": 3,
+        "p_home": 0.5391
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.18,
+        "margin": 3.54,
+        "p_home": 0.6199,
+        "rating_edge": 2.36,
+        "rest_edge": 0.0
+      }
+    },
+    {
+      "away": "MIA",
+      "commence_time": "2026-11-04T01:40:00Z",
+      "elo": {
+        "away_rating": 1529,
+        "home_court": 40,
+        "home_rating": 1690,
+        "p_home": 0.7608
+      },
+      "home": "SAS",
+      "id": "a393a0928460c5ca54eaa43112f02c3b",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.5593,
+        "lo": 0.5403,
+        "n": 3,
+        "p_home": 0.5558
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.33,
+        "margin": 5.62,
+        "p_home": 0.6859,
+        "rating_edge": 4.61,
+        "rest_edge": -0.32
+      }
+    },
+    {
+      "away": "IND",
+      "commence_time": "2026-11-04T01:40:00Z",
+      "elo": {
+        "away_rating": 1368,
+        "home_court": 40,
+        "home_rating": 1394,
+        "p_home": 0.5939
+      },
+      "home": "NOP",
+      "id": "f8a8069db2095a8a4e5d7f0d5625aa05",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.6682,
+        "lo": 0.654,
+        "n": 3,
+        "p_home": 0.6565
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.18,
+        "margin": 3.11,
+        "p_home": 0.6055,
+        "rating_edge": 1.93,
+        "rest_edge": 0.0
+      }
+    },
+    {
+      "away": "NYK",
+      "commence_time": "2026-11-04T02:10:00Z",
+      "elo": {
+        "away_rating": 1706,
+        "home_court": 40,
+        "home_rating": 1373,
+        "p_home": 0.1562
+      },
+      "home": "UTA",
+      "id": "60896f78c5ca139e8903442faa8a44da",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.1409,
+        "lo": 0.1288,
+        "n": 4,
+        "p_home": 0.1323
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 2.13,
+        "margin": -9.04,
+        "p_home": 0.2184,
+        "rating_edge": -11.17,
+        "rest_edge": 0.0
+      }
+    },
+    {
+      "away": "BOS",
+      "commence_time": "2026-11-04T03:10:00Z",
+      "elo": {
+        "away_rating": 1567,
+        "home_court": 40,
+        "home_rating": 1375,
+        "p_home": 0.2942
+      },
+      "home": "SAC",
+      "id": "663fbc29476f5b9ef09b92df943b46b6",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.3501,
+        "lo": 0.3287,
+        "n": 4,
+        "p_home": 0.3431
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.18,
+        "margin": -3.76,
+        "p_home": 0.3734,
+        "rating_edge": -6.96,
+        "rest_edge": 2.02
+      }
+    },
+    {
+      "away": "OKC",
+      "commence_time": "2026-11-04T03:10:00Z",
+      "elo": {
+        "away_rating": 1661,
+        "home_court": 40,
+        "home_rating": 1539,
+        "p_home": 0.3841
+      },
+      "home": "POR",
+      "id": "81cb2d85c8aad61d915c2eea0da183b4",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.331,
+        "lo": 0.3152,
+        "n": 4,
+        "p_home": 0.3279
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.18,
+        "margin": -3.2,
+        "p_home": 0.3917,
+        "rating_edge": -4.38,
+        "rest_edge": 0.0
+      }
+    },
+    {
+      "away": "MEM",
+      "commence_time": "2026-11-04T03:40:00Z",
+      "elo": {
+        "away_rating": 1342,
+        "home_court": 40,
+        "home_rating": 1597,
+        "p_home": 0.8453
+      },
+      "home": "LAL",
+      "id": "385e72a3bb1245350baeb8ac582450d6",
+      "market": {
+        "at": "2026-11-03T02:10:57Z",
+        "hi": 0.8725,
+        "lo": 0.8607,
+        "n": 4,
+        "p_home": 0.8645
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.19,
+        "margin": 10.53,
+        "p_home": 0.8177,
+        "rating_edge": 9.66,
+        "rest_edge": -0.32
+      }
+    }
+  ],
+  "parameters": {
+    "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
+    "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
+  },
+  "published_at": "2026-11-03T10:10:42Z",
+  "reasons": [],
+  "results_through": "2026-11-02",
+  "schema": 1,
+  "sport": "basketball_nba",
+  "status": "ok"
+}
