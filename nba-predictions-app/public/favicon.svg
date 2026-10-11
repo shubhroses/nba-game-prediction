@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <clipPath id="ball">
+    <circle cx="16" cy="16" r="14"/>
+  </clipPath>
+  <circle cx="16" cy="16" r="14" fill="#ea580c"/>
+  <path clip-path="url(#ball)" d="M0 16h32M16 0v32M5 5c5.5 6.5 5.5 15.5 0 22M27 5c-5.5 6.5-5.5 15.5 0 22" fill="none" stroke="#1f2937" stroke-width="1.5"/>
+</svg>

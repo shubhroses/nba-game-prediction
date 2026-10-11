@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getTeamLogo } from '../../utils/formatters';
 
 interface TeamLogoProps {

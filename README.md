@@ -4,10 +4,10 @@ A work-in-progress NBA data project with four parts:
 
 1. A small ingestion pipeline. A Prefect flow pulls the live NBA scoreboard and lands the raw JSON in S3, a script loads the newest file into Snowflake, and a second Prefect flow runs dbt, which turns the JSON into one row per game and one row per team per game.
 2. Two notebooks that train baseline win/loss classifiers on historical game data.
-3. A React app that lists upcoming games with the bookmaker-implied favourite for each.
+3. A React app that lists upcoming games with the favourite that the sportsbooks imply for each. It reads what part 4 publishes.
 4. A scheduled job that records, six times a day, the win probability that US sportsbooks' prices imply for each upcoming game, and once a day the final scores of the games that are over and whether the sportsbooks' favorite won. The same daily run forecasts the games of the day with two models of its own, Elo and a points-and-rest model, and grades their forecasts as it grades the sportsbooks'. It commits all of it to the `data` branch of this repository.
 
-The parts are not wired together yet. Nothing reads the dbt models or the odds snapshots, the notebooks read their own data, and the web app gets its numbers from a betting-odds API rather than from the notebook models. The dbt models are tested on a local emulator and have not been run against Snowflake. See [Known gaps](#known-gaps).
+Only two of the parts are wired together: the web app shows the latest odds snapshot. Nothing reads the dbt models, the notebooks read their own data, and no model's output reaches the web app. The dbt models are tested on a local emulator and have not been run against Snowflake. See [Known gaps](#known-gaps).
 
 Web app demo: https://nba-predictions-app.vercel.app
 
@@ -21,11 +21,11 @@ Web app demo: https://nba-predictions-app.vercel.app
 | `nba_dbt/` | dbt project for Snowflake, with its own [README](nba_dbt/README.md). A source for `RAW_NBA_SCOREBOARD`, a staging view `stg_nba__games` with one row per game, a mart table `fct_team_games` with one row per team per game, and schema tests on both. `nba_dbt/ci/profiles.yml` is a placeholder profile for checks that do not connect. |
 | `notebooks/predict_past.ipynb` | Season-by-season backtest of a ridge classifier on historical team box scores. |
 | `notebooks/predict_live.ipynb` | Exploratory notebook: random forest on game logs pulled from `nba_api`, then predictions for today's and tomorrow's schedule. |
-| `nba-predictions-app/` | React 19 + Vite + Tailwind CSS frontend, with its own [README](nba-predictions-app/README.md). |
+| `nba-predictions-app/` | React 19 + Vite + Tailwind CSS frontend in TypeScript, with its own [README](nba-predictions-app/README.md). It reads `v1/slate.json` from the `data` branch. Its `vercel.json` holds the build settings and the response headers of the deployment. |
 | `pipeline/` | Python package for the odds snapshots, the results and the forecasts, standard library only, with its own [README](pipeline/README.md). `python -m pipeline snapshot` asks The Odds API for the upcoming games, works out the sportsbooks' consensus for each one and writes three files: the board, a state file and the day's history. Once a day it first asks for the scores of the last three days, writes a result line for each game that is over, graded against the game's last line from before the start and against what its two models said that morning, rebuilds the record and the models, and freezes the models' forecasts for the games of the day. |
 | `pipeline/model/` | The two models, with their own [README](pipeline/model/README.md): Elo ratings kept the way FiveThirtyEight kept them, and a points-and-rest model that rates every team in points and adds terms for home court and rest. Both use the schedule and final scores only. The two JSON files hold what a season starts them from. |
 | `tests/` | pytest tests for the load script, the transformation flow, the dbt models and the odds pipeline with its two models, described under [Tests and CI](#tests-and-ci). `tests/fake_odds_api.py` is a local stand-in for The Odds API. `tests/fixtures/` holds, among other things, one season of FiveThirtyEight's published NBA Elo ratings, with a note on its source and license. `pytest.ini` puts the repository root and the two script directories on the import path. |
-| `.github/workflows/ci.yml` | GitHub Actions workflow with three jobs: the Python tests, `dbt parse` and `dbt compile`, and the web app's lint and build. |
+| `.github/workflows/ci.yml` | GitHub Actions workflow with three jobs: the Python tests, `dbt parse` and `dbt compile`, and the web app's lint, type check, unit tests and build, with two checks of the built files. |
 | `.github/workflows/pipeline.yml` | GitHub Actions workflow `Odds snapshot`. It runs `pipeline/` on a schedule and commits the output, snapshots, results and forecasts, to the `data` branch. |
 | `.github/data-branch/` | The two files the workflow puts into the `data` branch when it creates it: the branch's README, and a `vercel.json` that tells Vercel not to deploy that branch. |
 | `requirements.txt` | The Python packages the scripts and notebooks import, plus `dbt-snowflake` for the `dbt` command. |
@@ -89,14 +89,15 @@ Pulls every team's game log with `nba_api`'s `LeagueGameFinder`, trains a `Rando
 
 ## Web app (`nba-predictions-app/`)
 
-The app calls The Odds API (`api.the-odds-api.com/v4/sports/basketball_nba/odds`, US region, head-to-head market, decimal odds). For each game it takes the first bookmaker's prices, converts them to implied probabilities, normalises the two so they sum to 100% (removing the bookmaker's margin), and shows the more likely side as the "prediction" with that probability as the "confidence". It does not use the models from the notebooks, and the page says so.
+The app reads one file, [`v1/slate.json`](https://raw.githubusercontent.com/shubhroses/nba-game-prediction/data/v1/slate.json) on the `data` branch, which the job in the next section replaces at every snapshot. It sends no request to The Odds API, and its build holds no key. For each game that has not started it shows both teams' chances of winning, as the sportsbooks' prices imply them, and names the favourite. It does not use the models from the notebooks, and the page says where its percentages come from.
 
 Other behaviour, as implemented in `src/`:
 
-- Game cards are sorted by confidence, then by start time. Odds are displayed in American format. Team logos load from `cdn.nba.com`, with a coloured-initials placeholder if an image fails.
-- In a production build the app calls the API directly first and, if that fails, tries a list of public CORS proxies; in development it goes straight to the proxies.
-- A failed load is retried three times, two seconds apart. If every attempt fails the page ends on an error panel with Try Again and Reload Page buttons. The code also contains an automatic switch to eight hard-coded sample games, but it does not stay on screen (see the app README). The sample games are shown when the button that switches between live and sample data is used.
-- Data is refreshed every 15 minutes. `Ctrl+Shift+D` toggles a small debug panel.
+- Game cards are ordered by start time, the soonest first. Team logos load from `cdn.nba.com`, with a coloured-initials placeholder if an image fails.
+- A game is called a toss-up, and no team is named, when the home team's probability is within 2 points of 50%. A game without a line says so and shows no percentage. When two or more sportsbooks quote a game, the card gives their number and the range between them.
+- A status line above the cards gives the time and the age of the snapshot and says when the next one is due.
+- The page checks for a newer file every five minutes while its tab is visible. If such a check fails, the games on screen stay. If the first load fails, the page shows one sentence that says why and a Try again button.
+- The deployment sends a Content-Security-Policy that lets the page reach its own origin, `raw.githubusercontent.com` for the file and `cdn.nba.com` for the logos, and nothing else.
 
 Details are in [`nba-predictions-app/README.md`](nba-predictions-app/README.md).
 
@@ -195,16 +196,15 @@ pandas is capped below 3 because `predict_past.ipynb` relies on pandas 2 behavio
 
 ### Web app
 
-Requires Node.js 18, 20, or 22 and later (the range Vite 6 accepts) and an API key for The Odds API.
+Requires Node.js 20.19 or later, 22.13 or later, or 24 and later (the range the app's lint and test tools accept). No API key is needed.
 
 ```bash
 cd nba-predictions-app
 npm ci
-echo "VITE_SPORTS_API_KEY=<your Odds API key>" > .env
 npm run dev
 ```
 
-`VITE_ODDS_API_KEY` is accepted as an alternative variable name. The API module throws on load if neither is set, so a key is needed even to see the sample data. Other scripts in `package.json`: `npm run build`, `npm run preview`, `npm run lint`.
+The development server shows the board that is published on the `data` branch. Other scripts in `package.json`: `npm run build` (the type check, then the build), `npm run typecheck`, `npm run lint`, `npm test` and `npm run preview`.
 
 ### Odds snapshots, results and forecasts
 
@@ -234,24 +234,25 @@ The tests need no AWS or Snowflake account, no API key and no credentials.
 | `tests/test_dbt_models.py` | Builds the dbt project against [fakesnow](https://github.com/tekumara/fakesnow), a local emulator that translates Snowflake SQL to DuckDB, by calling the flow's task function with the real `dbt`. It then compares every row of both models with the rows expected for a set of scoreboard responses. Skipped when fakesnow is not installed. |
 | `tests/test_pipeline_*.py` | The odds pipeline, its two models and its workflow file; [`pipeline/README.md`](pipeline/README.md#tests) and [`pipeline/model/README.md`](pipeline/model/README.md#tests) list the files. The end-to-end tests run the command against `tests/fake_odds_api.py` on `127.0.0.1` with invented prices and scores and a dummy key: a first run, a second run in the same slot that must make no request, refusals and outages, a validation failure that must leave the files untouched, one sport failing while the other is written, and for the daily work an evening of lines and the morning after it, with the scores failing while the snapshot is taken and the reverse. For the models they run the mornings of a week: forecasts frozen on the morning of a game and graded the morning after, a file of forecasts that no later run changes, a missing result that leaves Elo published alone, and a morning that was missed and repairs itself. After every run they check that the key is in nothing the command printed or wrote. The grading rules and the record's arithmetic are tested against figures worked out by hand. The Elo rule is held to the 1,320 games of one season of FiveThirtyEight's published ratings, and the points-and-rest model to the expected values that its reference implementation came with. `tests/test_pipeline_credits.py` walks all the triggers of a day through the command for each way a run can fail and counts the requests: at most 3 for a slot and 18 a day for the odds of each sport, and at most 3 a day for its scores. |
 
+The web app has its own unit tests, written with Vitest and run with `npm test` in `nba-predictions-app/`. They cover the check on the shape of the board, the state behind the page's one data hook, and the functions that turn a game into what its card shows. [`nba-predictions-app/README.md`](nba-predictions-app/README.md#checks) lists the files.
+
 `.github/workflows/ci.yml` runs on every push and pull request. Its token can only read the repository, and its actions are pinned to commit SHAs. It has three jobs:
 
 - **Python tests:** installs the two requirements files on Python 3.12 and runs pytest.
 - **dbt parse and compile:** installs `dbt-snowflake`, then runs `dbt parse` and an offline `dbt compile` with the placeholder profile in `nba_dbt/ci`. Neither connects to a warehouse.
-- **Web app lint and build:** on Node 22, runs `npm ci`, `npm run lint` and `npm run build` in `nba-predictions-app/` with a dummy API key.
+- **Web app lint, type check, tests and build:** on Node 22, runs `npm ci`, the lint, the type check, the unit tests and the build in `nba-predictions-app/`. It then fails if the built files contain `apiKey=`, `the-odds-api` or `VITE_VERCEL_`. Last, it builds once more with `VITE_SPORTS_API_KEY` set to a dummy value and fails if that value is in the output.
 
 ## Known gaps
 
 - **The dbt models have not been run against Snowflake.** `nba_dbt/` turns the raw scoreboard JSON into a view of games and a table of team results. `dbt parse`, an offline `dbt compile` and a build against the fakesnow emulator all pass, but the emulator is not Snowflake, and the models have not been built in a Snowflake account. [`nba_dbt/README.md`](nba_dbt/README.md#what-has-and-has-not-been-verified) says exactly what was checked. Nothing downstream reads the two models yet.
-- **The notebooks are analysis, and the app does not show the models yet.** The two notebooks stay as they are, a walkthrough and an exploration with the caveats given above, and nothing is served from them. The models whose forecasts are published are the two in `pipeline/model/`. Their forecasts are files on the `data` branch. The web app in this repository does not read them: its "prediction" is still the bookmaker favourite.
+- **The notebooks are analysis, and the app does not show the models yet.** The two notebooks stay as they are, a walkthrough and an exploration with the caveats given above, and nothing is served from them. The models whose forecasts are published are the two in `pipeline/model/`. Their forecasts are files on the `data` branch. The web app reads the board from that branch but does not show the models' forecasts yet: what it shows is the sportsbooks' favourite.
 - **The ingestion flows are not scheduled.** There is no Prefect deployment, the flows are run by hand, and the S3-to-Snowflake step is a script rather than a flow. The only scheduled job is the odds snapshot workflow, which GitHub Actions runs.
 - **The record of the models against the sportsbooks is empty until games are played.** The job grades the sportsbooks' line and the two models against the results and writes the comparison to `record.json`. The season starts on 20 October 2026. As of 10 October 2026 the daily work with the models had been run only against a local stand-in for the API with invented games, and no scores response of the provider had been seen. [`pipeline/README.md`](pipeline/README.md#what-has-been-checked-and-what-has-not) says what was checked.
 - **The backtest behind the two models cannot be repeated from this repository.** It was run on game results from a feed that publishes no terms of use, so the results are not here. What is here are the parameters and ratings derived from them, a test that holds the Elo rule to a season that FiveThirtyEight published, and a test that holds the points-and-rest code to the expected values of its reference implementation. [`pipeline/model/README.md`](pipeline/model/README.md#how-the-two-were-chosen) gives the figures and says which of them were run again here.
 - **The models' files are for one season and partly kept by hand.** The games on a neutral floor are a list in `pipeline/model/points_rest_2026_27.json`, and the final of the NBA Cup, on 11 December 2026, has to be added to it when its two teams are known. Before 2027-28 both opening files have to be replaced.
 - **Skipping files that are already loaded is left to Snowflake, and has not been run there.** `move_nba_data_to_sf.py` used to look for an earlier load with a `SHOW COPY HISTORY` statement, which Snowflake does not have. That check is gone. `COPY INTO` ignores a staged file it has already loaded into the table unless `FORCE = TRUE` is given ([usage notes](https://docs.snowflake.com/en/sql-reference/sql/copy-into-table#usage-notes)), going by load metadata that Snowflake keeps on the table for 64 days ([load metadata](https://docs.snowflake.com/en/user-guide/data-load-considerations-load#load-metadata)), and the script logs what the statement returned. This follows Snowflake's documentation and is covered by tests with a fake connection, but it has not been run against Snowflake. Two limits are known. The `COPY INTO` reference lists the result columns for a loaded file but does not show the result for a skipped one, so the script treats both forms it knows of as already loaded: a single status row (`Copy executed with 0 files processed.`) and a file row with the status `LOAD_SKIPPED`. And a file older than 64 days whose load status Snowflake can no longer determine is skipped by default as well, and the script reports it as already loaded too.
 - **The S3 listing is not paginated.** `move_nba_data_to_sf.py` makes a single `list_objects_v2` call, which returns at most 1,000 keys, so with more files than that under `raw/` it would stop seeing the newest one.
-- **The Odds API key is exposed to the browser.** Vite inlines `VITE_*` variables into the client bundle, and the proxy fallback sends the full request URL, key included, to third-party CORS proxies. This is acceptable for a throwaway free-tier key only. `nba-predictions-app/API_TROUBLESHOOTING.md` sketches the server-side proxy that would fix it.
-- **Tests cover only part of the code.** The load script, the transformation task, the dbt models and the odds pipeline have tests. The ingestion flow in `fetch_nba_data.py`, the notebooks and the frontend have none. The frontend has no type-check step, and its ESLint configuration only covers `.js` and `.jsx` files, so the lint step in CI does not look at the TypeScript sources.
+- **Tests cover only part of the code.** The load script, the transformation task, the dbt models and the odds pipeline have tests, and so have the web app's handling of the data and its wording. The ingestion flow in `fetch_nba_data.py` and the notebooks have none, and CI does not test the web app's components in a browser.
 
 ## Acknowledgements
 

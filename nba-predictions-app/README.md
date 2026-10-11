@@ -1,63 +1,185 @@
 # NBA predictions web app
 
-A single-page React app that lists upcoming NBA games and, for each one, the side a bookmaker's odds favour and by how much.
+A single-page React app that lists upcoming NBA games and, for each one, the team the sportsbooks favour and by how much.
 
-Built with React 19, Vite 6 and Tailwind CSS 3. The components are written in TypeScript (`.tsx`); Vite strips the types at build time and there is no separate type-check step.
+The page reads one JSON file that a scheduled job in this repository publishes. It sends no request to the odds provider, and neither its code nor its build holds an API key.
 
-Demo: https://nba-predictions-app.vercel.app (deployed on Vercel from this folder, with `VITE_SPORTS_API_KEY` set as a project environment variable)
+Built with React 19, Vite 6, Tailwind CSS 3 and TypeScript 6.
 
-## How the "prediction" is computed
+Demo: https://nba-predictions-app.vercel.app (Vercel builds this folder on every push to `main`)
 
-The app does not run a model of its own. It requests head-to-head odds for NBA games from The Odds API (`api.the-odds-api.com/v4/sports/basketball_nba/odds`, US region, decimal format) and, for each game:
+## Where the numbers come from
 
-1. takes the first bookmaker's home and away prices;
-2. converts each price to an implied probability (`1 / decimal odds`);
-3. normalises the two probabilities so they sum to 100%, which removes the bookmaker's margin;
-4. shows the more likely team as the prediction and its normalised probability as the confidence.
+The job in [`pipeline/`](../pipeline/README.md) asks The Odds API for the upcoming games six times a day. For every game it takes each US sportsbook that quotes both teams, removes that sportsbook's margin, and records the median home win probability with the lowest, the highest and the number of sportsbooks. It commits the result to the [`data` branch](https://github.com/shubhroses/nba-game-prediction/tree/data).
 
-The logic is in `processGames` in `src/services/api.ts`.
+The page reads the board, the list of upcoming games as of the latest snapshot:
 
-## Behaviour
+```
+https://raw.githubusercontent.com/shubhroses/nba-game-prediction/data/v1/slate.json
+```
 
-- Cards are sorted by confidence, then by start time. Confidence of 70% or more is shown in green, 55% or more in yellow, anything lower in grey.
-- Odds are displayed in American format. Team logos load from `cdn.nba.com`; if one fails, a coloured circle with the team's initials is shown instead.
-- In a production build the API is called directly first; if that fails, the request is retried through a list of public CORS proxies (`api.allorigins.win`, `corsproxy.io`, `cors-anywhere.herokuapp.com`, `crossorigin.me`). In development the proxies are used from the start.
-- A failed load is retried three times, two seconds apart. After the last retry `usePredictions` switches to eight hard-coded sample games, but that state change re-runs the loading effect, which makes one more attempt and, when that fails too, replaces the sample games with an error panel (Try Again and Reload Page buttons). In practice a visitor sees the error panel, not the sample games.
-- The button next to the heading switches between live data and the sample games. The sample games' odds and confidence figures are made up, and the page labels them as sample data.
-- Data is refreshed every 15 minutes. `Ctrl+Shift+D` toggles a debug panel showing the build mode, whether an API key is present and how long it is (never the key itself).
+That host answers requests from any origin and lets a browser cache the file for five minutes. The page does no arithmetic on odds. It turns the home team's probability into a percentage for each team and words the result. It does not run a model of its own.
+
+## What the page shows
+
+Above the cards:
+
+- One status line, for example `Odds as of 12:12 PM (2 h 50 min ago), the median of up to 6 sportsbooks. Next update about 3:10 PM.` The first time is when the snapshot was taken and the second is the start of the next slot of the job, both in the visitor's time zone. Once that start has passed without a newer snapshot, the line says `The next update was due at 3:10 PM.` A time on another day has its date after it. The words `Odds as of 12:12 PM` are a status region (`role="status"`), so a screen reader reads them out when a newer snapshot arrives. The rest of the line is outside that region, because the age changes every minute.
+- One sentence that says what a percentage is.
+
+One card for each game that has not started, the soonest first:
+
+- The start time in the visitor's time zone.
+- Both teams by full name, with the logo from `cdn.nba.com`. If a logo does not load, a coloured circle with the team's initials is shown.
+- Under each team, its chance of winning in whole percent. The away team's figure is 100 minus the home team's, so the two always add up. A figure is never below 1% or above 99%.
+- Under that, the range between the sportsbooks for that team, such as `63% to 65%`, when there are two or more and they differ in whole percent.
+- The number of sportsbooks: `Median of 6 sportsbooks`, `1 sportsbook`, or `4 sportsbooks within a point of each other`.
+- A label and a footer with the outcome. `64% implied` and `Favored: Boston Celtics, 64% implied` name the favourite. `Toss-up` is shown, and no team is named, when the home team's probability is within 2 points of 50%. `No line yet` is shown when the board has no line for the game, and such a card has no percentage on it.
+
+The label is green from 70%, yellow from 55% and grey below that. The footer is blue for a home favourite and purple for an away favourite.
+
+No number on the page is a sportsbook's price. The page shows no moneyline.
+
+When the board cannot be loaded, the page shows one sentence that says why and a `Try again` button. When no game on the board is still to start, it says that no games have odds posted.
+
+## Loading and refreshing
+
+`src/hooks/useBoard.ts` is the one place that loads data. Its state is kept by a reducer in `src/data/boardState.ts`: a status (`loading`, `ready` or `error`), the board, the time it arrived and a flag that is set while a later check is under way.
+
+- The page makes one request when it opens.
+- While the tab is visible it checks for a newer board every five minutes. A check that comes due while the tab is hidden is made when the tab is shown again.
+- A request that fails on the network is repeated once, two seconds later. An HTTP error or a file of the wrong shape is not repeated.
+- A request is given up after 15 seconds, and that counts as a network error.
+- When a later check fails, the board that is on screen stays there, with its age in the status line.
+- The request is aborted when the component is unmounted.
+
+`src/data/board.ts` checks what arrives against schema 1 of the board as [`pipeline/README.md`](../pipeline/README.md#prefixslatejson) documents it: the types of the fields, the two time formats, probabilities strictly between 0 and 1 with `lo <= p_home <= hi`, and team codes of three capital letters. A field it does not know is ignored, so the pipeline can add fields. Anything else, another value of `schema` included, is a wrong shape. `src/data/fetchBoard.ts` returns one of three errors: `network`, `http` with the status, or `shape` with what is wrong.
 
 ## Run locally
 
-Requires Node.js 18, 20, or 22 and later, and an API key for The Odds API.
+Requires Node.js 20.19 or later, 22.13 or later, or 24 and later, which is the range the lint and test tools accept. CI uses Node 22. No key and no `.env` file are needed.
 
 ```bash
 npm ci
-echo "VITE_SPORTS_API_KEY=<your Odds API key>" > .env
 npm run dev
 ```
 
-`VITE_ODDS_API_KEY` is accepted as an alternative name. `src/services/api.ts` throws on load if neither variable is set, so a key is required even to view the sample data. A value shorter than 10 characters is rejected as invalid when the first request is made.
+The development server shows the published board.
 
-Other scripts: `npm run build`, `npm run preview`, `npm run lint`. The ESLint configuration only matches `.js` and `.jsx` files, so `npm run lint` does not check the `.ts` and `.tsx` sources.
+| Script | What it does |
+| --- | --- |
+| `npm run dev` | Starts the development server. |
+| `npm run build` | Checks the types, then builds into `dist/`. |
+| `npm run typecheck` | `tsc -b` over `src/` and `vite.config.ts`. |
+| `npm run lint` | ESLint. A warning fails it. |
+| `npm test` | The unit tests, once. |
+| `npm run preview` | Serves `dist/`. |
+
+### `VITE_DATA_BASE_URL`
+
+The address the files are read from is one constant in `src/data/fetchBoard.ts`. The build variable `VITE_DATA_BASE_URL` replaces it. It is not a secret. For example, this shows the preseason rehearsal that the job writes until 17 October 2026:
+
+```bash
+VITE_DATA_BASE_URL=https://raw.githubusercontent.com/shubhroses/nba-game-prediction/data/v1-dryrun npm run dev
+```
+
+The server it names has to allow requests from other origins. In a deployment, its host also has to be in `connect-src` in `vercel.json`.
+
+`vite.config.ts` sets `envPrefix` to `VITE_DATA_`. Vite can copy into the bundle any variable whose name starts with that prefix. With Vite's default, `VITE_`, that would include `VITE_SPORTS_API_KEY`, which held the API key when the page still asked the provider itself and which the Vercel project may still define.
+
+## Checks
+
+- **Types.** `tsconfig.json`, `tsconfig.app.json` and `tsconfig.node.json` are the files of Vite's `react-ts` template. `npm run build` runs the type check first, so a type error stops a deployment.
+- **Lint.** ESLint with typescript-eslint's recommended rules and the `react-hooks` rules over every `.ts` and `.tsx` file, and `no-console` as an error. A warning fails the script.
+- **Unit tests.** Vitest, in files next to the code they test:
+
+| File | What it covers |
+| --- | --- |
+| `src/data/board.test.ts` | The shape check: the example of the pipeline documentation is accepted as it is, unknown fields are left out, and each rule is broken once. |
+| `src/data/fetchBoard.test.ts` | The address with and without `VITE_DATA_BASE_URL`, one request without extra headers, the three kinds of error, the caller's abort and the 15 seconds. `fetch` is replaced by a stand-in. |
+| `src/data/boardState.test.ts` | Every transition of the reducer, among them that a failed later check keeps the board. |
+| `src/display/teams.test.ts` | 30 teams. The names are the keys of the logo table, and the codes are the ones in `pipeline/teams.py`, which the test reads as text. |
+| `src/display/gameCard.test.ts` | Favourite at home and away, the toss-up at and around 48% and 52%, no line, 1% and 99%, a half point, the range, the order of the list and the games that have started. |
+| `src/display/statusLine.test.ts` | Times in a given time zone, the date on another day, that the time of a snapshot stays as it is while the snapshot gets older, ages from under a minute to days, the count of sportsbooks, a snapshot that is due and one that is overdue. |
+| `src/utils/formatters.test.ts` | The start time across the end of daylight saving time, and the logo lookup. |
+
+All numbers in the tests are invented.
+
+The `web` job of `.github/workflows/ci.yml` runs `npm ci`, the lint, the type check, the tests and the build on Node 22. Then it runs two guards on the built files:
+
+1. They must not contain `apiKey=`, `the-odds-api` or `VITE_VERCEL_`.
+2. The build is repeated with `VITE_SPORTS_API_KEY` set to a dummy value, and that value must not be in the output.
+
+## Deployment
+
+`vercel.json` holds what Vercel needs to build the folder (`npm ci`, `npm run build`, output in `dist`) and the response headers.
+
+Every response carries:
+
+| Header | Value |
+| --- | --- |
+| `Content-Security-Policy` | `default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' https://cdn.nba.com; connect-src 'self' https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; frame-ancestors 'none'` |
+| `X-Content-Type-Options` | `nosniff` |
+| `X-Frame-Options` | `DENY` |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` |
+| `Permissions-Policy` | `camera=(), microphone=(), geolocation=(), payment=()` |
+
+The policy lets the page load its own script and stylesheet, team logos from `cdn.nba.com` and the board from `raw.githubusercontent.com`, and nothing else. There is no inline script or style in the built page. React sets the colours of the logo placeholder through the DOM, which `style-src 'self'` allows.
+
+Files under `/assets/` have a hash of their content in their name and are served with `Cache-Control: public, max-age=31536000, immutable`.
+
+The only build variable the page reads is `VITE_DATA_BASE_URL`, and it is optional. `VITE_SPORTS_API_KEY` is no longer read and can be deleted from the Vercel project.
 
 ## Source layout
 
 | Path | Purpose |
 | --- | --- |
-| `src/services/api.ts` | Odds request, CORS-proxy fallback, odds-to-probability conversion, sample data |
-| `src/hooks/usePredictions.ts` | Loading and error state, retries, switch to sample data, 15-minute refresh |
-| `src/components/` | `GameCard`, `PredictionsList`, `TeamLogo`, `Layout`, `LoadingSpinner` |
-| `src/utils/formatters.ts` | Date formatting, decimal-to-American odds, team name to logo URL map |
-| `src/types/index.ts` | Types for the API response and the processed game |
-| `src/App.tsx` | Page composition, data-mode toggle, debug panel |
+| `src/data/board.ts` | The types of the board and the shape check. |
+| `src/data/fetchBoard.ts` | The address of the board, the request and its three errors. |
+| `src/data/boardState.ts` | The reducer behind the data hook. |
+| `src/hooks/useBoard.ts` | The data hook: first load, re-check, retry, abort. |
+| `src/hooks/useNow.ts` | The current time, refreshed every half minute. |
+| `src/display/teams.ts` | Team codes to full names. |
+| `src/display/gameCard.ts` | Turns a game of the board into what its card shows, and orders the list. |
+| `src/display/statusLine.ts` | The wording of the status line. |
+| `src/utils/formatters.ts` | The start time of a game, and the table of team logos. |
+| `src/components/` | `Layout`, `StatusLine`, `GameList`, `GameCard`, `TeamLogo`, `LoadFailure`, `LoadingSpinner`. |
+| `src/App.tsx` | Puts the page together. |
+| `src/main.tsx` | Mounts the app inside an error boundary. If rendering throws, the visitor sees a short message and a button that reloads the page. |
 
-`index.html` loads `src/main.jsx`, which imports `./App.jsx`. There is no `App.jsx`; Vite resolves the import to `App.tsx`. `src/main.tsx`, which wraps the app in an error boundary, is not referenced by `index.html`. `src/App.css` and `src/assets/react.svg` are unused leftovers from the Vite template.
+## What has been checked, and what has not
+
+Checked, as of 10 October 2026:
+
+- `npm ci`, the lint, the type check, the unit tests and the build pass from a clean checkout, and so do the two guards: on Node 22 in a Linux container, with the steps taken from the workflow file, and on Node 25 on macOS.
+- 37 behaviours were each broken once in a scratch copy of `src/`, and every time a unit test failed. After the wording of the status line was split into two functions, 32 were broken in the same way, and each was caught.
+- Each guard was seen to fail: the first with a request to the provider put back into the code, the second with the whole environment object shown on the page and `envPrefix` removed. With `envPrefix` in place the second guard passed even then.
+- The built files were served locally with the headers of `vercel.json` and loaded in headless Chrome 154, with the request for the board answered inside the browser by an invented board. The cards came in start-time order, a game that had started was left out, and the status line, a toss-up card and a card without a line read as described above. The page made one request for the board and none to any host other than its own and `cdn.nba.com`. Chrome reported no violation of the policy. An inline script, a style attribute written as text, an image from another host and a request to another host were each refused, which shows that the policy was in force.
+- In the same browser, with the page's clock moved forward: a second request after five minutes, none while the tab was marked hidden and one when it was shown again, the board kept on screen through a check that failed, a game dropped from the list once it had started, and the status line turning to `The next update was due at`. A network error was retried once after two seconds. HTTP 404, HTTP 429, a file of another schema and a file that is not JSON were not retried, and each gave its sentence. With rendering made to throw, the page showed the short message of the error boundary and none of the error's text.
+- A second pass answered nothing inside the browser. Local servers stood in for `raw.githubusercontent.com` and `cdn.nba.com`, and Chrome reached them through its own network stack, with its CORS check and its cache. With the page's clock set to 3:02 PM in New York on 20 October 2026 and running on from there, thirteen cards, their start times and the status line matched figures worked out by hand in the time zones of Los Angeles, New York and London, with one exception: Chrome names London's winter time `GMT+0`, where `GMT` was expected. The stand-in logos loaded under the policy. At 320 and 390 pixels wide the page had no horizontal scroll.
+- In that pass a page was left open for a quarter of an hour with its clock left alone. It asked again five minutes after its first request: Chrome made that request conditional, and the stand-in answered 304. It kept its cards through a check that failed, retry included, and showed a newer board five minutes after that. A game that started in the meantime left the list without a request. The status region changed once in the quarter of an hour, when the newer board arrived.
+- A second page was in a tab behind another tab of its window, which Chrome reports as hidden. It asked for nothing for more than six minutes, twice, and each time it asked at once when it was brought to the front.
+- Under the development server, where React mounts every component twice, the request of the first mount was aborted and the cards were shown once.
+- The board as it was on the `data` branch on 10 October 2026, fetched once, passes the shape check, and the parsed board equals the file field for field. Served to the built page in the same way as the invented one, it gave one card for each of its 46 games.
+- The built page was then opened once against `raw.githubusercontent.com` itself, with that host's certificate checked as usual and the policy in force. It showed the 46 cards, made one request for the board and a second one five minutes later, and Chrome reported no violation.
+- A file that does not exist on the `data` branch, asked for once with `curl`, is answered with HTTP 404 and `Access-Control-Allow-Origin: *`. A browser can read that status, so the page gives the sentence that names it.
+- `vercel.json` validates against Vercel's published schema.
+
+Not checked:
+
+- Vercel has not built this version, and the headers have not been seen on the deployed site. On a preview deployment Vercel may add its toolbar from another origin, which this policy would refuse. The page does not need it.
+- The team logos themselves did not load in headless Chrome: `cdn.nba.com` ends its requests with an HTTP/2 protocol error, while `curl` gets the same file. The checks therefore saw the placeholders, stand-in logos from a local server, and that the policy lets the logo requests out, but not the real logos on the page.
+- The hidden tab was a tab of headless Chrome behind another tab. A minimised window, a locked phone and a computer that sleeps were not tried.
+- No screen reader was tried. That the status region is read out when its text changes is what its role asks of a screen reader. It was not heard.
+- No browser other than Chrome was tried. JavaScriptCore, the engine of Safari, was asked outside a browser, on macOS 26, to read the two time formats of the board and to write a start time. It reads both formats.
 
 ## Limitations
 
-- The API key is not secret once deployed: Vite inlines `VITE_*` variables into the client bundle, and the proxy fallback sends the full request URL, including the key, to third-party CORS proxies. Use a free-tier key you are prepared to rotate. `API_TROUBLESHOOTING.md` sketches a server-side proxy that would remove the problem.
-- Only the first bookmaker in the response is used; prices are not averaged across books.
-- A game that comes back without bookmaker odds gets a "No Data" badge, but its card still names the away team as the prediction, because the comparison falls through to the away side. Equal prices are also resolved in favour of the away team.
-- The app is independent of the notebooks in the parent repository. It does not display their model output.
-- The Terms, Privacy and About links in the footer are placeholders.
-- There are no automated tests.
+- The page shows what the sportsbooks imply. It makes no prediction of its own, and it does not display the output of the notebooks in the parent repository.
+- The board is as fresh as the job's last snapshot: six a day at best, and a visitor's browser may hold a copy for five more minutes. The status line gives its age.
+- The page depends on `raw.githubusercontent.com`, which GitHub may rate-limit for requests that carry no token. The page then shows the error sentence with the status it was given.
+- The components are not tested in a browser by CI. The checks above were run by hand.
+- The toss-up rule is applied to the probability as the board gives it, to four decimals, while the cards show whole percent. A favourite at 52.3% and a toss-up at 51.8% both show 52%.
+- A team code that is not one of the 30 is shown as the code, with initials in place of a logo.
+- Dates and times are written the American way for every visitor, and the details are the browser's. Chrome 154 names London's time zone `GMT+1` in summer and `GMT+0` in winter. JavaScriptCore on macOS 26 writes a start time as `Tue, Oct 20 at 7:00 PM EDT`, where Chrome writes `Tue, Oct 20, 7:00 PM EDT`.
+- The header still calls the page "NBA Game Predictions" and spells "favourites" the British way, while the cards say "Favored". The wording is left for the redesign.
