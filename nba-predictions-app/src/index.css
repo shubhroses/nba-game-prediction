@@ -2,18 +2,140 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles that complement Tailwind */
-body {
-  margin: 0;
-  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+/*
+ * The colors of the page. Each is written as its three channels, so that
+ * Tailwind can add an opacity to it, with the color itself in the comment.
+ * tailwind.config.js gives every one of them a class name, such as bg-surface
+ * and text-ink. The second block gives the same names their values for a
+ * visitor whose system is set to dark, so no component has to know which
+ * theme it is drawn in.
+ *
+ * Every color that text is written in has a contrast of at least 4.5 to 1
+ * on the page, on a surface, on the sunken color and on its own soft
+ * variant. src/display/tokens.test.ts holds the values to that.
+ */
+:root {
+  color-scheme: light dark;
+
+  /* Where things sit: the page, a card on it, a bar track or a table stripe, a border. */
+  --page: 246 247 249; /* #f6f7f9 */
+  --surface: 255 255 255; /* #ffffff */
+  --sunken: 238 240 244; /* #eef0f4 */
+  --line: 226 229 234; /* #e2e5ea */
+
+  /* Text: what is read, what explains it, and what may be passed over. */
+  --ink: 15 23 42; /* #0f172a */
+  --muted: 71 85 105; /* #475569 */
+  --faint: 93 109 132; /* #5d6d84 */
+
+  /* The three sources, each with a soft color to set its own text on. */
+  --pr: 194 65 12; /* #c2410c */
+  --pr-soft: 255 241 230; /* #fff1e6 */
+  --elo: 29 78 216; /* #1d4ed8 */
+  --elo-soft: 219 234 254; /* #dbeafe */
+  --books: 71 85 105; /* #475569 */
+  --books-soft: 226 232 240; /* #e2e8f0 */
+
+  /* What became of a forecast, and a warning. */
+  --win: 20 122 58; /* #147a3a */
+  --win-soft: 220 252 231; /* #dcfce7 */
+  --loss: 185 28 28; /* #b91c1c */
+  --loss-soft: 254 226 226; /* #fee2e2 */
+  --warn: 152 92 6; /* #985c06 */
+  --warn-soft: 254 249 195; /* #fef9c3 */
+
+  /* Text on a solid block of a source's or a verdict's color. */
+  --on-fill: 255 255 255; /* #ffffff */
+
+  /* The header is the same navy in both themes. */
+  --header: 11 18 32; /* #0b1220 */
+  --header-ink: 255 255 255; /* #ffffff */
+  --header-muted: 163 173 189; /* #a3adbd */
+  --accent: 251 146 60; /* #fb923c */
+
+  --focus: 29 78 216; /* #1d4ed8 */
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.05), 0 2px 6px rgb(15 23 42 / 0.06);
 }
 
-/* Add better placeholder styling for team logos */
-.team-logo-placeholder {
-  @apply bg-blue-100 flex items-center justify-center text-blue-800 font-bold;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --page: 11 15 23; /* #0b0f17 */
+    --surface: 18 24 38; /* #121826 */
+    --sunken: 27 35 51; /* #1b2333 */
+    --line: 38 48 68; /* #263044 */
+
+    --ink: 232 236 243; /* #e8ecf3 */
+    --muted: 163 173 189; /* #a3adbd */
+    --faint: 132 144 163; /* #8490a3 */
+
+    --pr: 251 146 60; /* #fb923c */
+    --pr-soft: 58 31 13; /* #3a1f0d */
+    --elo: 96 165 250; /* #60a5fa */
+    --elo-soft: 21 42 82; /* #152a52 */
+    --books: 148 163 184; /* #94a3b8 */
+    --books-soft: 38 48 67; /* #263043 */
+
+    --win: 74 222 128; /* #4ade80 */
+    --win-soft: 16 48 30; /* #10301e */
+    --loss: 248 113 113; /* #f87171 */
+    --loss-soft: 59 23 26; /* #3b171a */
+    --warn: 250 204 21; /* #facc15 */
+    --warn-soft: 51 41 10; /* #33290a */
+
+    --on-fill: 11 15 23; /* #0b0f17 */
+
+    --focus: 96 165 250; /* #60a5fa */
+    /* A shadow does not show on a dark page, so the border carries the card. This is a shadow
+       of nothing and not the word none, which cannot stand in a list of shadows next to a ring. */
+    --shadow-card: 0 0 rgb(0 0 0 / 0);
+  }
 }
 
-/* Remove all default Vite styles below this line */
+/* On the navy of the header the focus ring is a light blue in both themes. */
+.on-header {
+  --focus: 147 197 253; /* #93c5fd */
+}
+
+@layer base {
+  /* The bar of tabs stays at the top of the window. Whatever takes the focus in the content, or is
+     scrolled to there, comes to rest under that bar and not behind it. The margin is on what is in
+     the content and not a padding of the whole page: a padding would also count for the tabs
+     themselves, and the page would move whenever one of them took the focus. */
+  main :where(a, button, summary, select, input, textarea, [tabindex]) {
+    scroll-margin-top: theme('spacing.below-tabs');
+  }
+
+  body {
+    @apply bg-page text-ink antialiased;
+    /* Digits of one width, so that numbers under each other line up. */
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--focus));
+    outline-offset: 2px;
+  }
+}
+
+@layer utilities {
+  /* For a row that scrolls sideways inside its own box, such as the tabs on a phone. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Nothing on the page moves for a visitor who has asked for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

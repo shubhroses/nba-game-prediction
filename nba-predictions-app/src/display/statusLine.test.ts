@@ -12,7 +12,7 @@ function game(sportsbooks: number, commence_time = '2026-10-20T23:00:00Z'): Boar
     sportsbooks === 0
       ? null
       : { p_home: 0.6, lo: 0.6, hi: 0.6, n: sportsbooks, books: [], captured_at: '2026-10-20T16:12:00Z' };
-  return { id: `game-${sportsbooks}`, commence_time, home: 'BOS', away: 'NYK', line, open: null };
+  return { id: `game-${sportsbooks}`, commence_time, home: 'BOS', away: 'NYK', line, open: null, elo: null, points_rest: null };
 }
 
 /** The snapshot of the 12:10 slot in New York, taken at 12:12, with the next one due at 15:10. */
@@ -24,6 +24,9 @@ function board(games: BoardGame[]): Board {
     slot: '2026-10-20T12:10-04:00',
     next_due: '2026-10-20T15:10-04:00',
     games,
+    models: null,
+    record: null,
+    recent_results: [],
   };
 }
 

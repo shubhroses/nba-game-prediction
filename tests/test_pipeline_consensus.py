@@ -28,7 +28,7 @@ def test_home_share_is_the_implied_probability_without_the_margin():
     assert round(share, 4) == 0.6429
     # The raw implied probabilities add up to more than 1. That excess is the margin.
     assert 1 / 1.50 + 1 / 2.70 == pytest.approx(1.037, abs=0.0005)
-    # Normalising them, as the web app does, gives the same number.
+    # Normalising them gives the same number.
     assert share == pytest.approx((1 / 1.50) / (1 / 1.50 + 1 / 2.70))
     # The two sides of one quote add up to 1.
     assert share + consensus.home_share(2.70, 1.50) == pytest.approx(1)

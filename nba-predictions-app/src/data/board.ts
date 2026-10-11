@@ -1,17 +1,32 @@
 /**
  * The board, `v1/slate.json` on the data branch: the upcoming games as of the
- * latest snapshot. The types follow schema 1 as pipeline/README.md documents
- * it, and parseBoard checks a value from the network against them.
+ * latest snapshot with the forecasts for them, the record so far and the
+ * results of the last days. The types follow schema 1 as pipeline/README.md
+ * documents it, and parseBoard checks a value from the network against them.
  */
+import { consensus, modelStatus, pointsRestOrNull, type Consensus, type ModelStatus, type PointsRestForecast } from './forecasts';
+import { resultLine, type ResultLine } from './results';
+import {
+  count,
+  day,
+  expected,
+  list,
+  object,
+  objectIfThere,
+  objectOrNull,
+  orNull,
+  parsed,
+  probability,
+  schemaOne,
+  slotId,
+  teamCode,
+  text,
+  utcTime,
+  type Parsed,
+} from './shape';
 
 /** What the sportsbooks imply about one game. Every probability is the home team's. */
-export interface Line {
-  /** The median across the sportsbooks. */
-  p_home: number;
-  lo: number;
-  hi: number;
-  /** How many sportsbooks the median is taken over. */
-  n: number;
+export interface Line extends Consensus {
   /** Their names, or an empty list when `lo` equals `hi`. */
   books: string[];
   captured_at: string;
@@ -20,6 +35,11 @@ export interface Line {
 export interface OpeningLine {
   p_home: number;
   at: string;
+}
+
+/** Elo's chance for the home team. */
+export interface EloChance {
+  p_home: number;
 }
 
 export interface BoardGame {
@@ -33,6 +53,43 @@ export interface BoardGame {
   line: Line | null;
   /** The first line the game had. Null if it never had one. */
   open: OpeningLine | null;
+  /**
+   * For a game of the day whose forecasts are frozen, the frozen chance. For
+   * any other game, what the ratings of the last daily run make of it, which
+   * can still move. Null until the models have been built once, and in a
+   * sport that is not forecast.
+   */
+  elo: EloChance | null;
+  /**
+   * The frozen forecast of the points-and-rest model, which is made on the
+   * morning of the game. Null for a game of a later day, for a game without
+   * a forecast, on a day on which the model was left out, and in a sport
+   * that is not forecast.
+   */
+  points_rest: PointsRestForecast | null;
+}
+
+/** What the forecasts of the board rest on. */
+export interface BoardModels {
+  /** The day of the last result that the models have replayed. Null before the first one. */
+  results_through: string | null;
+  status: ModelStatus;
+  /** The day whose frozen forecasts the board carries. Null when there is none. */
+  predictions_day: string | null;
+}
+
+/** The favorites of one source that won, and the ones that lost. */
+export interface Tally {
+  wins: number;
+  losses: number;
+}
+
+export interface BoardRecord {
+  /** The sportsbooks' favorite. */
+  market: Tally;
+  /** Null in a sport that is not forecast. */
+  elo: Tally | null;
+  points_rest: Tally | null;
 }
 
 export interface Board {
@@ -43,110 +100,102 @@ export interface Board {
   /** The slot of this snapshot and the next one: New York times with their UTC offset. */
   slot: string;
   next_due: string;
+  /** The games that had not started at `generated_at`, by start. */
   games: BoardGame[];
-}
-
-export type ParsedBoard = { ok: true; board: Board } | { ok: false; problem: string };
-
-class ShapeProblem extends Error {}
-
-const UTC_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
-const SLOT_ID = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}[+-]\d{2}:\d{2}$/;
-const TEAM_CODE = /^[A-Z]{3}$/;
-
-function expected(what: string, path: string): never {
-  throw new ShapeProblem(`${path} should be ${what}`);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function text(value: unknown, path: string): string {
-  if (typeof value !== 'string' || value === '') expected('a string that is not empty', path);
-  return value;
-}
-
-function teamCode(value: unknown, path: string): string {
-  if (typeof value !== 'string' || !TEAM_CODE.test(value)) expected('three capital letters', path);
-  return value;
-}
-
-function time(format: RegExp, example: string, value: unknown, path: string): string {
-  if (typeof value !== 'string' || !format.test(value) || Number.isNaN(Date.parse(value))) {
-    expected(`a time like ${example}`, path);
-  }
-  return value;
-}
-
-const utcTime = (value: unknown, path: string) => time(UTC_TIME, '2026-10-20T22:10:41Z', value, path);
-const slotId = (value: unknown, path: string) => time(SLOT_ID, '2026-10-20T18:10-04:00', value, path);
-
-function probability(value: unknown, path: string): number {
-  if (typeof value !== 'number' || !(value > 0 && value < 1)) expected('a number between 0 and 1', path);
-  return value;
+  /** Null until the models have been built once, and in a sport that is not forecast. */
+  models: BoardModels | null;
+  /** Null until the daily work has been recorded once. */
+  record: BoardRecord | null;
+  /** The games that started less than eight days before `generated_at`, by start. */
+  recent_results: ResultLine[];
 }
 
 function line(value: unknown, path: string): Line | null {
-  if (value === null) return null;
-  if (!isRecord(value)) expected('an object or null', path);
+  const fields = objectOrNull(value, path);
+  if (fields === null) return null;
 
-  const p_home = probability(value.p_home, `${path}.p_home`);
-  const lo = probability(value.lo, `${path}.lo`);
-  const hi = probability(value.hi, `${path}.hi`);
-  if (lo > p_home || p_home > hi) expected('in the order lo, p_home, hi', path);
-
-  const { n, books } = value;
-  if (typeof n !== 'number' || !Number.isInteger(n) || n < 1) expected('a whole number of at least 1', `${path}.n`);
+  const numbers = consensus(fields, path);
+  const { books } = fields;
   if (!Array.isArray(books) || !books.every((book) => typeof book === 'string')) {
     expected('a list of names', `${path}.books`);
   }
-
-  return { p_home, lo, hi, n, books: [...books], captured_at: utcTime(value.captured_at, `${path}.captured_at`) };
+  return { ...numbers, books: [...books], captured_at: utcTime(fields.captured_at, `${path}.captured_at`) };
 }
 
 function openingLine(value: unknown, path: string): OpeningLine | null {
-  if (value === null) return null;
-  if (!isRecord(value)) expected('an object or null', path);
-  return { p_home: probability(value.p_home, `${path}.p_home`), at: utcTime(value.at, `${path}.at`) };
+  const fields = objectOrNull(value, path);
+  return fields && { p_home: probability(fields.p_home, `${path}.p_home`), at: utcTime(fields.at, `${path}.at`) };
+}
+
+function eloChance(value: unknown, path: string): EloChance | null {
+  const fields = objectIfThere(value, path);
+  return fields && { p_home: probability(fields.p_home, `${path}.p_home`) };
 }
 
 function game(value: unknown, path: string): BoardGame {
-  if (!isRecord(value)) expected('an object', path);
+  const fields = object(value, path);
   return {
-    id: text(value.id, `${path}.id`),
-    commence_time: utcTime(value.commence_time, `${path}.commence_time`),
-    home: teamCode(value.home, `${path}.home`),
-    away: teamCode(value.away, `${path}.away`),
-    line: line(value.line, `${path}.line`),
-    open: openingLine(value.open, `${path}.open`),
+    id: text(fields.id, `${path}.id`),
+    commence_time: utcTime(fields.commence_time, `${path}.commence_time`),
+    home: teamCode(fields.home, `${path}.home`),
+    away: teamCode(fields.away, `${path}.away`),
+    line: line(fields.line, `${path}.line`),
+    open: openingLine(fields.open, `${path}.open`),
+    elo: eloChance(fields.elo, `${path}.elo`),
+    // A sport that is not forecast does not have the field, and that counts as null.
+    points_rest: fields.points_rest === undefined ? null : pointsRestOrNull(fields.points_rest, `${path}.points_rest`),
   };
 }
 
+function models(value: unknown): BoardModels | null {
+  const fields = objectIfThere(value, 'models');
+  return (
+    fields && {
+      results_through: orNull(fields.results_through, 'models.results_through', day),
+      status: modelStatus(fields.status, 'models.status'),
+      predictions_day: orNull(fields.predictions_day, 'models.predictions_day', day),
+    }
+  );
+}
+
+function tally(value: unknown, path: string): Tally {
+  const fields = object(value, path);
+  return { wins: count(fields.wins, `${path}.wins`), losses: count(fields.losses, `${path}.losses`) };
+}
+
+function record(value: unknown): BoardRecord | null {
+  const fields = objectOrNull(value, 'record');
+  return (
+    fields && {
+      market: tally(fields.market, 'record.market'),
+      elo: fields.elo === undefined ? null : tally(fields.elo, 'record.elo'),
+      points_rest: fields.points_rest === undefined ? null : tally(fields.points_rest, 'record.points_rest'),
+    }
+  );
+}
+
 function board(value: unknown): Board {
-  if (!isRecord(value)) expected('an object', 'the board');
-  if (value.schema !== 1) expected('1', 'schema');
-  if (!Array.isArray(value.games)) expected('a list', 'games');
+  const fields = object(value, 'the board');
   return {
-    schema: 1,
-    sport: text(value.sport, 'sport'),
-    generated_at: utcTime(value.generated_at, 'generated_at'),
-    slot: slotId(value.slot, 'slot'),
-    next_due: slotId(value.next_due, 'next_due'),
-    games: value.games.map((entry, index) => game(entry, `games[${index}]`)),
+    schema: schemaOne(fields.schema),
+    sport: text(fields.sport, 'sport'),
+    generated_at: utcTime(fields.generated_at, 'generated_at'),
+    slot: slotId(fields.slot, 'slot'),
+    next_due: slotId(fields.next_due, 'next_due'),
+    games: list(fields.games, 'games', game),
+    models: models(fields.models),
+    record: record(fields.record),
+    recent_results: list(fields.recent_results, 'recent_results', resultLine),
   };
 }
 
 /**
  * Checks that a value has the shape of a schema 1 board and returns it with
  * the documented fields only. A field this page does not know is left out
- * without complaint, because the pipeline is free to add fields.
+ * without complaint, because the pipeline is free to add fields. The fields
+ * of the models, which the board of a sport that is not forecast does not
+ * have, come out as null.
  */
-export function parseBoard(value: unknown): ParsedBoard {
-  try {
-    return { ok: true, board: board(value) };
-  } catch (error) {
-    if (error instanceof ShapeProblem) return { ok: false, problem: error.message };
-    throw error;
-  }
+export function parseBoard(value: unknown): Parsed<Board> {
+  return parsed(() => board(value));
 }

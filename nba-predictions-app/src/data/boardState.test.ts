@@ -9,6 +9,9 @@ const board = (generated_at: string): Board => ({
   slot: '2026-10-20T12:10-04:00',
   next_due: '2026-10-20T15:10-04:00',
   games: [],
+  models: null,
+  record: null,
+  recent_results: [],
 });
 
 const NOON = board('2026-10-20T16:12:00Z');
@@ -47,6 +50,23 @@ describe('boardReducer', () => {
     const state = boardReducer(checking, { type: 'check_succeeded', board: AFTERNOON, at: 2000 });
 
     expect(state).toEqual({ status: 'ready', board: AFTERNOON, fetchedAt: 2000, refreshing: false });
+  });
+
+  it('keeps the board on screen when a later check is answered with an older one', () => {
+    // Two copies of the file on the host are not of one age, and a check can be answered from the older one.
+    const later: BoardState = { status: 'ready', board: AFTERNOON, fetchedAt: 2000, refreshing: true };
+    const state = boardReducer(later, { type: 'check_succeeded', board: NOON, at: 3000 });
+
+    expect(state).toEqual({ status: 'ready', board: AFTERNOON, fetchedAt: 2000, refreshing: false });
+    expect(state.status === 'ready' && state.board).toBe(AFTERNOON);
+  });
+
+  it('takes the board of a later check that is of the same snapshot, so that the page knows that a check was made', () => {
+    const same = board(NOON.generated_at);
+    const state = boardReducer({ ...ready, refreshing: true }, { type: 'check_succeeded', board: same, at: 3000 });
+
+    expect(state).toEqual({ status: 'ready', board: same, fetchedAt: 3000, refreshing: false });
+    expect(state.status === 'ready' && state.board).toBe(same);
   });
 
   it.each([{ kind: 'network' }, { kind: 'http', status: 503 }, { kind: 'shape', problem: 'schema should be 1' }] as const)(

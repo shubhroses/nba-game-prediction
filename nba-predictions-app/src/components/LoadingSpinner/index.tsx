@@ -1,7 +1,14 @@
-export default function LoadingSpinner() {
+interface LoadingSpinnerProps {
+  /** What is being loaded, as in "Loading the record". */
+  label?: string;
+}
+
+export default function LoadingSpinner({ label = 'Loading the games' }: LoadingSpinnerProps) {
   return (
-    <div className="flex justify-center items-center p-8" role="status" aria-label="Loading the odds">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+    <div className="flex flex-col items-center gap-3 p-8 text-sm text-muted" role="status">
+      {/* The ring turns only for a visitor who has not asked for less motion. The words say the same without it. */}
+      <div className="h-10 w-10 rounded-full border-2 border-line border-t-elo motion-safe:animate-spin" aria-hidden="true"></div>
+      <p>{label}…</p>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatDate, getTeamLogo } from './formatters';
+import { formatDate, formatTime, getTeamLogo } from './formatters';
 
 describe('formatDate', () => {
   it('gives the day, the time and the time zone', () => {
@@ -11,6 +11,16 @@ describe('formatDate', () => {
 
   it('follows the end of daylight saving time', () => {
     expect(formatDate(new Date('2026-11-02T00:30:00Z'), 'America/New_York')).toBe('Sun, Nov 1, 7:30 PM EST');
+  });
+});
+
+describe('formatTime', () => {
+  it('gives the time of day and the time zone, without the date', () => {
+    const opener = new Date('2026-10-20T23:00:00Z');
+
+    expect(formatTime(opener, 'America/New_York')).toBe('7:00 PM EDT');
+    expect(formatTime(opener, 'America/Los_Angeles')).toBe('4:00 PM PDT');
+    expect(formatTime(new Date('2026-11-02T00:30:00Z'), 'America/New_York')).toBe('7:30 PM EST');
   });
 });
 

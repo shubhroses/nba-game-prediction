@@ -11,6 +11,11 @@ export function formatDate(date: Date, timeZone?: string): string {
   }).format(date);
 }
 
+/** The time of day of a game's start, as in "7:00 PM EDT". Without a time zone the visitor's own is used. */
+export function formatTime(date: Date, timeZone?: string): string {
+  return new Intl.DateTimeFormat('en-US', { hour: 'numeric', minute: '2-digit', timeZoneName: 'short', timeZone }).format(date);
+}
+
 /**
  * The logo of each team, by the team's full name. tests/test_pipeline_teams.py
  * reads this table to check that the pipeline spells the names the same way.

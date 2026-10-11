@@ -8,6 +8,9 @@ const BOARD = {
   slot: '2026-10-20T12:10-04:00',
   next_due: '2026-10-20T15:10-04:00',
   games: [],
+  models: null,
+  record: null,
+  recent_results: [],
 };
 
 const never = new AbortController().signal;
