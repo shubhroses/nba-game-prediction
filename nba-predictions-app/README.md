@@ -127,6 +127,8 @@ One system in a light and a dark theme, which follows `prefers-color-scheme`.
 
 ## Loading and refreshing
 
+The Games view comes with the page. Each of the other four views is a file of its own, so the first screen does not wait for what it does not show. `src/App.tsx` asks for those files once the first screen is up and the browser is idle, so that a tab opens at once. A view that is opened before its file has arrived shows a spinner until it has, and a file that cannot be had is reported in place of the view, with the tabs left standing.
+
 `src/hooks/useBoard.ts` loads the board. Its state is kept by a reducer in `src/data/boardState.ts`: a status (`loading`, `ready` or `error`), the board, the time it arrived and a flag that is set while a later check is under way.
 
 - The page makes one request for the board when it opens.
