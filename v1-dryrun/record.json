@@ -1,0 +1,87 @@
+{
+  "baseline_home": {
+    "games": 12,
+    "wins": 5
+  },
+  "by_day": [
+    {
+      "day": "2026-10-07",
+      "games": 4,
+      "market": {
+        "losses": 0,
+        "not_graded": 4,
+        "toss_ups": 0,
+        "wins": 0
+      }
+    },
+    {
+      "day": "2026-10-08",
+      "games": 6,
+      "market": {
+        "losses": 0,
+        "not_graded": 6,
+        "toss_ups": 0,
+        "wins": 0
+      }
+    },
+    {
+      "day": "2026-10-09",
+      "games": 2,
+      "market": {
+        "losses": 0,
+        "not_graded": 2,
+        "toss_ups": 0,
+        "wins": 0
+      }
+    }
+  ],
+  "games": 12,
+  "market": {
+    "accuracy": null,
+    "accuracy_interval": null,
+    "bands": [
+      {
+        "band": "52-59",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "60-69",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "70-79",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "80-89",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "90+",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      }
+    ],
+    "biggest_upsets": [],
+    "brier": null,
+    "games": 0,
+    "log_loss": null,
+    "losses": 0,
+    "not_graded": 12,
+    "toss_ups": 0,
+    "wins": 0,
+    "with_line": 0
+  },
+  "schema": 1,
+  "since": "2026-10-07",
+  "sport": "basketball_nba_preseason"
+}

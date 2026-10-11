@@ -1,0 +1,170 @@
+{
+  "baseline_home": {
+    "games": 0,
+    "wins": 0
+  },
+  "by_day": [],
+  "elo": {
+    "accuracy": null,
+    "accuracy_interval": null,
+    "bands": [
+      {
+        "band": "52-59",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "60-69",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "70-79",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "80-89",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "90+",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      }
+    ],
+    "biggest_upsets": [],
+    "brier": null,
+    "brier_against_market": {
+      "difference": null,
+      "games": 0,
+      "interval": null
+    },
+    "games": 0,
+    "late": 0,
+    "log_loss": null,
+    "losses": 0,
+    "not_graded": 0,
+    "picks_against_market": {
+      "differ": 0,
+      "latest": [],
+      "market_right": 0,
+      "model_right": 0
+    },
+    "toss_ups": 0,
+    "wins": 0,
+    "with_line": 0
+  },
+  "games": 0,
+  "market": {
+    "accuracy": null,
+    "accuracy_interval": null,
+    "bands": [
+      {
+        "band": "52-59",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "60-69",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "70-79",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "80-89",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "90+",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      }
+    ],
+    "biggest_upsets": [],
+    "brier": null,
+    "games": 0,
+    "log_loss": null,
+    "losses": 0,
+    "not_graded": 0,
+    "toss_ups": 0,
+    "wins": 0,
+    "with_line": 0
+  },
+  "points_rest": {
+    "accuracy": null,
+    "accuracy_interval": null,
+    "bands": [
+      {
+        "band": "52-59",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "60-69",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "70-79",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "80-89",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      },
+      {
+        "band": "90+",
+        "games": 0,
+        "mean_p_favorite": null,
+        "wins": 0
+      }
+    ],
+    "biggest_upsets": [],
+    "brier": null,
+    "brier_against_market": {
+      "difference": null,
+      "games": 0,
+      "interval": null
+    },
+    "games": 0,
+    "late": 0,
+    "log_loss": null,
+    "losses": 0,
+    "not_graded": 0,
+    "picks_against_market": {
+      "differ": 0,
+      "latest": [],
+      "market_right": 0,
+      "model_right": 0
+    },
+    "toss_ups": 0,
+    "wins": 0,
+    "with_line": 0
+  },
+  "schema": 1,
+  "since": null,
+  "sport": "basketball_nba"
+}
