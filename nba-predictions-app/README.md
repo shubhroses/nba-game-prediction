@@ -295,7 +295,19 @@ The page reads two build variables, `VITE_DATA_BASE_URL` and `VITE_DATA_NOW`. Bo
 
 ## What has been checked, and what has not
 
-Checked on this version of the page, on 11 October 2026:
+Checked on the published page, on 11 October 2026:
+
+- CI passed on this version, and Vercel built it. The script that the live site serves is byte for byte the one that the build writes locally.
+- On the live site each of the five views was opened in Chrome: no error in the console, and no request to any host but the page's own, `raw.githubusercontent.com` and `cdn.nba.com`. The files of the other four views arrived without being asked for by a tab.
+- After the daily run of that morning the page showed the new board within minutes.
+
+Checked on this version, after the views were split into files of their own:
+
+- The lint, the type check, the unit tests, the build and the two guards.
+- On both builds, served locally with the headers of `vercel.json`, each view opened by its address at 375 and at 1280 pixels: no error in the console, no violation of the policy, no failed request and no sideways scroll.
+- With the sample data: the tabs followed one after the other in one page, and Back to a view that had been scrolled, which was put back where it was left.
+
+Checked on 11 October 2026, before the views were split into files of their own:
 
 - The lint, the type check, the unit tests and the build pass, and so do the two guards on the built files, on Node 25 on macOS.
 - The Python tests that read files of this folder pass.
@@ -325,7 +337,6 @@ Checked on an earlier version, and not again since:
 
 Not checked:
 
-- Vercel has not built this version, and CI has not run on it: the checks above were run on one machine.
 - No real season has been seen. Every state of a season in progress was looked at with invented data. The real files are due to hold their first result on the morning of 21 October 2026.
 - No screen reader was tried, and no browser other than Chrome. That Back puts a view back where it was left, that a link with the focus is brought into its row and that the margin for scrolling keeps the focus clear of the tabs are known for Chrome alone. The theme of forced colors and the touch screen were Chrome's emulations.
 - What the odds provider does with a game that is put off was not seen. The page shows a game that the latest snapshot no longer lists apart, whatever the reason.
