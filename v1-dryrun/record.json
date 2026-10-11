@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 12,
-    "wins": 5
+    "games": 19,
+    "wins": 10
   },
   "by_day": [
     {
@@ -33,29 +33,42 @@
         "toss_ups": 0,
         "wins": 0
       }
+    },
+    {
+      "day": "2026-10-10",
+      "games": 7,
+      "market": {
+        "losses": 3,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 4
+      }
     }
   ],
-  "games": 12,
+  "games": 19,
   "market": {
-    "accuracy": null,
-    "accuracy_interval": null,
+    "accuracy": 0.5714,
+    "accuracy_interval": [
+      0.2505,
+      0.8418
+    ],
     "bands": [
       {
         "band": "52-59",
-        "games": 0,
-        "mean_p_favorite": null,
-        "wins": 0
+        "games": 3,
+        "mean_p_favorite": 0.5545,
+        "wins": 1
       },
       {
         "band": "60-69",
-        "games": 0,
-        "mean_p_favorite": null,
-        "wins": 0
+        "games": 3,
+        "mean_p_favorite": 0.6674,
+        "wins": 3
       },
       {
         "band": "70-79",
-        "games": 0,
-        "mean_p_favorite": null,
+        "games": 1,
+        "mean_p_favorite": 0.7081,
         "wins": 0
       },
       {
@@ -71,15 +84,46 @@
         "wins": 0
       }
     ],
-    "biggest_upsets": [],
-    "brier": null,
-    "games": 0,
-    "log_loss": null,
-    "losses": 0,
+    "biggest_upsets": [
+      {
+        "away": "SAS",
+        "away_pts": 98,
+        "commence_time": "2026-10-11T02:43:35Z",
+        "favorite": "SAS",
+        "home": "PHX",
+        "home_pts": 102,
+        "id": "fe1fcaddeec9d7348d7e90485e267747",
+        "p_favorite": 0.7081
+      },
+      {
+        "away": "DET",
+        "away_pts": 108,
+        "commence_time": "2026-10-10T23:10:00Z",
+        "favorite": "DET",
+        "home": "WAS",
+        "home_pts": 114,
+        "id": "42ee1e0fa899f373863ec8c250275670",
+        "p_favorite": 0.5627
+      },
+      {
+        "away": "ATL",
+        "away_pts": 119,
+        "commence_time": "2026-10-10T23:10:26Z",
+        "favorite": "IND",
+        "home": "IND",
+        "home_pts": 117,
+        "id": "9b12ab21e4683e6519e33f36354c0f40",
+        "p_favorite": 0.526
+      }
+    ],
+    "brier": 0.2301,
+    "games": 7,
+    "log_loss": 0.6537,
+    "losses": 3,
     "not_graded": 12,
     "toss_ups": 0,
-    "wins": 0,
-    "with_line": 0
+    "wins": 4,
+    "with_line": 7
   },
   "schema": 1,
   "since": "2026-10-07",
