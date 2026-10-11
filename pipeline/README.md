@@ -51,7 +51,7 @@ A sportsbook quotes a decimal price for each team. A price `p` implies a probabi
 home share = (1/home) / (1/home + 1/away) = away / (home + away)
 ```
 
-With invented prices of 1.50 for the home team and 2.70 for the away team, the implied probabilities are 0.6667 and 0.3704, which add up to 1.037, and the home share is 2.70 / 4.20 = 0.6429. The web app's `processGames` normalises the same way, for the first sportsbook only.
+With invented prices of 1.50 for the home team and 2.70 for the away team, the implied probabilities are 0.6667 and 0.3704, which add up to 1.037, and the home share is 2.70 / 4.20 = 0.6429.
 
 For one game:
 
