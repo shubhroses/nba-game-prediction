@@ -1,8 +1,8 @@
 {
   "credits": {
-    "last": 1,
-    "remaining": 400,
-    "used": 100
+    "last": 0,
+    "remaining": 399,
+    "used": 101
   },
   "games": {
     "0036e615f08dd4d7d5d0e5f01edab115": {
@@ -182,8 +182,8 @@
       }
     }
   },
-  "last_run_at": "2026-10-11T22:22:53Z",
-  "last_slot": "2026-10-11T18:10-04:00",
+  "last_run_at": "2026-10-12T01:52:19Z",
+  "last_slot": "2026-10-11T21:10-04:00",
   "results": {
     "last_run_at": "2026-10-11T09:24:34Z",
     "last_slot": "2026-10-11T05:10-04:00",
