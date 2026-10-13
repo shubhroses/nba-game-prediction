@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 23,
-    "wins": 13
+    "games": 27,
+    "wins": 15
   },
   "by_day": [
     {
@@ -53,27 +53,37 @@
         "toss_ups": 0,
         "wins": 3
       }
+    },
+    {
+      "day": "2026-10-12",
+      "games": 4,
+      "market": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 1,
+        "wins": 2
+      }
     }
   ],
-  "games": 23,
+  "games": 27,
   "market": {
-    "accuracy": 0.6364,
+    "accuracy": 0.6429,
     "accuracy_interval": [
-      0.3538,
-      0.8483
+      0.3876,
+      0.8366
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 5,
-        "mean_p_favorite": 0.5549,
+        "games": 6,
+        "mean_p_favorite": 0.557,
         "wins": 2
       },
       {
         "band": "60-69",
-        "games": 5,
-        "mean_p_favorite": 0.6656,
-        "wins": 5
+        "games": 7,
+        "mean_p_favorite": 0.6539,
+        "wins": 7
       },
       {
         "band": "70-79",
@@ -106,6 +116,16 @@
         "p_favorite": 0.7081
       },
       {
+        "away": "BKN",
+        "away_pts": 131,
+        "commence_time": "2026-10-12T23:10:53Z",
+        "favorite": "WAS",
+        "home": "WAS",
+        "home_pts": 122,
+        "id": "a4d55f0b99923a198810be29dfe954c2",
+        "p_favorite": 0.5674
+      },
+      {
         "away": "DET",
         "away_pts": 108,
         "commence_time": "2026-10-10T23:10:00Z",
@@ -114,26 +134,16 @@
         "home_pts": 114,
         "id": "42ee1e0fa899f373863ec8c250275670",
         "p_favorite": 0.5627
-      },
-      {
-        "away": "ATL",
-        "away_pts": 119,
-        "commence_time": "2026-10-10T23:10:26Z",
-        "favorite": "IND",
-        "home": "IND",
-        "home_pts": 117,
-        "id": "9b12ab21e4683e6519e33f36354c0f40",
-        "p_favorite": 0.526
       }
     ],
-    "brier": 0.2082,
-    "games": 11,
-    "log_loss": 0.6077,
-    "losses": 4,
+    "brier": 0.2103,
+    "games": 14,
+    "log_loss": 0.6119,
+    "losses": 5,
     "not_graded": 12,
-    "toss_ups": 0,
-    "wins": 7,
-    "with_line": 11
+    "toss_ups": 1,
+    "wins": 9,
+    "with_line": 15
   },
   "schema": 1,
   "since": "2026-10-07",
