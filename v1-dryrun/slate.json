@@ -15,11 +15,11 @@
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-13T19:20:42Z",
-        "hi": 0.4934,
+        "captured_at": "2026-10-13T22:19:21Z",
+        "hi": 0.4764,
         "lo": 0.4675,
         "n": 7,
-        "p_home": 0.472
+        "p_home": 0.4688
       },
       "open": {
         "at": "2026-10-12T22:23:10Z",
@@ -34,18 +34,17 @@
       "line": {
         "books": [
           "BetOnline.ag",
-          "BetRivers",
           "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-13T19:20:42Z",
-        "hi": 0.7776,
-        "lo": 0.764,
-        "n": 7,
-        "p_home": 0.7721
+        "captured_at": "2026-10-13T22:19:21Z",
+        "hi": 0.7778,
+        "lo": 0.7625,
+        "n": 6,
+        "p_home": 0.7735
       },
       "open": {
         "at": "2026-10-13T09:31:12Z",
@@ -67,11 +66,11 @@
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-13T19:20:42Z",
-        "hi": 0.752,
-        "lo": 0.7246,
+        "captured_at": "2026-10-13T22:19:21Z",
+        "hi": 0.732,
+        "lo": 0.7146,
         "n": 7,
-        "p_home": 0.7261
+        "p_home": 0.7218
       },
       "open": {
         "at": "2026-10-13T09:31:12Z",
@@ -93,11 +92,11 @@
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-13T19:20:42Z",
+        "captured_at": "2026-10-13T22:19:21Z",
         "hi": 0.553,
-        "lo": 0.5325,
+        "lo": 0.5222,
         "n": 7,
-        "p_home": 0.5426
+        "p_home": 0.5325
       },
       "open": {
         "at": "2026-10-12T22:23:10Z",
@@ -119,11 +118,11 @@
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-13T19:20:42Z",
-        "hi": 0.5816,
-        "lo": 0.5491,
+        "captured_at": "2026-10-13T22:19:21Z",
+        "hi": 0.4406,
+        "lo": 0.4231,
         "n": 7,
-        "p_home": 0.5633
+        "p_home": 0.4293
       },
       "open": {
         "at": "2026-10-13T09:31:12Z",
@@ -131,8 +130,8 @@
       }
     }
   ],
-  "generated_at": "2026-10-13T19:20:42Z",
-  "next_due": "2026-10-13T18:10-04:00",
+  "generated_at": "2026-10-13T22:19:21Z",
+  "next_due": "2026-10-13T21:10-04:00",
   "recent_results": [
     {
       "away": "ORL",
@@ -529,6 +528,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-10-13T15:10-04:00",
+  "slot": "2026-10-13T18:10-04:00",
   "sport": "basketball_nba_preseason"
 }
