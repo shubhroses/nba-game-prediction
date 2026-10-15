@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 32,
-    "wins": 18
+    "games": 39,
+    "wins": 22
   },
   "by_day": [
     {
@@ -73,33 +73,43 @@
         "toss_ups": 0,
         "wins": 4
       }
+    },
+    {
+      "day": "2026-10-14",
+      "games": 7,
+      "market": {
+        "losses": 2,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 5
+      }
     }
   ],
-  "games": 32,
+  "games": 39,
   "market": {
-    "accuracy": 0.6842,
+    "accuracy": 0.6923,
     "accuracy_interval": [
-      0.4601,
-      0.8464
+      0.5001,
+      0.835
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 8,
-        "mean_p_favorite": 0.5536,
-        "wins": 3
+        "games": 9,
+        "mean_p_favorite": 0.5535,
+        "wins": 4
       },
       {
         "band": "60-69",
-        "games": 8,
-        "mean_p_favorite": 0.6544,
-        "wins": 8
+        "games": 12,
+        "mean_p_favorite": 0.6402,
+        "wins": 10
       },
       {
         "band": "70-79",
-        "games": 3,
-        "mean_p_favorite": 0.7345,
-        "wins": 2
+        "games": 5,
+        "mean_p_favorite": 0.7419,
+        "wins": 4
       },
       {
         "band": "80-89",
@@ -126,34 +136,34 @@
         "p_favorite": 0.7081
       },
       {
-        "away": "BKN",
-        "away_pts": 131,
-        "commence_time": "2026-10-12T23:10:53Z",
-        "favorite": "WAS",
-        "home": "WAS",
+        "away": "DEN",
+        "away_pts": 110,
+        "commence_time": "2026-10-15T02:40:28Z",
+        "favorite": "DEN",
+        "home": "LAC",
         "home_pts": 122,
-        "id": "a4d55f0b99923a198810be29dfe954c2",
-        "p_favorite": 0.5674
+        "id": "89bf29731911747aee70e0a95975c6ea",
+        "p_favorite": 0.6143
       },
       {
         "away": "DET",
-        "away_pts": 108,
-        "commence_time": "2026-10-10T23:10:00Z",
-        "favorite": "DET",
-        "home": "WAS",
-        "home_pts": 114,
-        "id": "42ee1e0fa899f373863ec8c250275670",
-        "p_favorite": 0.5627
+        "away_pts": 128,
+        "commence_time": "2026-10-15T00:10:57Z",
+        "favorite": "MIN",
+        "home": "MIN",
+        "home_pts": 106,
+        "id": "cd410fe82d3b76067e4eb9f3290d6795",
+        "p_favorite": 0.6074
       }
     ],
-    "brier": 0.194,
-    "games": 19,
-    "log_loss": 0.5762,
-    "losses": 6,
+    "brier": 0.1944,
+    "games": 26,
+    "log_loss": 0.5761,
+    "losses": 8,
     "not_graded": 12,
     "toss_ups": 1,
-    "wins": 13,
-    "with_line": 20
+    "wins": 18,
+    "with_line": 27
   },
   "schema": 1,
   "since": "2026-10-07",
