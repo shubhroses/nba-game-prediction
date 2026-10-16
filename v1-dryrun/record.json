@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 39,
-    "wins": 22
+    "games": 41,
+    "wins": 24
   },
   "by_day": [
     {
@@ -83,27 +83,37 @@
         "toss_ups": 0,
         "wins": 5
       }
+    },
+    {
+      "day": "2026-10-15",
+      "games": 2,
+      "market": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 1
+      }
     }
   ],
-  "games": 39,
+  "games": 41,
   "market": {
-    "accuracy": 0.6923,
+    "accuracy": 0.6786,
     "accuracy_interval": [
-      0.5001,
-      0.835
+      0.4934,
+      0.8207
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 9,
-        "mean_p_favorite": 0.5535,
+        "games": 10,
+        "mean_p_favorite": 0.5561,
         "wins": 4
       },
       {
         "band": "60-69",
-        "games": 12,
+        "games": 13,
         "mean_p_favorite": 0.6402,
-        "wins": 10
+        "wins": 11
       },
       {
         "band": "70-79",
@@ -156,14 +166,14 @@
         "p_favorite": 0.6074
       }
     ],
-    "brier": 0.1944,
-    "games": 26,
-    "log_loss": 0.5761,
-    "losses": 8,
+    "brier": 0.1971,
+    "games": 28,
+    "log_loss": 0.5816,
+    "losses": 9,
     "not_graded": 12,
     "toss_ups": 1,
-    "wins": 18,
-    "with_line": 27
+    "wins": 19,
+    "with_line": 29
   },
   "schema": 1,
   "since": "2026-10-07",
