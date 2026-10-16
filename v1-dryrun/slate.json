@@ -10,13 +10,14 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.7678,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.7735,
         "lo": 0.748,
-        "n": 4,
-        "p_home": 0.7593
+        "n": 5,
+        "p_home": 0.7619
       },
       "open": {
         "at": "2026-10-16T01:28:12Z",
@@ -30,16 +31,18 @@
       "id": "304a287828bbf16b32f47afcf2dc0060",
       "line": {
         "books": [
+          "BetOnline.ag",
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.7002,
-        "lo": 0.6713,
-        "n": 4,
-        "p_home": 0.6824
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.6713,
+        "lo": 0.6341,
+        "n": 6,
+        "p_home": 0.6551
       },
       "open": {
         "at": "2026-10-16T01:28:12Z",
@@ -53,16 +56,18 @@
       "id": "5dea8d6991af35a89575750ce9b1985a",
       "line": {
         "books": [
+          "BetOnline.ag",
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.5641,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.5619,
         "lo": 0.5426,
-        "n": 4,
-        "p_home": 0.5577
+        "n": 6,
+        "p_home": 0.5524
       },
       "open": {
         "at": "2026-10-16T01:28:12Z",
@@ -79,13 +84,14 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.7415,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.7362,
         "lo": 0.7246,
-        "n": 4,
-        "p_home": 0.7388
+        "n": 5,
+        "p_home": 0.73
       },
       "open": {
         "at": "2026-10-16T01:28:12Z",
@@ -102,12 +108,13 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.5105,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.516,
         "lo": 0.5092,
-        "n": 4,
+        "n": 5,
         "p_home": 0.5105
       },
       "open": {
@@ -125,13 +132,14 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
+        "captured_at": "2026-10-16T13:24:04Z",
         "hi": 0.4583,
         "lo": 0.4473,
-        "n": 4,
-        "p_home": 0.456
+        "n": 5,
+        "p_home": 0.4545
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -148,13 +156,14 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
+        "captured_at": "2026-10-16T13:24:04Z",
         "hi": 0.4803,
-        "lo": 0.4726,
-        "n": 4,
-        "p_home": 0.4778
+        "lo": 0.4675,
+        "n": 5,
+        "p_home": 0.4773
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -171,13 +180,14 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.8721,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.8927,
         "lo": 0.8541,
-        "n": 4,
-        "p_home": 0.8645
+        "n": 5,
+        "p_home": 0.8801
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -194,13 +204,14 @@
           "BetRivers",
           "Bovada",
           "DraftKings",
-          "FanDuel"
+          "FanDuel",
+          "MyBookie.ag"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.4948,
-        "lo": 0.4485,
-        "n": 4,
-        "p_home": 0.472
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.4545,
+        "lo": 0.4359,
+        "n": 5,
+        "p_home": 0.4373
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -219,11 +230,11 @@
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.4207,
-        "lo": 0.3905,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.4081,
+        "lo": 0.4,
         "n": 4,
-        "p_home": 0.4092
+        "p_home": 0.4028
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -242,11 +253,11 @@
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
-        "hi": 0.6361,
-        "lo": 0.6143,
+        "captured_at": "2026-10-16T13:24:04Z",
+        "hi": 0.6429,
+        "lo": 0.6154,
         "n": 4,
-        "p_home": 0.6299
+        "p_home": 0.6309
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -265,11 +276,11 @@
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-16T09:24:52Z",
+        "captured_at": "2026-10-16T13:24:04Z",
         "hi": 0.6885,
         "lo": 0.6429,
         "n": 4,
-        "p_home": 0.6627
+        "p_home": 0.6588
       },
       "open": {
         "at": "2026-10-16T09:24:52Z",
@@ -277,8 +288,8 @@
       }
     }
   ],
-  "generated_at": "2026-10-16T09:24:52Z",
-  "next_due": "2026-10-16T09:10-04:00",
+  "generated_at": "2026-10-16T13:24:04Z",
+  "next_due": "2026-10-16T12:10-04:00",
   "recent_results": [
     {
       "away": "BOS",
@@ -869,6 +880,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-10-16T05:10-04:00",
+  "slot": "2026-10-16T09:10-04:00",
   "sport": "basketball_nba_preseason"
 }
