@@ -1,19 +1,8 @@
 {
   "games": [],
-  "generated_at": "2026-10-17T09:20:43Z",
-  "next_due": "2026-10-17T09:10-04:00",
+  "generated_at": "2026-10-17T13:18:42Z",
+  "next_due": "2026-10-17T12:10-04:00",
   "recent_results": [
-    {
-      "away": "HOU",
-      "away_pts": 135,
-      "commence_time": "2026-10-09T12:13:13Z",
-      "home": "DAL",
-      "home_pts": 117,
-      "id": "55b71cda24b60783b78c16c239b8d0e0",
-      "market": null,
-      "market_verdict": "not_graded",
-      "recorded_at": "2026-10-11T00:07:43Z"
-    },
     {
       "away": "MEM",
       "away_pts": 104,
@@ -730,6 +719,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-10-17T05:10-04:00",
+  "slot": "2026-10-17T09:10-04:00",
   "sport": "basketball_nba_preseason"
 }
