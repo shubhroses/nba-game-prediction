@@ -20,11 +20,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5949,
         "lo": 0.5714,
         "n": 9,
-        "p_home": 0.5793
+        "p_home": 0.5783
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
@@ -58,9 +58,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.7415,
-        "lo": 0.7218,
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.744,
+        "lo": 0.7246,
         "n": 9,
         "p_home": 0.7332
       },
@@ -86,16 +86,17 @@
       "id": "0cdc865f5b785c0be6bc409117fe38aa",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5222,
         "lo": 0.5,
-        "n": 4,
-        "p_home": 0.5098
+        "n": 5,
+        "p_home": 0.5091
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -113,16 +114,17 @@
       "id": "0d34c898f6cbb990077ae9f0a2773513",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.5515,
-        "lo": 0.5325,
-        "n": 4,
-        "p_home": 0.5504
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.557,
+        "lo": 0.5426,
+        "n": 5,
+        "p_home": 0.5501
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
@@ -140,16 +142,17 @@
       "id": "7763ba1c6e1e163be38cbe1b880d4cd9",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.4895,
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.4805,
         "lo": 0.4635,
-        "n": 4,
-        "p_home": 0.474
+        "n": 5,
+        "p_home": 0.4778
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -167,16 +170,17 @@
       "id": "8540b2b24fe0b2042a07c8c20452aead",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.407,
-        "lo": 0.3775,
-        "n": 4,
-        "p_home": 0.3906
+        "lo": 0.372,
+        "n": 5,
+        "p_home": 0.3905
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -194,16 +198,17 @@
       "id": "d36eac2ef6bf2d6c0af0073612f6193d",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.6604,
-        "lo": 0.6501,
-        "n": 4,
-        "p_home": 0.6541
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.6643,
+        "lo": 0.6509,
+        "n": 5,
+        "p_home": 0.6588
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -221,16 +226,17 @@
       "id": "fd0625e5807950edc0d2d31772639859",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.4462,
-        "lo": 0.4207,
-        "n": 4,
-        "p_home": 0.4356
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.4473,
+        "lo": 0.4148,
+        "n": 5,
+        "p_home": 0.4359
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -248,16 +254,17 @@
       "id": "db951d9ee1d6777d7ced41eba05aac44",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.5426,
-        "lo": 0.5325,
-        "n": 4,
-        "p_home": 0.5383
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.5469,
+        "lo": 0.5391,
+        "n": 5,
+        "p_home": 0.5426
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -275,16 +282,17 @@
       "id": "49fc89a9696a9a20b658732b34ce61c4",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.7112,
-        "lo": 0.6954,
-        "n": 4,
-        "p_home": 0.7002
+        "lo": 0.6889,
+        "n": 5,
+        "p_home": 0.6954
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
@@ -302,16 +310,17 @@
       "id": "7469a7f48dbb77001b3148829f80c97b",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.6311,
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.6176,
         "lo": 0.598,
-        "n": 4,
-        "p_home": 0.6081
+        "n": 5,
+        "p_home": 0.6
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -329,16 +338,17 @@
       "id": "93ae924d3fc473aadfa50b26a9a2115b",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.3096,
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.308,
         "lo": 0.271,
-        "n": 4,
-        "p_home": 0.3039
+        "n": 5,
+        "p_home": 0.2812
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -356,16 +366,17 @@
       "id": "946d3484688886fd8d3662aee224fb5f",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.7776,
-        "lo": 0.7605,
-        "n": 4,
-        "p_home": 0.7663
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.7762,
+        "lo": 0.7619,
+        "n": 5,
+        "p_home": 0.7721
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -383,16 +394,17 @@
       "id": "d7525d3e92349ef234ca0c1ac699b365",
       "line": {
         "books": [
+          "BetMGM",
           "BetRivers",
           "Bovada",
           "DraftKings",
           "FanDuel"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
-        "hi": 0.6143,
+        "captured_at": "2026-10-22T13:26:28Z",
+        "hi": 0.6045,
         "lo": 0.5823,
-        "n": 4,
-        "p_home": 0.5987
+        "n": 5,
+        "p_home": 0.5985
       },
       "open": {
         "at": "2026-10-22T09:26:04Z",
@@ -410,7 +422,7 @@
       "id": "45ebc54751ef3e435192eaeb0470acfb",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 1,
@@ -432,7 +444,7 @@
       "id": "036a93ca33d6261c21d4bfa6e0d02568",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.8178,
         "lo": 0.8178,
         "n": 1,
@@ -454,7 +466,7 @@
       "id": "64df299b882ea19ad5f8cb0ed5516a6f",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.2739,
         "lo": 0.2739,
         "n": 1,
@@ -476,7 +488,7 @@
       "id": "96a166bbd49782dbd9a61c2fb9069787",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5325,
         "lo": 0.5325,
         "n": 1,
@@ -498,7 +510,7 @@
       "id": "a0f5d89a4fc51e52edd0e70d1e4cbaf2",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5823,
         "lo": 0.5823,
         "n": 1,
@@ -520,7 +532,7 @@
       "id": "c3a424e24d426af94a693e06a33e3037",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5714,
         "lo": 0.5714,
         "n": 1,
@@ -542,7 +554,7 @@
       "id": "cac1461f5983a88fac612685395aa897",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.748,
         "lo": 0.748,
         "n": 1,
@@ -564,7 +576,7 @@
       "id": "761c15cdefb5a94e34f234e11d6e57ad",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.4895,
         "lo": 0.4895,
         "n": 1,
@@ -586,7 +598,7 @@
       "id": "9ae108f7a23e86e8102237053dd9e58d",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.4574,
         "lo": 0.4574,
         "n": 1,
@@ -608,7 +620,7 @@
       "id": "85869b2fdc16ef10d3e2582bf05ead95",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5222,
         "lo": 0.5222,
         "n": 1,
@@ -630,7 +642,7 @@
       "id": "83d77fe350d56a036fd7a3404e78249a",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5823,
         "lo": 0.5823,
         "n": 1,
@@ -652,7 +664,7 @@
       "id": "6669b911691463c669a5c10574742e8e",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.4675,
         "lo": 0.4675,
         "n": 1,
@@ -674,7 +686,7 @@
       "id": "1fae7f34ec6035dffa74feb148ee26c7",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.8046,
         "lo": 0.8046,
         "n": 1,
@@ -696,7 +708,7 @@
       "id": "9051693857c6a0e5e1bc6bb2b4f6fe35",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5222,
         "lo": 0.5222,
         "n": 1,
@@ -718,7 +730,7 @@
       "id": "086d2fe80483ffcc280994fe2e12d4f4",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5714,
         "lo": 0.5714,
         "n": 1,
@@ -740,7 +752,7 @@
       "id": "3167a4072c65c9314c71d0fe49be8e28",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.3775,
         "lo": 0.3775,
         "n": 1,
@@ -762,7 +774,7 @@
       "id": "6bfadbd22ed8a054cf82ec1b12b78243",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.744,
         "lo": 0.744,
         "n": 1,
@@ -784,7 +796,7 @@
       "id": "4f6d199bb67cf3a517a3880fd2f00b26",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5823,
         "lo": 0.5823,
         "n": 1,
@@ -806,7 +818,7 @@
       "id": "07421d1675d6bc51bb5fa91f84a09eb3",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.7567,
         "lo": 0.7567,
         "n": 1,
@@ -828,7 +840,7 @@
       "id": "9aa9f220709533d70d11f85fae886771",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.407,
         "lo": 0.407,
         "n": 1,
@@ -850,7 +862,7 @@
       "id": "3c522e32c3035d7dc3e1734903b84654",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.6225,
         "lo": 0.6225,
         "n": 1,
@@ -872,7 +884,7 @@
       "id": "13d9ca3bcb664829c603755d31401002",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.6854,
         "lo": 0.6854,
         "n": 1,
@@ -897,7 +909,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5105,
         "lo": 0.5,
         "n": 2,
@@ -922,7 +934,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.625,
         "lo": 0.6225,
         "n": 2,
@@ -944,7 +956,7 @@
       "id": "dfd908bad3a3bfcae9e08bf128273b18",
       "line": {
         "books": [],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 2,
@@ -969,7 +981,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.4177,
         "lo": 0.4101,
         "n": 2,
@@ -994,7 +1006,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-22T09:26:04Z",
+        "captured_at": "2026-10-22T13:26:28Z",
         "hi": 0.4661,
         "lo": 0.4574,
         "n": 2,
@@ -1007,13 +1019,13 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-10-22T09:26:04Z",
+  "generated_at": "2026-10-22T13:26:28Z",
   "models": {
     "predictions_day": "2026-10-22",
     "results_through": "2026-10-21",
     "status": "ok"
   },
-  "next_due": "2026-10-22T09:10-04:00",
+  "next_due": "2026-10-22T12:10-04:00",
   "recent_results": [
     {
       "away": "BOS",
@@ -1423,6 +1435,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-10-22T05:10-04:00",
+  "slot": "2026-10-22T09:10-04:00",
   "sport": "basketball_nba"
 }
