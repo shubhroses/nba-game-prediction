@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-10-22T09:26:04Z",
+  "built_at": "2026-10-23T09:25:50Z",
   "code_commit": "8bb93f94ff80aed01f76833a5cd9feaed0ff2550",
   "elo": {
     "constants": {
@@ -30,7 +30,7 @@
         "week_ago": 1385
       },
       "CLE": {
-        "rating": 1578,
+        "rating": 1569,
         "week_ago": 1578
       },
       "DAL": {
@@ -38,7 +38,7 @@
         "week_ago": 1394
       },
       "DEN": {
-        "rating": 1597,
+        "rating": 1591,
         "week_ago": 1597
       },
       "DET": {
@@ -90,7 +90,7 @@
         "week_ago": 1720
       },
       "OKC": {
-        "rating": 1698,
+        "rating": 1705,
         "week_ago": 1684
       },
       "ORL": {
@@ -98,7 +98,7 @@
         "week_ago": 1549
       },
       "PHI": {
-        "rating": 1547,
+        "rating": 1556,
         "week_ago": 1532
       },
       "PHX": {
@@ -131,7 +131,7 @@
       }
     }
   },
-  "games": 14,
+  "games": 16,
   "parameters": {
     "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
     "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
@@ -160,16 +160,16 @@
         "uncertainty": 3.03
       },
       "CLE": {
-        "rating": 2.22,
-        "uncertainty": 3.13
+        "rating": 1.79,
+        "uncertainty": 3.05
       },
       "DAL": {
         "rating": -4.76,
         "uncertainty": 3.03
       },
       "DEN": {
-        "rating": 3.36,
-        "uncertainty": 3.15
+        "rating": 3.05,
+        "uncertainty": 3.07
       },
       "DET": {
         "rating": 5.38,
@@ -192,7 +192,7 @@
         "uncertainty": 3.03
       },
       "LAL": {
-        "rating": 3.07,
+        "rating": 3.08,
         "uncertainty": 3.06
       },
       "MEM": {
@@ -220,16 +220,16 @@
         "uncertainty": 3.1
       },
       "OKC": {
-        "rating": 8.6,
-        "uncertainty": 3.07
+        "rating": 8.89,
+        "uncertainty": 3.0
       },
       "ORL": {
         "rating": 0.46,
         "uncertainty": 3.04
       },
       "PHI": {
-        "rating": 1.49,
-        "uncertainty": 3.03
+        "rating": 1.89,
+        "uncertainty": 2.96
       },
       "PHX": {
         "rating": -0.53,
@@ -248,7 +248,7 @@
         "uncertainty": 3.06
       },
       "TOR": {
-        "rating": 2.31,
+        "rating": 2.32,
         "uncertainty": 3.06
       },
       "UTA": {
@@ -262,7 +262,7 @@
     }
   },
   "reasons": [],
-  "results_through": "2026-10-21",
+  "results_through": "2026-10-22",
   "schema": 1,
   "season": "2026-27",
   "sport": "basketball_nba",
@@ -289,7 +289,7 @@
       "wins": 0
     },
     "CLE": {
-      "losses": 0,
+      "losses": 1,
       "wins": 0
     },
     "DAL": {
@@ -297,7 +297,7 @@
       "wins": 0
     },
     "DEN": {
-      "losses": 0,
+      "losses": 1,
       "wins": 0
     },
     "DET": {
@@ -350,7 +350,7 @@
     },
     "OKC": {
       "losses": 0,
-      "wins": 1
+      "wins": 2
     },
     "ORL": {
       "losses": 1,
@@ -358,7 +358,7 @@
     },
     "PHI": {
       "losses": 0,
-      "wins": 1
+      "wins": 2
     },
     "PHX": {
       "losses": 1,
