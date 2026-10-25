@@ -20,9 +20,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.338,
-        "lo": 0.3166,
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.3357,
+        "lo": 0.3122,
         "n": 9,
         "p_home": 0.3198
       },
@@ -58,11 +58,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.3046,
-        "lo": 0.2918,
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.3234,
+        "lo": 0.308,
         "n": 9,
-        "p_home": 0.295
+        "p_home": 0.3176
       },
       "open": {
         "at": "2026-10-25T01:33:03Z",
@@ -96,11 +96,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.7233,
-        "lo": 0.71,
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.7188,
+        "lo": 0.7007,
         "n": 9,
-        "p_home": 0.7173
+        "p_home": 0.7097
       },
       "open": {
         "at": "2026-10-25T01:33:03Z",
@@ -131,11 +131,11 @@
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.517,
-        "lo": 0.4934,
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.5105,
+        "lo": 0.5,
         "n": 6,
-        "p_home": 0.5105
+        "p_home": 0.5033
       },
       "open": {
         "at": "2026-10-25T01:33:03Z",
@@ -169,11 +169,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.8956,
-        "lo": 0.8801,
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.9008,
+        "lo": 0.8731,
         "n": 9,
-        "p_home": 0.891
+        "p_home": 0.8963
       },
       "open": {
         "at": "2026-10-25T01:33:03Z",
@@ -198,17 +198,20 @@
       "line": {
         "books": [
           "BetMGM",
+          "BetOnline.ag",
           "BetRivers",
+          "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
+          "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.5156,
-        "lo": 0.4868,
-        "n": 6,
-        "p_home": 0.4954
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.5091,
+        "lo": 0.4856,
+        "n": 9,
+        "p_home": 0.4908
       },
       "open": {
         "at": "2026-10-25T09:21:48Z",
@@ -236,11 +239,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
-        "hi": 0.4127,
-        "lo": 0.3956,
+        "captured_at": "2026-10-25T19:16:36Z",
+        "hi": 0.4177,
+        "lo": 0.4,
         "n": 9,
-        "p_home": 0.4
+        "p_home": 0.4122
       },
       "open": {
         "at": "2026-10-25T01:33:03Z",
@@ -267,7 +270,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
+        "captured_at": "2026-10-25T19:16:36Z",
         "hi": 0.5105,
         "lo": 0.5,
         "n": 2,
@@ -292,7 +295,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
+        "captured_at": "2026-10-25T19:16:36Z",
         "hi": 0.6311,
         "lo": 0.625,
         "n": 2,
@@ -314,7 +317,7 @@
       "id": "dfd908bad3a3bfcae9e08bf128273b18",
       "line": {
         "books": [],
-        "captured_at": "2026-10-25T16:22:07Z",
+        "captured_at": "2026-10-25T19:16:36Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 2,
@@ -339,7 +342,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
+        "captured_at": "2026-10-25T19:16:36Z",
         "hi": 0.4101,
         "lo": 0.407,
         "n": 2,
@@ -364,7 +367,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-25T16:22:07Z",
+        "captured_at": "2026-10-25T19:16:36Z",
         "hi": 0.4661,
         "lo": 0.4574,
         "n": 2,
@@ -377,13 +380,13 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-10-25T16:22:07Z",
+  "generated_at": "2026-10-25T19:16:36Z",
   "models": {
     "predictions_day": "2026-10-25",
     "results_through": "2026-10-24",
     "status": "ok"
   },
-  "next_due": "2026-10-25T15:10-04:00",
+  "next_due": "2026-10-25T18:10-04:00",
   "recent_results": [
     {
       "away": "BOS",
@@ -1353,6 +1356,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-10-25T12:10-04:00",
+  "slot": "2026-10-25T15:10-04:00",
   "sport": "basketball_nba"
 }
