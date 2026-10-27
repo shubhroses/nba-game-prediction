@@ -1,0 +1,43 @@
+{
+  "code_commit": "8bb93f94ff80aed01f76833a5cd9feaed0ff2550",
+  "day": "2026-10-27",
+  "games": [
+    {
+      "away": "DET",
+      "commence_time": "2026-10-28T00:10:00Z",
+      "elo": {
+        "away_rating": 1643,
+        "home_court": 40,
+        "home_rating": 1679,
+        "p_home": 0.6077
+      },
+      "home": "NYK",
+      "id": "bde272846214fd6cf197e14c278c12f2",
+      "market": {
+        "at": "2026-10-27T01:35:45Z",
+        "hi": 0.607,
+        "lo": 0.607,
+        "n": 1,
+        "p_home": 0.607
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.05,
+        "margin": -0.09,
+        "p_home": 0.4972,
+        "rating_edge": -1.14,
+        "rest_edge": 0.0
+      }
+    }
+  ],
+  "parameters": {
+    "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
+    "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
+  },
+  "published_at": "2026-10-27T09:27:22Z",
+  "reasons": [],
+  "results_through": "2026-10-26",
+  "schema": 1,
+  "sport": "basketball_nba",
+  "status": "ok"
+}
