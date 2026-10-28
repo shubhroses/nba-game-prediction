@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 52,
-    "wins": 26
+    "games": 56,
+    "wins": 29
   },
   "by_day": [
     {
@@ -157,13 +157,35 @@
         "toss_ups": 0,
         "wins": 3
       }
+    },
+    {
+      "day": "2026-10-27",
+      "elo": {
+        "losses": 0,
+        "not_graded": 3,
+        "toss_ups": 0,
+        "wins": 1
+      },
+      "games": 4,
+      "market": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 3
+      },
+      "points_rest": {
+        "losses": 0,
+        "not_graded": 3,
+        "toss_ups": 1,
+        "wins": 0
+      }
     }
   ],
   "elo": {
-    "accuracy": 0.5429,
+    "accuracy": 0.5556,
     "accuracy_interval": [
-      0.3819,
-      0.6953
+      0.3958,
+      0.7046
     ],
     "bands": [
       {
@@ -174,9 +196,9 @@
       },
       {
         "band": "60-69",
-        "games": 9,
-        "mean_p_favorite": 0.6491,
-        "wins": 5
+        "games": 10,
+        "mean_p_favorite": 0.645,
+        "wins": 6
       },
       {
         "band": "70-79",
@@ -229,20 +251,20 @@
         "p_favorite": 0.767
       }
     ],
-    "brier": 0.2451,
+    "brier": 0.2428,
     "brier_against_market": {
-      "difference": 0.0351,
-      "games": 39,
+      "difference": 0.0341,
+      "games": 40,
       "interval": [
-        0.0031,
-        0.067
+        0.0027,
+        0.0657
       ]
     },
-    "games": 35,
+    "games": 36,
     "late": 0,
-    "log_loss": 0.6819,
+    "log_loss": 0.6773,
     "losses": 16,
-    "not_graded": 13,
+    "not_graded": 16,
     "picks_against_market": {
       "differ": 6,
       "latest": [
@@ -317,28 +339,28 @@
       "model_right": 1
     },
     "toss_ups": 4,
-    "wins": 19,
-    "with_line": 39
+    "wins": 20,
+    "with_line": 40
   },
-  "games": 52,
+  "games": 56,
   "market": {
-    "accuracy": 0.7174,
+    "accuracy": 0.72,
     "accuracy_interval": [
-      0.5745,
-      0.8268
+      0.5833,
+      0.8253
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 18,
-        "mean_p_favorite": 0.5551,
+        "games": 19,
+        "mean_p_favorite": 0.5539,
         "wins": 13
       },
       {
         "band": "60-69",
-        "games": 12,
-        "mean_p_favorite": 0.6465,
-        "wins": 6
+        "games": 13,
+        "mean_p_favorite": 0.6431,
+        "wins": 7
       },
       {
         "band": "70-79",
@@ -348,15 +370,15 @@
       },
       {
         "band": "80-89",
-        "games": 4,
-        "mean_p_favorite": 0.8535,
-        "wins": 4
+        "games": 5,
+        "mean_p_favorite": 0.8492,
+        "wins": 5
       },
       {
         "band": "90+",
-        "games": 0,
-        "mean_p_favorite": null,
-        "wins": 0
+        "games": 1,
+        "mean_p_favorite": 0.9129,
+        "wins": 1
       }
     ],
     "biggest_upsets": [
@@ -391,14 +413,14 @@
         "p_favorite": 0.6958
       }
     ],
-    "brier": 0.1985,
-    "games": 46,
-    "log_loss": 0.5787,
-    "losses": 13,
+    "brier": 0.1929,
+    "games": 50,
+    "log_loss": 0.5649,
+    "losses": 14,
     "not_graded": 0,
     "toss_ups": 6,
-    "wins": 33,
-    "with_line": 52
+    "wins": 36,
+    "with_line": 56
   },
   "points_rest": {
     "accuracy": 0.5946,
@@ -470,20 +492,20 @@
         "p_favorite": 0.7579
       }
     ],
-    "brier": 0.2308,
+    "brier": 0.2313,
     "brier_against_market": {
-      "difference": 0.0207,
-      "games": 39,
+      "difference": 0.0226,
+      "games": 40,
       "interval": [
-        -0.0099,
-        0.0511
+        -0.0072,
+        0.0522
       ]
     },
     "games": 37,
     "late": 0,
-    "log_loss": 0.6513,
+    "log_loss": 0.6525,
     "losses": 15,
-    "not_graded": 13,
+    "not_graded": 16,
     "picks_against_market": {
       "differ": 5,
       "latest": [
@@ -546,9 +568,9 @@
       "market_right": 4,
       "model_right": 1
     },
-    "toss_ups": 2,
+    "toss_ups": 3,
     "wins": 22,
-    "with_line": 39
+    "with_line": 40
   },
   "schema": 1,
   "since": "2026-10-20",
