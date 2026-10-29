@@ -1,0 +1,70 @@
+{
+  "code_commit": "8bb93f94ff80aed01f76833a5cd9feaed0ff2550",
+  "day": "2026-10-29",
+  "games": [
+    {
+      "away": "SAC",
+      "commence_time": "2026-10-30T00:10:00Z",
+      "elo": {
+        "away_rating": 1346,
+        "home_court": 40,
+        "home_rating": 1409,
+        "p_home": 0.644
+      },
+      "home": "NOP",
+      "id": "f91d27cc050b1b85073d745372c73833",
+      "market": {
+        "at": "2026-10-29T01:18:32Z",
+        "hi": 0.6475,
+        "lo": 0.609,
+        "n": 5,
+        "p_home": 0.6361
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.05,
+        "margin": 3.69,
+        "p_home": 0.6233,
+        "rating_edge": 3.99,
+        "rest_edge": -1.35
+      }
+    },
+    {
+      "away": "MEM",
+      "commence_time": "2026-10-30T02:10:00Z",
+      "elo": {
+        "away_rating": 1378,
+        "home_court": 40,
+        "home_rating": 1563,
+        "p_home": 0.785
+      },
+      "home": "POR",
+      "id": "ba667ca1b0b042f0661cb9d9af56c165",
+      "market": {
+        "at": "2026-10-29T01:18:32Z",
+        "hi": 0.7158,
+        "lo": 0.6904,
+        "n": 4,
+        "p_home": 0.7009
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.05,
+        "margin": 7.9,
+        "p_home": 0.7491,
+        "rating_edge": 6.53,
+        "rest_edge": 0.32
+      }
+    }
+  ],
+  "parameters": {
+    "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
+    "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
+  },
+  "published_at": "2026-10-29T09:19:13Z",
+  "reasons": [],
+  "results_through": "2026-10-28",
+  "schema": 1,
+  "sport": "basketball_nba",
+  "status": "ok"
+}
