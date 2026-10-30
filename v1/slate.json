@@ -1,44 +1,6 @@
 {
   "games": [
     {
-      "away": "MEM",
-      "commence_time": "2026-10-30T02:10:00Z",
-      "elo": {
-        "p_home": 0.785
-      },
-      "home": "POR",
-      "id": "ba667ca1b0b042f0661cb9d9af56c165",
-      "line": {
-        "books": [
-          "BetMGM",
-          "BetOnline.ag",
-          "BetRivers",
-          "BetUS",
-          "Bovada",
-          "DraftKings",
-          "FanDuel",
-          "LowVig.ag",
-          "MyBookie.ag"
-        ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.7466,
-        "lo": 0.6853,
-        "n": 9,
-        "p_home": 0.7332
-      },
-      "open": {
-        "at": "2026-10-28T22:16:25Z",
-        "p_home": 0.7173
-      },
-      "points_rest": {
-        "home_court": 1.05,
-        "margin": 7.9,
-        "p_home": 0.7491,
-        "rating_edge": 6.53,
-        "rest_edge": 0.32
-      }
-    },
-    {
       "away": "CHA",
       "commence_time": "2026-10-30T23:10:00Z",
       "elo": {
@@ -58,17 +20,23 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.5417,
-        "lo": 0.5,
+        "lo": 0.5105,
         "n": 9,
-        "p_home": 0.5285
+        "p_home": 0.5247
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.4895
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": -7.94,
+        "p_home": 0.2493,
+        "rating_edge": -8.98,
+        "rest_edge": 0.0
+      }
     },
     {
       "away": "CHI",
@@ -81,23 +49,32 @@
       "line": {
         "books": [
           "BetMGM",
+          "BetOnline.ag",
           "BetRivers",
+          "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
+          "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.8842,
-        "lo": 0.8429,
-        "n": 6,
-        "p_home": 0.8588
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.8764,
+        "lo": 0.8437,
+        "n": 9,
+        "p_home": 0.8577
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.8178
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": 11.71,
+        "p_home": 0.8405,
+        "rating_edge": 10.35,
+        "rest_edge": 0.32
+      }
     },
     {
       "away": "DET",
@@ -119,17 +96,23 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.3096,
-        "lo": 0.2887,
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.2944,
+        "lo": 0.2653,
         "n": 9,
-        "p_home": 0.2982
+        "p_home": 0.286
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.2739
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": -12.03,
+        "p_home": 0.1529,
+        "rating_edge": -13.39,
+        "rest_edge": 0.32
+      }
     },
     {
       "away": "NYK",
@@ -151,17 +134,23 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.4961,
-        "lo": 0.4564,
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.4778,
+        "lo": 0.447,
         "n": 9,
-        "p_home": 0.4675
+        "p_home": 0.4625
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.5325
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": -3.27,
+        "p_home": 0.3902,
+        "rating_edge": -4.63,
+        "rest_edge": 0.32
+      }
     },
     {
       "away": "ORL",
@@ -183,17 +172,23 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.6588,
-        "lo": 0.6311,
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.6643,
+        "lo": 0.6444,
         "n": 9,
-        "p_home": 0.6517
+        "p_home": 0.6542
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.5714
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.08,
+        "margin": 4.27,
+        "p_home": 0.6415,
+        "rating_edge": 3.19,
+        "rest_edge": 0.0
+      }
     },
     {
       "away": "HOU",
@@ -206,24 +201,32 @@
       "line": {
         "books": [
           "BetMGM",
+          "BetOnline.ag",
           "BetRivers",
           "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
+          "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.3797,
-        "lo": 0.3412,
-        "n": 7,
-        "p_home": 0.3571
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.3489,
+        "lo": 0.3265,
+        "n": 9,
+        "p_home": 0.3419
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.407
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.13,
+        "margin": -6.2,
+        "p_home": 0.2984,
+        "rating_edge": -7.33,
+        "rest_edge": 0.0
+      }
     },
     {
       "away": "IND",
@@ -245,17 +248,23 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.7018,
-        "lo": 0.6766,
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.7374,
+        "lo": 0.705,
         "n": 9,
-        "p_home": 0.6958
+        "p_home": 0.7146
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.5714
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": 5.07,
+        "p_home": 0.6672,
+        "rating_edge": 4.03,
+        "rest_edge": 0.0
+      }
     },
     {
       "away": "LAC",
@@ -277,17 +286,23 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.7082,
-        "lo": 0.6691,
+        "lo": 0.686,
         "n": 9,
-        "p_home": 0.7002
+        "p_home": 0.7018
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.7332
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.2,
+        "margin": 4.76,
+        "p_home": 0.6574,
+        "rating_edge": 3.88,
+        "rest_edge": -0.32
+      }
     },
     {
       "away": "LAL",
@@ -300,23 +315,32 @@
       "line": {
         "books": [
           "BetMGM",
+          "BetOnline.ag",
           "BetRivers",
+          "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
+          "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.4635,
-        "lo": 0.4499,
-        "n": 6,
-        "p_home": 0.4574
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.4609,
+        "lo": 0.4289,
+        "n": 9,
+        "p_home": 0.4473
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.5
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": -3.96,
+        "p_home": 0.3678,
+        "rating_edge": -5.0,
+        "rest_edge": 0.0
+      }
     },
     {
       "away": "DEN",
@@ -331,23 +355,30 @@
           "BetMGM",
           "BetOnline.ag",
           "BetRivers",
+          "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
-        "hi": 0.403,
-        "lo": 0.372,
-        "n": 8,
-        "p_home": 0.3983
+        "captured_at": "2026-10-30T09:18:53Z",
+        "hi": 0.3979,
+        "lo": 0.382,
+        "n": 9,
+        "p_home": 0.3857
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
         "p_home": 0.4574
       },
-      "points_rest": null
+      "points_rest": {
+        "home_court": 1.04,
+        "margin": -0.85,
+        "p_home": 0.4714,
+        "rating_edge": -2.21,
+        "rest_edge": 0.32
+      }
     },
     {
       "away": "SAS",
@@ -362,7 +393,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.5,
         "lo": 0.4895,
         "n": 2,
@@ -387,7 +418,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.6573,
         "lo": 0.625,
         "n": 2,
@@ -409,7 +440,7 @@
       "id": "dfd908bad3a3bfcae9e08bf128273b18",
       "line": {
         "books": [],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 2,
@@ -431,7 +462,7 @@
       "id": "2b7218aa25cf98318a40e6f2469a5c5d",
       "line": {
         "books": [],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.3965,
         "lo": 0.3965,
         "n": 1,
@@ -456,7 +487,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-30T01:19:46Z",
+        "captured_at": "2026-10-30T09:18:53Z",
         "hi": 0.4661,
         "lo": 0.4485,
         "n": 2,
@@ -469,98 +500,14 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-10-30T01:19:46Z",
+  "generated_at": "2026-10-30T09:18:53Z",
   "models": {
-    "predictions_day": "2026-10-29",
-    "results_through": "2026-10-28",
+    "predictions_day": "2026-10-30",
+    "results_through": "2026-10-29",
     "status": "ok"
   },
-  "next_due": "2026-10-30T05:10-04:00",
+  "next_due": "2026-10-30T09:10-04:00",
   "recent_results": [
-    {
-      "away": "PHX",
-      "away_pts": 83,
-      "commence_time": "2026-10-22T02:14:55Z",
-      "elo": {
-        "p_home": 0.5545,
-        "published_at": "2026-10-21T09:25:48Z"
-      },
-      "elo_verdict": "favorite_won",
-      "home": "POR",
-      "home_pts": 124,
-      "id": "71e24359951927c356bd8c852fb867dd",
-      "market": {
-        "at": "2026-10-22T01:30:06Z",
-        "hi": 0.5919,
-        "lo": 0.5823,
-        "n": 9,
-        "p_home": 0.5885
-      },
-      "market_verdict": "favorite_won",
-      "points_rest": {
-        "margin": 1.16,
-        "p_home": 0.539,
-        "published_at": "2026-10-21T09:25:48Z"
-      },
-      "points_rest_verdict": "favorite_won",
-      "recorded_at": "2026-10-22T09:26:04Z"
-    },
-    {
-      "away": "GSW",
-      "away_pts": 105,
-      "commence_time": "2026-10-22T02:17:00Z",
-      "elo": {
-        "p_home": 0.7117,
-        "published_at": "2026-10-21T09:25:48Z"
-      },
-      "elo_verdict": "favorite_won",
-      "home": "LAL",
-      "home_pts": 127,
-      "id": "6fff70f4bf196dba25060a5775a03b54",
-      "market": {
-        "at": "2026-10-22T01:30:06Z",
-        "hi": 0.6751,
-        "lo": 0.6557,
-        "n": 9,
-        "p_home": 0.6713
-      },
-      "market_verdict": "favorite_won",
-      "points_rest": {
-        "margin": 5.13,
-        "p_home": 0.6672,
-        "published_at": "2026-10-21T09:25:48Z"
-      },
-      "points_rest_verdict": "favorite_won",
-      "recorded_at": "2026-10-22T09:26:04Z"
-    },
-    {
-      "away": "SAC",
-      "away_pts": 96,
-      "commence_time": "2026-10-22T02:43:44Z",
-      "elo": {
-        "p_home": 0.7512,
-        "published_at": "2026-10-21T09:25:48Z"
-      },
-      "elo_verdict": "favorite_won",
-      "home": "LAC",
-      "home_pts": 121,
-      "id": "f6be3e587d43c3821d8f059c3a1f1967",
-      "market": {
-        "at": "2026-10-22T01:30:06Z",
-        "hi": 0.6368,
-        "lo": 0.6188,
-        "n": 9,
-        "p_home": 0.6295
-      },
-      "market_verdict": "favorite_won",
-      "points_rest": {
-        "margin": 7.73,
-        "p_home": 0.7427,
-        "published_at": "2026-10-21T09:25:48Z"
-      },
-      "points_rest_verdict": "favorite_won",
-      "recorded_at": "2026-10-22T09:26:04Z"
-    },
     {
       "away": "CLE",
       "away_pts": 106,
@@ -1960,23 +1907,100 @@
       },
       "points_rest_verdict": "upset",
       "recorded_at": "2026-10-29T09:19:13Z"
+    },
+    {
+      "away": "CLE",
+      "away_pts": 111,
+      "commence_time": "2026-10-30T00:10:30Z",
+      "elo": null,
+      "elo_verdict": "not_graded",
+      "home": "ATL",
+      "home_pts": 114,
+      "id": "b123d92eb8046e43fabf95a33a676634",
+      "market": {
+        "at": "2026-10-29T22:16:26Z",
+        "hi": 0.5181,
+        "lo": 0.5066,
+        "n": 9,
+        "p_home": 0.517
+      },
+      "market_verdict": "toss_up",
+      "points_rest": null,
+      "points_rest_verdict": "not_graded",
+      "recorded_at": "2026-10-30T09:18:53Z"
+    },
+    {
+      "away": "SAC",
+      "away_pts": 120,
+      "commence_time": "2026-10-30T00:11:00Z",
+      "elo": {
+        "p_home": 0.644,
+        "published_at": "2026-10-29T09:19:13Z"
+      },
+      "elo_verdict": "favorite_won",
+      "home": "NOP",
+      "home_pts": 132,
+      "id": "f91d27cc050b1b85073d745372c73833",
+      "market": {
+        "at": "2026-10-29T22:16:26Z",
+        "hi": 0.6984,
+        "lo": 0.6735,
+        "n": 9,
+        "p_home": 0.6772
+      },
+      "market_verdict": "favorite_won",
+      "points_rest": {
+        "margin": 3.69,
+        "p_home": 0.6233,
+        "published_at": "2026-10-29T09:19:13Z"
+      },
+      "points_rest_verdict": "favorite_won",
+      "recorded_at": "2026-10-30T09:18:53Z"
+    },
+    {
+      "away": "MEM",
+      "away_pts": 124,
+      "commence_time": "2026-10-30T02:13:00Z",
+      "elo": {
+        "p_home": 0.785,
+        "published_at": "2026-10-29T09:19:13Z"
+      },
+      "elo_verdict": "upset",
+      "home": "POR",
+      "home_pts": 103,
+      "id": "ba667ca1b0b042f0661cb9d9af56c165",
+      "market": {
+        "at": "2026-10-30T01:19:46Z",
+        "hi": 0.7466,
+        "lo": 0.6853,
+        "n": 9,
+        "p_home": 0.7332
+      },
+      "market_verdict": "upset",
+      "points_rest": {
+        "margin": 7.9,
+        "p_home": 0.7491,
+        "published_at": "2026-10-29T09:19:13Z"
+      },
+      "points_rest_verdict": "upset",
+      "recorded_at": "2026-10-30T09:18:53Z"
     }
   ],
   "record": {
     "elo": {
-      "losses": 19,
-      "wins": 28
+      "losses": 20,
+      "wins": 29
     },
     "market": {
-      "losses": 17,
-      "wins": 44
+      "losses": 18,
+      "wins": 45
     },
     "points_rest": {
-      "losses": 19,
-      "wins": 30
+      "losses": 20,
+      "wins": 31
     }
   },
   "schema": 1,
-  "slot": "2026-10-29T21:10-04:00",
+  "slot": "2026-10-30T05:10-04:00",
   "sport": "basketball_nba"
 }
