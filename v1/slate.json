@@ -20,11 +20,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.2952,
-        "lo": 0.2827,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.2668,
+        "lo": 0.256,
         "n": 9,
-        "p_home": 0.2845
+        "p_home": 0.2652
       },
       "open": {
         "at": "2026-10-31T01:15:28Z",
@@ -58,9 +58,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.4788,
-        "lo": 0.474,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.483,
+        "lo": 0.4677,
         "n": 9,
         "p_home": 0.4778
       },
@@ -90,8 +90,8 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.3879,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.3959,
         "lo": 0.375,
         "n": 9,
         "p_home": 0.3829
@@ -128,9 +128,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.8262,
-        "lo": 0.8059,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.8345,
+        "lo": 0.8046,
         "n": 9,
         "p_home": 0.8219
       },
@@ -166,11 +166,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.2704,
-        "lo": 0.2559,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.249,
+        "lo": 0.2315,
         "n": 9,
-        "p_home": 0.2585
+        "p_home": 0.2381
       },
       "open": {
         "at": "2026-10-31T01:15:28Z",
@@ -204,11 +204,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.7744,
-        "lo": 0.7544,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.7605,
+        "lo": 0.744,
         "n": 9,
-        "p_home": 0.7721
+        "p_home": 0.7572
       },
       "open": {
         "at": "2026-10-31T01:15:28Z",
@@ -242,11 +242,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
-        "hi": 0.5754,
-        "lo": 0.559,
+        "captured_at": "2026-10-31T16:14:06Z",
+        "hi": 0.5714,
+        "lo": 0.5492,
         "n": 9,
-        "p_home": 0.5711
+        "p_home": 0.5627
       },
       "open": {
         "at": "2026-10-31T09:14:17Z",
@@ -267,7 +267,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
+        "captured_at": "2026-10-31T16:14:06Z",
         "hi": 0.5,
         "lo": 0.4895,
         "n": 2,
@@ -292,7 +292,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
+        "captured_at": "2026-10-31T16:14:06Z",
         "hi": 0.6573,
         "lo": 0.625,
         "n": 2,
@@ -314,7 +314,7 @@
       "id": "dfd908bad3a3bfcae9e08bf128273b18",
       "line": {
         "books": [],
-        "captured_at": "2026-10-31T13:12:44Z",
+        "captured_at": "2026-10-31T16:14:06Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 2,
@@ -336,7 +336,7 @@
       "id": "2b7218aa25cf98318a40e6f2469a5c5d",
       "line": {
         "books": [],
-        "captured_at": "2026-10-31T13:12:44Z",
+        "captured_at": "2026-10-31T16:14:06Z",
         "hi": 0.4177,
         "lo": 0.4177,
         "n": 1,
@@ -361,7 +361,7 @@
           "BetRivers",
           "DraftKings"
         ],
-        "captured_at": "2026-10-31T13:12:44Z",
+        "captured_at": "2026-10-31T16:14:06Z",
         "hi": 0.4661,
         "lo": 0.4485,
         "n": 2,
@@ -374,13 +374,13 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-10-31T13:12:44Z",
+  "generated_at": "2026-10-31T16:14:06Z",
   "models": {
     "predictions_day": "2026-10-31",
     "results_through": "2026-10-30",
     "status": "ok"
   },
-  "next_due": "2026-10-31T12:10-04:00",
+  "next_due": "2026-10-31T15:10-04:00",
   "recent_results": [
     {
       "away": "CHI",
@@ -2099,6 +2099,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-10-31T09:10-04:00",
+  "slot": "2026-10-31T12:10-04:00",
   "sport": "basketball_nba"
 }
