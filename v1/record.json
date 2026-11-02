@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 88,
-    "wins": 46
+    "games": 92,
+    "wins": 48
   },
   "by_day": [
     {
@@ -267,6 +267,28 @@
         "toss_ups": 0,
         "wins": 4
       }
+    },
+    {
+      "day": "2026-11-01",
+      "elo": {
+        "losses": 0,
+        "not_graded": 4,
+        "toss_ups": 0,
+        "wins": 0
+      },
+      "games": 4,
+      "market": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 3
+      },
+      "points_rest": {
+        "losses": 0,
+        "not_graded": 4,
+        "toss_ups": 0,
+        "wins": 0
+      }
     }
   ],
   "elo": {
@@ -352,7 +374,7 @@
     "late": 0,
     "log_loss": 0.6701,
     "losses": 26,
-    "not_graded": 19,
+    "not_graded": 23,
     "picks_against_market": {
       "differ": 6,
       "latest": [
@@ -430,31 +452,31 @@
     "wins": 38,
     "with_line": 69
   },
-  "games": 88,
+  "games": 92,
   "market": {
-    "accuracy": 0.7051,
+    "accuracy": 0.7073,
     "accuracy_interval": [
-      0.5962,
-      0.7948
+      0.6013,
+      0.7947
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 23,
-        "mean_p_favorite": 0.5564,
-        "wins": 14
+        "games": 25,
+        "mean_p_favorite": 0.5563,
+        "wins": 16
       },
       {
         "band": "60-69",
-        "games": 24,
-        "mean_p_favorite": 0.6445,
+        "games": 25,
+        "mean_p_favorite": 0.6428,
         "wins": 13
       },
       {
         "band": "70-79",
-        "games": 22,
-        "mean_p_favorite": 0.7447,
-        "wins": 19
+        "games": 23,
+        "mean_p_favorite": 0.7435,
+        "wins": 20
       },
       {
         "band": "80-89",
@@ -501,14 +523,14 @@
         "p_favorite": 0.7002
       }
     ],
-    "brier": 0.1933,
-    "games": 78,
-    "log_loss": 0.5665,
-    "losses": 23,
+    "brier": 0.194,
+    "games": 82,
+    "log_loss": 0.5684,
+    "losses": 24,
     "not_graded": 0,
     "toss_ups": 10,
-    "wins": 55,
-    "with_line": 88
+    "wins": 58,
+    "with_line": 92
   },
   "points_rest": {
     "accuracy": 0.6061,
@@ -593,7 +615,7 @@
     "late": 0,
     "log_loss": 0.6625,
     "losses": 26,
-    "not_graded": 19,
+    "not_graded": 23,
     "picks_against_market": {
       "differ": 5,
       "latest": [
