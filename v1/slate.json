@@ -17,11 +17,11 @@
           "FanDuel",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-05T10:15:02Z",
-        "hi": 0.5303,
-        "lo": 0.4948,
+        "captured_at": "2026-11-05T14:15:56Z",
+        "hi": 0.517,
+        "lo": 0.5,
         "n": 6,
-        "p_home": 0.5137
+        "p_home": 0.5085
       },
       "open": {
         "at": "2026-11-05T10:15:02Z",
@@ -40,17 +40,20 @@
       "line": {
         "books": [
           "BetMGM",
+          "BetOnline.ag",
           "BetRivers",
+          "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
+          "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-05T10:15:02Z",
-        "hi": 0.732,
-        "lo": 0.705,
-        "n": 6,
-        "p_home": 0.7086
+        "captured_at": "2026-11-05T14:15:56Z",
+        "hi": 0.7143,
+        "lo": 0.7002,
+        "n": 9,
+        "p_home": 0.709
       },
       "open": {
         "at": "2026-11-05T10:15:02Z",
@@ -68,7 +71,7 @@
       "id": "a6555e8b7252dfb32f1817fc8c59ad83",
       "line": {
         "books": [],
-        "captured_at": "2026-11-05T10:15:02Z",
+        "captured_at": "2026-11-05T14:15:56Z",
         "hi": 0.5,
         "lo": 0.5,
         "n": 1,
@@ -90,7 +93,7 @@
       "id": "d60e7fc0690e4dff121a086395e24de4",
       "line": {
         "books": [],
-        "captured_at": "2026-11-05T10:15:02Z",
+        "captured_at": "2026-11-05T14:15:56Z",
         "hi": 0.625,
         "lo": 0.625,
         "n": 1,
@@ -112,7 +115,7 @@
       "id": "dfd908bad3a3bfcae9e08bf128273b18",
       "line": {
         "books": [],
-        "captured_at": "2026-11-05T10:15:02Z",
+        "captured_at": "2026-11-05T14:15:56Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 1,
@@ -134,7 +137,7 @@
       "id": "85a2379bc49135f2759709e55af0c4c6",
       "line": {
         "books": [],
-        "captured_at": "2026-11-05T10:15:02Z",
+        "captured_at": "2026-11-05T14:15:56Z",
         "hi": 0.4661,
         "lo": 0.4661,
         "n": 1,
@@ -147,13 +150,13 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-11-05T10:15:02Z",
+  "generated_at": "2026-11-05T14:15:56Z",
   "models": {
     "predictions_day": null,
     "results_through": "2026-11-04",
     "status": "ok"
   },
-  "next_due": "2026-11-05T09:10-05:00",
+  "next_due": "2026-11-05T12:10-05:00",
   "recent_results": [
     {
       "away": "CHA",
@@ -1921,6 +1924,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-11-05T05:10-05:00",
+  "slot": "2026-11-05T09:10-05:00",
   "sport": "basketball_nba"
 }
