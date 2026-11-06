@@ -1,8 +1,8 @@
 {
   "credits": {
     "last": 1,
-    "remaining": 454,
-    "used": 46
+    "remaining": 453,
+    "used": 47
   },
   "games": {
     "036a93ca33d6261c21d4bfa6e0d02568": {
@@ -254,11 +254,11 @@
       },
       "home": "MIL",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
-        "hi": 0.3326,
-        "lo": 0.3271,
-        "n": 2,
-        "p_home": 0.3299
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.3271,
+        "lo": 0.2965,
+        "n": 5,
+        "p_home": 0.2998
       }
     },
     "1cb12166c3eda270d40cc65b9b34459a": {
@@ -323,22 +323,6 @@
         "lo": 0.8046,
         "n": 1,
         "p_home": 0.8046
-      }
-    },
-    "223b2883b9b05a67329ef246384b85f1": {
-      "away": "DEN",
-      "commence_time": "2026-10-23T01:40:00Z",
-      "first": {
-        "at": "2026-10-10T19:18:44Z",
-        "p_home": 0.7041
-      },
-      "home": "OKC",
-      "latest": {
-        "at": "2026-10-23T01:33:10Z",
-        "hi": 0.7415,
-        "lo": 0.7246,
-        "n": 9,
-        "p_home": 0.7332
       }
     },
     "252f3af49fb5271bb040e95e0119f207": {
@@ -686,11 +670,27 @@
       },
       "home": "NOP",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
-        "hi": 0.3732,
-        "lo": 0.3617,
-        "n": 2,
-        "p_home": 0.3674
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.4133,
+        "lo": 0.372,
+        "n": 5,
+        "p_home": 0.398
+      }
+    },
+    "62a92e31b546d31ba57caf792815bf65": {
+      "away": "UTA",
+      "commence_time": "2026-11-07T01:10:00Z",
+      "first": {
+        "at": "2026-11-06T02:20:25Z",
+        "p_home": 0.6904
+      },
+      "home": "DAL",
+      "latest": {
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.7082,
+        "lo": 0.6824,
+        "n": 5,
+        "p_home": 0.6904
       }
     },
     "64df299b882ea19ad5f8cb0ed5516a6f": {
@@ -1086,11 +1086,11 @@
       },
       "home": "LAL",
       "latest": {
-        "at": "2026-10-23T01:33:10Z",
-        "hi": 0.5823,
-        "lo": 0.5823,
-        "n": 1,
-        "p_home": 0.5823
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.5711,
+        "lo": 0.5426,
+        "n": 4,
+        "p_home": 0.5681
       }
     },
     "8540b2b24fe0b2042a07c8c20452aead": {
@@ -1118,11 +1118,11 @@
       },
       "home": "CLE",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
-        "hi": 0.4689,
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.4611,
         "lo": 0.4352,
-        "n": 3,
-        "p_home": 0.441
+        "n": 5,
+        "p_home": 0.4373
       }
     },
     "85a2379bc49135f2759709e55af0c4c6": {
@@ -1134,7 +1134,7 @@
       },
       "home": "GSW",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
+        "at": "2026-11-06T02:20:25Z",
         "hi": 0.4661,
         "lo": 0.4661,
         "n": 1,
@@ -1155,6 +1155,22 @@
         "lo": 0.7335,
         "n": 9,
         "p_home": 0.744
+      }
+    },
+    "86684f64a8ec8385537a36c3b3768935": {
+      "away": "OKC",
+      "commence_time": "2026-11-07T01:10:00Z",
+      "first": {
+        "at": "2026-11-06T02:20:25Z",
+        "p_home": 0.391
+      },
+      "home": "MEM",
+      "latest": {
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.4025,
+        "lo": 0.3857,
+        "n": 5,
+        "p_home": 0.391
       }
     },
     "87d2b814c3f0d3691e9cebbf2de76295": {
@@ -1374,7 +1390,7 @@
       },
       "home": "NYK",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
+        "at": "2026-11-06T02:20:25Z",
         "hi": 0.5,
         "lo": 0.5,
         "n": 1,
@@ -1422,11 +1438,11 @@
       },
       "home": "GSW",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
-        "hi": 0.6064,
-        "lo": 0.5897,
+        "at": "2026-11-06T02:20:25Z",
+        "hi": 0.6095,
+        "lo": 0.5965,
         "n": 9,
-        "p_home": 0.5965
+        "p_home": 0.6
       }
     },
     "afde8462706839f30115ea9d5f761066": {
@@ -1662,11 +1678,11 @@
       },
       "home": "SAC",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
+        "at": "2026-11-06T02:20:25Z",
         "hi": 0.1358,
-        "lo": 0.1352,
-        "n": 2,
-        "p_home": 0.1355
+        "lo": 0.1118,
+        "n": 4,
+        "p_home": 0.1256
       }
     },
     "d36eac2ef6bf2d6c0af0073612f6193d": {
@@ -1726,7 +1742,7 @@
       },
       "home": "BOS",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
+        "at": "2026-11-06T02:20:25Z",
         "hi": 0.625,
         "lo": 0.625,
         "n": 1,
@@ -1854,7 +1870,7 @@
       },
       "home": "LAL",
       "latest": {
-        "at": "2026-11-05T23:13:37Z",
+        "at": "2026-11-06T02:20:25Z",
         "hi": 0.5105,
         "lo": 0.5105,
         "n": 1,
@@ -2070,8 +2086,8 @@
       }
     }
   },
-  "last_run_at": "2026-11-05T23:13:37Z",
-  "last_slot": "2026-11-05T18:10-05:00",
+  "last_run_at": "2026-11-06T02:20:25Z",
+  "last_slot": "2026-11-05T21:10-05:00",
   "models": {
     "built_at": "2026-11-05T10:15:02Z",
     "elo": {
@@ -2114,202 +2130,6 @@
     "last_run_at": "2026-11-05T10:15:02Z",
     "last_slot": "2026-11-05T05:10-05:00",
     "recent": [
-      {
-        "away": "ORL",
-        "away_pts": 99,
-        "commence_time": "2026-10-28T23:42:00Z",
-        "elo": {
-          "p_home": 0.5686,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "favorite_won",
-        "home": "TOR",
-        "home_pts": 129,
-        "id": "67550840fbe9bb9c550d3d4958e259ea",
-        "market": {
-          "at": "2026-10-28T22:16:25Z",
-          "hi": 0.6368,
-          "lo": 0.6232,
-          "n": 9,
-          "p_home": 0.6289
-        },
-        "market_verdict": "favorite_won",
-        "points_rest": {
-          "margin": 2.21,
-          "p_home": 0.5748,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "favorite_won",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
-      {
-        "away": "DEN",
-        "away_pts": 104,
-        "commence_time": "2026-10-29T00:11:00Z",
-        "elo": {
-          "p_home": 0.3507,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "favorite_won",
-        "home": "NOP",
-        "home_pts": 91,
-        "id": "782d6ce7f65b592ad1c43d2f4e53cc82",
-        "market": {
-          "at": "2026-10-28T22:16:25Z",
-          "hi": 0.3877,
-          "lo": 0.375,
-          "n": 9,
-          "p_home": 0.3821
-        },
-        "market_verdict": "favorite_won",
-        "points_rest": {
-          "margin": -3.19,
-          "p_home": 0.3931,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "favorite_won",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
-      {
-        "away": "NYK",
-        "away_pts": 133,
-        "commence_time": "2026-10-29T00:11:00Z",
-        "elo": {
-          "p_home": 0.1655,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "favorite_won",
-        "home": "CHI",
-        "home_pts": 127,
-        "id": "7b9e02686c886a54c9a91dd3f3879326",
-        "market": {
-          "at": "2026-10-28T22:16:25Z",
-          "hi": 0.3016,
-          "lo": 0.2887,
-          "n": 9,
-          "p_home": 0.2918
-        },
-        "market_verdict": "favorite_won",
-        "points_rest": {
-          "margin": -9.73,
-          "p_home": 0.2029,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "favorite_won",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
-      {
-        "away": "HOU",
-        "away_pts": 132,
-        "commence_time": "2026-10-29T00:11:00Z",
-        "elo": {
-          "p_home": 0.2466,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "favorite_won",
-        "home": "MIL",
-        "home_pts": 100,
-        "id": "83ca338f605b5664b7b1da34c19a0222",
-        "market": {
-          "at": "2026-10-28T22:16:25Z",
-          "hi": 0.2812,
-          "lo": 0.2471,
-          "n": 9,
-          "p_home": 0.256
-        },
-        "market_verdict": "favorite_won",
-        "points_rest": {
-          "margin": -9.17,
-          "p_home": 0.2167,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "favorite_won",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
-      {
-        "away": "GSW",
-        "away_pts": 119,
-        "commence_time": "2026-10-29T00:11:00Z",
-        "elo": {
-          "p_home": 0.7458,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "upset",
-        "home": "MIN",
-        "home_pts": 114,
-        "id": "c6d62b9457cbd8517860e222f1d4f953",
-        "market": {
-          "at": "2026-10-28T22:16:25Z",
-          "hi": 0.6064,
-          "lo": 0.5823,
-          "n": 9,
-          "p_home": 0.6005
-        },
-        "market_verdict": "upset",
-        "points_rest": {
-          "margin": 8.66,
-          "p_home": 0.77,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "upset",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
-      {
-        "away": "SAS",
-        "away_pts": 117,
-        "commence_time": "2026-10-29T01:15:00Z",
-        "elo": {
-          "p_home": 0.1375,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "favorite_won",
-        "home": "UTA",
-        "home_pts": 111,
-        "id": "e74d54621abaed183e569394f935c362",
-        "market": {
-          "at": "2026-10-28T22:16:25Z",
-          "hi": 0.1679,
-          "lo": 0.152,
-          "n": 9,
-          "p_home": 0.1586
-        },
-        "market_verdict": "favorite_won",
-        "points_rest": {
-          "margin": -11.76,
-          "p_home": 0.1576,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "favorite_won",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
-      {
-        "away": "OKC",
-        "away_pts": 96,
-        "commence_time": "2026-10-29T01:48:00Z",
-        "elo": {
-          "p_home": 0.1804,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "elo_verdict": "upset",
-        "home": "DAL",
-        "home_pts": 120,
-        "id": "1e3ca91e27ded6e4b4bb35aabb67b505",
-        "market": {
-          "at": "2026-10-29T01:18:32Z",
-          "hi": 0.3812,
-          "lo": 0.3541,
-          "n": 9,
-          "p_home": 0.3729
-        },
-        "market_verdict": "upset",
-        "points_rest": {
-          "margin": -11.73,
-          "p_home": 0.1583,
-          "published_at": "2026-10-28T09:19:23Z"
-        },
-        "points_rest_verdict": "upset",
-        "recorded_at": "2026-10-29T09:19:13Z"
-      },
       {
         "away": "LAL",
         "away_pts": 103,
