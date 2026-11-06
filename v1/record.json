@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 121,
-    "wins": 62
+    "games": 123,
+    "wins": 64
   },
   "by_day": [
     {
@@ -333,6 +333,28 @@
         "toss_ups": 0,
         "wins": 9
       }
+    },
+    {
+      "day": "2026-11-05",
+      "elo": {
+        "losses": 0,
+        "not_graded": 2,
+        "toss_ups": 0,
+        "wins": 0
+      },
+      "games": 2,
+      "market": {
+        "losses": 0,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 2
+      },
+      "points_rest": {
+        "losses": 0,
+        "not_graded": 2,
+        "toss_ups": 0,
+        "wins": 0
+      }
     }
   ],
   "elo": {
@@ -418,7 +440,7 @@
     "late": 0,
     "log_loss": 0.6504,
     "losses": 35,
-    "not_graded": 26,
+    "not_graded": 28,
     "picks_against_market": {
       "differ": 8,
       "latest": [
@@ -518,25 +540,25 @@
     "wins": 55,
     "with_line": 95
   },
-  "games": 121,
+  "games": 123,
   "market": {
-    "accuracy": 0.7027,
+    "accuracy": 0.708,
     "accuracy_interval": [
-      0.6121,
-      0.7798
+      0.6184,
+      0.7839
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 32,
-        "mean_p_favorite": 0.5585,
-        "wins": 21
+        "games": 33,
+        "mean_p_favorite": 0.5574,
+        "wins": 22
       },
       {
         "band": "60-69",
-        "games": 36,
-        "mean_p_favorite": 0.6413,
-        "wins": 19
+        "games": 37,
+        "mean_p_favorite": 0.6402,
+        "wins": 20
       },
       {
         "band": "70-79",
@@ -590,13 +612,13 @@
       }
     ],
     "brier": 0.1944,
-    "games": 111,
-    "log_loss": 0.5684,
+    "games": 113,
+    "log_loss": 0.5686,
     "losses": 33,
     "not_graded": 0,
     "toss_ups": 10,
-    "wins": 78,
-    "with_line": 121
+    "wins": 80,
+    "with_line": 123
   },
   "points_rest": {
     "accuracy": 0.6154,
@@ -681,7 +703,7 @@
     "late": 0,
     "log_loss": 0.6386,
     "losses": 35,
-    "not_graded": 26,
+    "not_graded": 28,
     "picks_against_market": {
       "differ": 7,
       "latest": [
