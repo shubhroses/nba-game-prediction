@@ -1,0 +1,97 @@
+{
+  "code_commit": "8bb93f94ff80aed01f76833a5cd9feaed0ff2550",
+  "day": "2026-11-12",
+  "games": [
+    {
+      "away": "DET",
+      "commence_time": "2026-11-13T00:10:00Z",
+      "elo": {
+        "away_rating": 1641,
+        "home_court": 40,
+        "home_rating": 1323,
+        "p_home": 0.1679
+      },
+      "home": "WAS",
+      "id": "d5c5ae8d56762b45d1ec4b85337878f3",
+      "market": {
+        "at": "2026-11-12T02:19:38Z",
+        "hi": 0.2433,
+        "lo": 0.2322,
+        "n": 3,
+        "p_home": 0.2404
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.05,
+        "margin": -13.49,
+        "p_home": 0.1226,
+        "rating_edge": -12.55,
+        "rest_edge": -1.99
+      }
+    },
+    {
+      "away": "DAL",
+      "commence_time": "2026-11-13T01:10:00Z",
+      "elo": {
+        "away_rating": 1456,
+        "home_court": 40,
+        "home_rating": 1621,
+        "p_home": 0.765
+      },
+      "home": "MIN",
+      "id": "3c93e4724d36d796aed71c0ca4055b1b",
+      "market": {
+        "at": "2026-11-12T02:19:38Z",
+        "hi": 0.6386,
+        "lo": 0.6277,
+        "n": 4,
+        "p_home": 0.6329
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.14,
+        "margin": 8.43,
+        "p_home": 0.766,
+        "rating_edge": 6.97,
+        "rest_edge": 0.32
+      }
+    },
+    {
+      "away": "CHA",
+      "commence_time": "2026-11-13T02:10:00Z",
+      "elo": {
+        "away_rating": 1485,
+        "home_court": 40,
+        "home_rating": 1505,
+        "p_home": 0.5855
+      },
+      "home": "PHX",
+      "id": "f3f429e773bfb2340ba2bb90f2b9dd1e",
+      "market": {
+        "at": "2026-11-12T02:19:38Z",
+        "hi": 0.6861,
+        "lo": 0.6728,
+        "n": 3,
+        "p_home": 0.6729
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.12,
+        "margin": 1.8,
+        "p_home": 0.5617,
+        "rating_edge": 1.32,
+        "rest_edge": -0.64
+      }
+    }
+  ],
+  "parameters": {
+    "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
+    "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
+  },
+  "published_at": "2026-11-12T10:15:51Z",
+  "reasons": [],
+  "results_through": "2026-11-11",
+  "schema": 1,
+  "sport": "basketball_nba",
+  "status": "ok"
+}
