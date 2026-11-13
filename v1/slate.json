@@ -20,11 +20,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.2746,
-        "lo": 0.26,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.268,
+        "lo": 0.2579,
         "n": 9,
-        "p_home": 0.2652
+        "p_home": 0.26
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
@@ -58,11 +58,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.7626,
-        "lo": 0.743,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.7711,
+        "lo": 0.7544,
         "n": 9,
-        "p_home": 0.759
+        "p_home": 0.7664
       },
       "open": {
         "at": "2026-11-12T23:12:36Z",
@@ -96,9 +96,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.5711,
-        "lo": 0.5455,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.5633,
+        "lo": 0.5492,
         "n": 9,
         "p_home": 0.5527
       },
@@ -134,11 +134,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.308,
-        "lo": 0.2851,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.3046,
+        "lo": 0.2888,
         "n": 9,
-        "p_home": 0.2872
+        "p_home": 0.2937
       },
       "open": {
         "at": "2026-11-13T02:17:28Z",
@@ -172,11 +172,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.4485,
-        "lo": 0.4322,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.4112,
+        "lo": 0.402,
         "n": 9,
-        "p_home": 0.443
+        "p_home": 0.4081
       },
       "open": {
         "at": "2026-11-12T23:12:36Z",
@@ -210,11 +210,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.8963,
-        "lo": 0.8842,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.8899,
+        "lo": 0.8797,
         "n": 9,
-        "p_home": 0.8923
+        "p_home": 0.8861
       },
       "open": {
         "at": "2026-11-12T23:12:36Z",
@@ -248,11 +248,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.8429,
-        "lo": 0.8178,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.8403,
+        "lo": 0.8192,
         "n": 9,
-        "p_home": 0.8362
+        "p_home": 0.8336
       },
       "open": {
         "at": "2026-10-10T19:18:44Z",
@@ -286,11 +286,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.2119,
+        "captured_at": "2026-11-13T20:15:08Z",
+        "hi": 0.2138,
         "lo": 0.1954,
         "n": 9,
-        "p_home": 0.2083
+        "p_home": 0.2096
       },
       "open": {
         "at": "2026-11-12T23:12:36Z",
@@ -324,9 +324,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-13T17:13:39Z",
+        "captured_at": "2026-11-13T20:15:08Z",
         "hi": 0.308,
-        "lo": 0.2872,
+        "lo": 0.2897,
         "n": 9,
         "p_home": 0.294
       },
@@ -341,103 +341,15 @@
         "rating_edge": -7.1,
         "rest_edge": 0.64
       }
-    },
-    {
-      "away": "SAS",
-      "commence_time": "2026-12-25T17:00:00Z",
-      "elo": {
-        "p_home": 0.5014
-      },
-      "home": "NYK",
-      "id": "a6555e8b7252dfb32f1817fc8c59ad83",
-      "line": {
-        "books": [],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.5,
-        "lo": 0.5,
-        "n": 1,
-        "p_home": 0.5
-      },
-      "open": {
-        "at": "2026-10-10T19:18:44Z",
-        "p_home": 0.5052
-      },
-      "points_rest": null
-    },
-    {
-      "away": "MIA",
-      "commence_time": "2026-12-25T19:30:00Z",
-      "elo": {
-        "p_home": 0.7691
-      },
-      "home": "BOS",
-      "id": "d60e7fc0690e4dff121a086395e24de4",
-      "line": {
-        "books": [],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.625,
-        "lo": 0.625,
-        "n": 1,
-        "p_home": 0.625
-      },
-      "open": {
-        "at": "2026-10-10T19:18:44Z",
-        "p_home": 0.6184
-      },
-      "points_rest": null
-    },
-    {
-      "away": "PHI",
-      "commence_time": "2026-12-25T22:00:00Z",
-      "elo": {
-        "p_home": 0.6347
-      },
-      "home": "LAL",
-      "id": "dfd908bad3a3bfcae9e08bf128273b18",
-      "line": {
-        "books": [],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.5105,
-        "lo": 0.5105,
-        "n": 1,
-        "p_home": 0.5105
-      },
-      "open": {
-        "at": "2026-10-10T19:18:44Z",
-        "p_home": 0.5112
-      },
-      "points_rest": null
-    },
-    {
-      "away": "DEN",
-      "commence_time": "2026-12-26T03:30:00Z",
-      "elo": {
-        "p_home": 0.4957
-      },
-      "home": "GSW",
-      "id": "85a2379bc49135f2759709e55af0c4c6",
-      "line": {
-        "books": [],
-        "captured_at": "2026-11-13T17:13:39Z",
-        "hi": 0.4661,
-        "lo": 0.4661,
-        "n": 1,
-        "p_home": 0.4661
-      },
-      "open": {
-        "at": "2026-10-10T19:18:44Z",
-        "p_home": 0.4574
-      },
-      "points_rest": null
     }
   ],
-  "generated_at": "2026-11-13T17:13:39Z",
+  "generated_at": "2026-11-13T20:15:08Z",
   "models": {
     "predictions_day": "2026-11-13",
     "results_through": "2026-11-12",
     "status": "ok"
   },
-  "next_due": "2026-11-13T15:10-05:00",
+  "next_due": "2026-11-13T18:10-05:00",
   "recent_results": [
     {
       "away": "ORL",
@@ -1806,6 +1718,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-11-13T12:10-05:00",
+  "slot": "2026-11-13T15:10-05:00",
   "sport": "basketball_nba"
 }
