@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 174,
-    "wins": 89
+    "games": 183,
+    "wins": 96
   },
   "by_day": [
     {
@@ -509,38 +509,60 @@
         "toss_ups": 0,
         "wins": 3
       }
+    },
+    {
+      "day": "2026-11-13",
+      "elo": {
+        "losses": 4,
+        "not_graded": 0,
+        "toss_ups": 1,
+        "wins": 4
+      },
+      "games": 9,
+      "market": {
+        "losses": 3,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 6
+      },
+      "points_rest": {
+        "losses": 4,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 5
+      }
     }
   ],
   "elo": {
-    "accuracy": 0.6694,
+    "accuracy": 0.6591,
     "accuracy_interval": [
-      0.5826,
-      0.746
+      0.5748,
+      0.7344
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 28,
-        "mean_p_favorite": 0.5643,
+        "games": 29,
+        "mean_p_favorite": 0.5644,
         "wins": 16
       },
       {
         "band": "60-69",
-        "games": 43,
-        "mean_p_favorite": 0.6471,
+        "games": 44,
+        "mean_p_favorite": 0.6479,
         "wins": 25
       },
       {
         "band": "70-79",
-        "games": 31,
-        "mean_p_favorite": 0.7516,
-        "wins": 21
+        "games": 35,
+        "mean_p_favorite": 0.7522,
+        "wins": 24
       },
       {
         "band": "80-89",
-        "games": 19,
-        "mean_p_favorite": 0.8481,
-        "wins": 18
+        "games": 21,
+        "mean_p_favorite": 0.8497,
+        "wins": 19
       },
       {
         "band": "90+",
@@ -550,6 +572,16 @@
       }
     ],
     "biggest_upsets": [
+      {
+        "away": "NYK",
+        "away_pts": 104,
+        "commence_time": "2026-11-14T00:13:00Z",
+        "favorite": "NYK",
+        "home": "IND",
+        "home_pts": 106,
+        "id": "6669b911691463c669a5c10574742e8e",
+        "p_favorite": 0.8337
+      },
       {
         "away": "OKC",
         "away_pts": 96,
@@ -569,35 +601,36 @@
         "home_pts": 94,
         "id": "6acd74a2d987fa101c79eaf378fd5891",
         "p_favorite": 0.7927
-      },
-      {
-        "away": "PHI",
-        "away_pts": 106,
-        "commence_time": "2026-10-20T23:18:02Z",
-        "favorite": "NYK",
-        "home": "NYK",
-        "home_pts": 100,
-        "id": "2b042ddad3d3c6c6fe5b7005dc26c775",
-        "p_favorite": 0.7879
       }
     ],
-    "brier": 0.2095,
+    "brier": 0.2131,
     "brier_against_market": {
-      "difference": 0.0192,
-      "games": 129,
+      "difference": 0.0204,
+      "games": 138,
       "interval": [
-        0.0031,
-        0.0355
+        0.0052,
+        0.0358
       ]
     },
-    "games": 124,
+    "games": 132,
     "late": 0,
-    "log_loss": 0.6017,
-    "losses": 41,
+    "log_loss": 0.6097,
+    "losses": 45,
     "not_graded": 45,
     "picks_against_market": {
-      "differ": 11,
+      "differ": 12,
       "latest": [
+        {
+          "away": "CLE",
+          "away_pts": 121,
+          "commence_time": "2026-11-14T01:10:00Z",
+          "home": "MIA",
+          "home_pts": 133,
+          "id": "58b860d500be69ebf853926aa1ac8271",
+          "market_pick": "MIA",
+          "pick": "CLE",
+          "right": "market"
+        },
         {
           "away": "OKC",
           "away_pts": 108,
@@ -696,39 +729,28 @@
           "market_pick": "IND",
           "pick": "NOP",
           "right": "market"
-        },
-        {
-          "away": "MIL",
-          "away_pts": 116,
-          "commence_time": "2026-10-21T23:15:00Z",
-          "home": "WAS",
-          "home_pts": 128,
-          "id": "164cc0396837d5ff433215ffd3279283",
-          "market_pick": "WAS",
-          "pick": "MIL",
-          "right": "market"
         }
       ],
-      "market_right": 7,
+      "market_right": 8,
       "model_right": 4
     },
-    "toss_ups": 5,
-    "wins": 83,
-    "with_line": 129
+    "toss_ups": 6,
+    "wins": 87,
+    "with_line": 138
   },
-  "games": 174,
+  "games": 183,
   "market": {
-    "accuracy": 0.7439,
+    "accuracy": 0.7399,
     "accuracy_interval": [
-      0.6721,
-      0.8046
+      0.6698,
+      0.7995
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 44,
-        "mean_p_favorite": 0.5583,
-        "wins": 28
+        "games": 46,
+        "mean_p_favorite": 0.5589,
+        "wins": 30
       },
       {
         "band": "60-69",
@@ -738,15 +760,15 @@
       },
       {
         "band": "70-79",
-        "games": 40,
-        "mean_p_favorite": 0.7442,
-        "wins": 34
+        "games": 45,
+        "mean_p_favorite": 0.744,
+        "wins": 36
       },
       {
         "band": "80-89",
-        "games": 24,
-        "mean_p_favorite": 0.8437,
-        "wins": 24
+        "games": 26,
+        "mean_p_favorite": 0.8452,
+        "wins": 26
       },
       {
         "band": "90+",
@@ -787,51 +809,51 @@
         "p_favorite": 0.7332
       }
     ],
-    "brier": 0.1811,
-    "games": 164,
-    "log_loss": 0.5401,
-    "losses": 42,
+    "brier": 0.1833,
+    "games": 173,
+    "log_loss": 0.5445,
+    "losses": 45,
     "not_graded": 0,
     "toss_ups": 10,
-    "wins": 122,
-    "with_line": 174
+    "wins": 128,
+    "with_line": 183
   },
   "points_rest": {
-    "accuracy": 0.6694,
+    "accuracy": 0.6617,
     "accuracy_interval": [
-      0.5826,
-      0.746
+      0.5777,
+      0.7365
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 31,
-        "mean_p_favorite": 0.5595,
-        "wins": 18
+        "games": 33,
+        "mean_p_favorite": 0.5597,
+        "wins": 19
       },
       {
         "band": "60-69",
-        "games": 41,
-        "mean_p_favorite": 0.6483,
+        "games": 43,
+        "mean_p_favorite": 0.6494,
         "wins": 23
       },
       {
         "band": "70-79",
-        "games": 32,
-        "mean_p_favorite": 0.7494,
-        "wins": 23
+        "games": 34,
+        "mean_p_favorite": 0.7492,
+        "wins": 25
       },
       {
         "band": "80-89",
-        "games": 16,
-        "mean_p_favorite": 0.8496,
-        "wins": 15
+        "games": 18,
+        "mean_p_favorite": 0.8448,
+        "wins": 16
       },
       {
         "band": "90+",
-        "games": 4,
-        "mean_p_favorite": 0.908,
-        "wins": 4
+        "games": 5,
+        "mean_p_favorite": 0.9093,
+        "wins": 5
       }
     ],
     "biggest_upsets": [
@@ -846,6 +868,16 @@
         "p_favorite": 0.8417
       },
       {
+        "away": "NYK",
+        "away_pts": 104,
+        "commence_time": "2026-11-14T00:13:00Z",
+        "favorite": "NYK",
+        "home": "IND",
+        "home_pts": 106,
+        "id": "6669b911691463c669a5c10574742e8e",
+        "p_favorite": 0.8087
+      },
+      {
         "away": "GSW",
         "away_pts": 134,
         "commence_time": "2026-10-27T02:10:55Z",
@@ -854,35 +886,36 @@
         "home_pts": 114,
         "id": "d7f8398941d7c90befa60f35876a3ae7",
         "p_favorite": 0.7787
-      },
-      {
-        "away": "GSW",
-        "away_pts": 119,
-        "commence_time": "2026-10-29T00:11:00Z",
-        "favorite": "MIN",
-        "home": "MIN",
-        "home_pts": 114,
-        "id": "c6d62b9457cbd8517860e222f1d4f953",
-        "p_favorite": 0.77
       }
     ],
-    "brier": 0.2061,
+    "brier": 0.2091,
     "brier_against_market": {
-      "difference": 0.0158,
-      "games": 129,
+      "difference": 0.0165,
+      "games": 138,
       "interval": [
-        0.0009,
-        0.031
+        0.0023,
+        0.0307
       ]
     },
-    "games": 124,
+    "games": 133,
     "late": 0,
-    "log_loss": 0.5941,
-    "losses": 41,
+    "log_loss": 0.6006,
+    "losses": 45,
     "not_graded": 45,
     "picks_against_market": {
-      "differ": 9,
+      "differ": 10,
       "latest": [
+        {
+          "away": "CLE",
+          "away_pts": 121,
+          "commence_time": "2026-11-14T01:10:00Z",
+          "home": "MIA",
+          "home_pts": 133,
+          "id": "58b860d500be69ebf853926aa1ac8271",
+          "market_pick": "MIA",
+          "pick": "CLE",
+          "right": "market"
+        },
         {
           "away": "OKC",
           "away_pts": 108,
@@ -983,12 +1016,12 @@
           "right": "model"
         }
       ],
-      "market_right": 6,
+      "market_right": 7,
       "model_right": 3
     },
     "toss_ups": 5,
-    "wins": 83,
-    "with_line": 129
+    "wins": 88,
+    "with_line": 138
   },
   "schema": 1,
   "since": "2026-10-20",
