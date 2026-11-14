@@ -20,11 +20,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-14T14:12:55Z",
-        "hi": 0.1866,
-        "lo": 0.1643,
+        "captured_at": "2026-11-14T17:11:35Z",
+        "hi": 0.1796,
+        "lo": 0.1563,
         "n": 9,
-        "p_home": 0.1742
+        "p_home": 0.1723
       },
       "open": {
         "at": "2026-11-14T10:13:18Z",
@@ -45,17 +45,18 @@
           "BetMGM",
           "BetOnline.ag",
           "BetRivers",
+          "BetUS",
           "Bovada",
           "DraftKings",
           "FanDuel",
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-14T14:12:55Z",
-        "hi": 0.5144,
-        "lo": 0.483,
-        "n": 8,
-        "p_home": 0.5019
+        "captured_at": "2026-11-14T17:11:35Z",
+        "hi": 0.4635,
+        "lo": 0.4473,
+        "n": 9,
+        "p_home": 0.4564
       },
       "open": {
         "at": "2026-11-14T10:13:18Z",
@@ -83,11 +84,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-14T14:12:55Z",
-        "hi": 0.8801,
-        "lo": 0.856,
+        "captured_at": "2026-11-14T17:11:35Z",
+        "hi": 0.8811,
+        "lo": 0.8631,
         "n": 9,
-        "p_home": 0.8664
+        "p_home": 0.8706
       },
       "open": {
         "at": "2026-11-14T10:13:18Z",
@@ -115,11 +116,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-14T14:12:55Z",
-        "hi": 0.6044,
-        "lo": 0.593,
+        "captured_at": "2026-11-14T17:11:35Z",
+        "hi": 0.5949,
+        "lo": 0.5718,
         "n": 9,
-        "p_home": 0.6005
+        "p_home": 0.5875
       },
       "open": {
         "at": "2026-11-14T10:13:18Z",
@@ -147,11 +148,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-14T14:12:55Z",
-        "hi": 0.3689,
-        "lo": 0.3614,
+        "captured_at": "2026-11-14T17:11:35Z",
+        "hi": 0.3683,
+        "lo": 0.3541,
         "n": 9,
-        "p_home": 0.366
+        "p_home": 0.3612
       },
       "open": {
         "at": "2026-11-14T10:13:18Z",
@@ -160,13 +161,13 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-11-14T14:12:55Z",
+  "generated_at": "2026-11-14T17:11:35Z",
   "models": {
     "predictions_day": null,
     "results_through": "2026-11-13",
     "status": "ok"
   },
-  "next_due": "2026-11-14T12:10-05:00",
+  "next_due": "2026-11-14T15:10-05:00",
   "recent_results": [
     {
       "away": "BOS",
@@ -1745,6 +1746,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-11-14T09:10-05:00",
+  "slot": "2026-11-14T12:10-05:00",
   "sport": "basketball_nba"
 }
