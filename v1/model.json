@@ -1,5 +1,5 @@
 {
-  "built_at": "2026-11-14T10:13:17Z",
+  "built_at": "2026-11-15T10:13:36Z",
   "code_commit": "8bb93f94ff80aed01f76833a5cd9feaed0ff2550",
   "elo": {
     "constants": {
@@ -11,11 +11,11 @@
     "ratings": {
       "ATL": {
         "rating": 1521,
-        "week_ago": 1543
+        "week_ago": 1545
       },
       "BKN": {
-        "rating": 1347,
-        "week_ago": 1324
+        "rating": 1338,
+        "week_ago": 1323
       },
       "BOS": {
         "rating": 1661,
@@ -26,36 +26,36 @@
         "week_ago": 1470
       },
       "CHI": {
-        "rating": 1362,
+        "rating": 1387,
         "week_ago": 1353
       },
       "CLE": {
-        "rating": 1565,
-        "week_ago": 1587
+        "rating": 1570,
+        "week_ago": 1578
       },
       "DAL": {
-        "rating": 1446,
+        "rating": 1440,
         "week_ago": 1440
       },
       "DEN": {
-        "rating": 1581,
-        "week_ago": 1580
+        "rating": 1585,
+        "week_ago": 1584
       },
       "DET": {
-        "rating": 1643,
+        "rating": 1620,
         "week_ago": 1648
       },
       "GSW": {
         "rating": 1528,
-        "week_ago": 1518
+        "week_ago": 1524
       },
       "HOU": {
         "rating": 1629,
-        "week_ago": 1622
+        "week_ago": 1615
       },
       "IND": {
         "rating": 1374,
-        "week_ago": 1361
+        "week_ago": 1357
       },
       "LAC": {
         "rating": 1479,
@@ -66,11 +66,11 @@
         "week_ago": 1599
       },
       "MEM": {
-        "rating": 1445,
+        "rating": 1454,
         "week_ago": 1403
       },
       "MIA": {
-        "rating": 1505,
+        "rating": 1528,
         "week_ago": 1482
       },
       "MIL": {
@@ -78,24 +78,24 @@
         "week_ago": 1340
       },
       "MIN": {
-        "rating": 1632,
+        "rating": 1607,
         "week_ago": 1619
       },
       "NOP": {
-        "rating": 1355,
+        "rating": 1351,
         "week_ago": 1444
       },
       "NYK": {
         "rating": 1673,
-        "week_ago": 1686
+        "week_ago": 1695
       },
       "OKC": {
         "rating": 1638,
-        "week_ago": 1674
+        "week_ago": 1679
       },
       "ORL": {
         "rating": 1502,
-        "week_ago": 1493
+        "week_ago": 1486
       },
       "PHI": {
         "rating": 1565,
@@ -103,11 +103,11 @@
       },
       "PHX": {
         "rating": 1511,
-        "week_ago": 1492
+        "week_ago": 1499
       },
       "POR": {
         "rating": 1584,
-        "week_ago": 1556
+        "week_ago": 1545
       },
       "SAC": {
         "rating": 1324,
@@ -115,7 +115,7 @@
       },
       "SAS": {
         "rating": 1732,
-        "week_ago": 1700
+        "week_ago": 1711
       },
       "TOR": {
         "rating": 1512,
@@ -127,11 +127,11 @@
       },
       "WAS": {
         "rating": 1321,
-        "week_ago": 1339
+        "week_ago": 1335
       }
     }
   },
-  "games": 183,
+  "games": 188,
   "parameters": {
     "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
     "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
@@ -144,8 +144,8 @@
         "uncertainty": 2.5
       },
       "BKN": {
-        "rating": -5.48,
-        "uncertainty": 2.55
+        "rating": -6.03,
+        "uncertainty": 2.53
       },
       "BOS": {
         "rating": 6.31,
@@ -156,31 +156,31 @@
         "uncertainty": 2.53
       },
       "CHI": {
-        "rating": -5.69,
-        "uncertainty": 2.57
+        "rating": -4.64,
+        "uncertainty": 2.53
       },
       "CLE": {
-        "rating": 1.95,
-        "uncertainty": 2.48
+        "rating": 2.13,
+        "uncertainty": 2.44
       },
       "DAL": {
-        "rating": -1.89,
-        "uncertainty": 2.52
+        "rating": -2.07,
+        "uncertainty": 2.49
       },
       "DEN": {
-        "rating": 2.63,
-        "uncertainty": 2.61
+        "rating": 2.72,
+        "uncertainty": 2.59
       },
       "DET": {
-        "rating": 5.71,
-        "uncertainty": 2.57
+        "rating": 4.65,
+        "uncertainty": 2.54
       },
       "GSW": {
         "rating": 1.21,
         "uncertainty": 2.48
       },
       "HOU": {
-        "rating": 5.43,
+        "rating": 5.44,
         "uncertainty": 2.49
       },
       "IND": {
@@ -196,24 +196,24 @@
         "uncertainty": 2.47
       },
       "MEM": {
-        "rating": -1.17,
-        "uncertainty": 2.52
+        "rating": -0.63,
+        "uncertainty": 2.48
       },
       "MIA": {
-        "rating": -0.83,
-        "uncertainty": 2.53
+        "rating": 0.19,
+        "uncertainty": 2.49
       },
       "MIL": {
         "rating": -7.82,
         "uncertainty": 2.47
       },
       "MIN": {
-        "rating": 6.21,
-        "uncertainty": 2.54
+        "rating": 5.19,
+        "uncertainty": 2.51
       },
       "NOP": {
-        "rating": -5.12,
-        "uncertainty": 2.48
+        "rating": -5.2,
+        "uncertainty": 2.44
       },
       "NYK": {
         "rating": 5.64,
@@ -224,7 +224,7 @@
         "uncertainty": 2.5
       },
       "ORL": {
-        "rating": -1.4,
+        "rating": -1.39,
         "uncertainty": 2.52
       },
       "PHI": {
@@ -262,7 +262,7 @@
     }
   },
   "reasons": [],
-  "results_through": "2026-11-13",
+  "results_through": "2026-11-14",
   "schema": 1,
   "season": "2026-27",
   "sport": "basketball_nba",
@@ -273,7 +273,7 @@
       "wins": 7
     },
     "BKN": {
-      "losses": 8,
+      "losses": 9,
       "wins": 3
     },
     "BOS": {
@@ -286,22 +286,22 @@
     },
     "CHI": {
       "losses": 9,
-      "wins": 2
+      "wins": 3
     },
     "CLE": {
       "losses": 7,
-      "wins": 6
+      "wins": 7
     },
     "DAL": {
-      "losses": 5,
+      "losses": 6,
       "wins": 7
     },
     "DEN": {
       "losses": 4,
-      "wins": 6
+      "wins": 7
     },
     "DET": {
-      "losses": 3,
+      "losses": 4,
       "wins": 8
     },
     "GSW": {
@@ -326,22 +326,22 @@
     },
     "MEM": {
       "losses": 4,
-      "wins": 8
+      "wins": 9
     },
     "MIA": {
       "losses": 6,
-      "wins": 6
+      "wins": 7
     },
     "MIL": {
       "losses": 12,
       "wins": 1
     },
     "MIN": {
-      "losses": 3,
+      "losses": 4,
       "wins": 9
     },
     "NOP": {
-      "losses": 9,
+      "losses": 10,
       "wins": 4
     },
     "NYK": {
