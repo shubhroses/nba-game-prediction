@@ -1,7 +1,7 @@
 {
   "baseline_home": {
-    "games": 188,
-    "wins": 99
+    "games": 197,
+    "wins": 102
   },
   "by_day": [
     {
@@ -553,13 +553,35 @@
         "toss_ups": 0,
         "wins": 0
       }
+    },
+    {
+      "day": "2026-11-15",
+      "elo": {
+        "losses": 0,
+        "not_graded": 5,
+        "toss_ups": 0,
+        "wins": 4
+      },
+      "games": 9,
+      "market": {
+        "losses": 0,
+        "not_graded": 0,
+        "toss_ups": 1,
+        "wins": 8
+      },
+      "points_rest": {
+        "losses": 0,
+        "not_graded": 5,
+        "toss_ups": 0,
+        "wins": 4
+      }
     }
   ],
   "elo": {
-    "accuracy": 0.6591,
+    "accuracy": 0.6691,
     "accuracy_interval": [
-      0.5748,
-      0.7344
+      0.5863,
+      0.7426
     ],
     "bands": [
       {
@@ -570,27 +592,27 @@
       },
       {
         "band": "60-69",
-        "games": 44,
-        "mean_p_favorite": 0.6479,
-        "wins": 25
+        "games": 45,
+        "mean_p_favorite": 0.6483,
+        "wins": 26
       },
       {
         "band": "70-79",
-        "games": 35,
-        "mean_p_favorite": 0.7522,
-        "wins": 24
+        "games": 36,
+        "mean_p_favorite": 0.7532,
+        "wins": 25
       },
       {
         "band": "80-89",
-        "games": 21,
-        "mean_p_favorite": 0.8497,
-        "wins": 19
+        "games": 22,
+        "mean_p_favorite": 0.8486,
+        "wins": 20
       },
       {
         "band": "90+",
-        "games": 3,
-        "mean_p_favorite": 0.9135,
-        "wins": 3
+        "games": 4,
+        "mean_p_favorite": 0.9126,
+        "wins": 4
       }
     ],
     "biggest_upsets": [
@@ -625,20 +647,20 @@
         "p_favorite": 0.7927
       }
     ],
-    "brier": 0.2131,
+    "brier": 0.2084,
     "brier_against_market": {
-      "difference": 0.0204,
-      "games": 138,
+      "difference": 0.0193,
+      "games": 142,
       "interval": [
-        0.0052,
-        0.0358
+        0.0048,
+        0.0344
       ]
     },
-    "games": 132,
+    "games": 136,
     "late": 0,
-    "log_loss": 0.6097,
+    "log_loss": 0.5991,
     "losses": 45,
-    "not_graded": 50,
+    "not_graded": 55,
     "picks_against_market": {
       "differ": 12,
       "latest": [
@@ -757,40 +779,40 @@
       "model_right": 4
     },
     "toss_ups": 6,
-    "wins": 87,
-    "with_line": 138
+    "wins": 91,
+    "with_line": 142
   },
-  "games": 188,
+  "games": 197,
   "market": {
-    "accuracy": 0.7303,
+    "accuracy": 0.7419,
     "accuracy_interval": [
-      0.6608,
-      0.7902
+      0.6746,
+      0.7995
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 47,
-        "mean_p_favorite": 0.5586,
-        "wins": 31
+        "games": 48,
+        "mean_p_favorite": 0.5592,
+        "wins": 32
       },
       {
         "band": "60-69",
-        "games": 56,
-        "mean_p_favorite": 0.6415,
-        "wins": 35
-      },
-      {
-        "band": "70-79",
-        "games": 46,
-        "mean_p_favorite": 0.744,
+        "games": 57,
+        "mean_p_favorite": 0.6417,
         "wins": 36
       },
       {
+        "band": "70-79",
+        "games": 50,
+        "mean_p_favorite": 0.7447,
+        "wins": 40
+      },
+      {
         "band": "80-89",
-        "games": 28,
-        "mean_p_favorite": 0.8459,
-        "wins": 27
+        "games": 30,
+        "mean_p_favorite": 0.8477,
+        "wins": 29
       },
       {
         "band": "90+",
@@ -831,20 +853,20 @@
         "p_favorite": 0.7456
       }
     ],
-    "brier": 0.1888,
-    "games": 178,
-    "log_loss": 0.5579,
+    "brier": 0.1844,
+    "games": 186,
+    "log_loss": 0.5481,
     "losses": 48,
     "not_graded": 0,
-    "toss_ups": 10,
-    "wins": 130,
-    "with_line": 188
+    "toss_ups": 11,
+    "wins": 138,
+    "with_line": 197
   },
   "points_rest": {
-    "accuracy": 0.6617,
+    "accuracy": 0.6715,
     "accuracy_interval": [
-      0.5777,
-      0.7365
+      0.5891,
+      0.7446
     ],
     "bands": [
       {
@@ -855,27 +877,27 @@
       },
       {
         "band": "60-69",
-        "games": 43,
+        "games": 44,
         "mean_p_favorite": 0.6494,
-        "wins": 23
+        "wins": 24
       },
       {
         "band": "70-79",
-        "games": 34,
-        "mean_p_favorite": 0.7492,
-        "wins": 25
+        "games": 35,
+        "mean_p_favorite": 0.7489,
+        "wins": 26
       },
       {
         "band": "80-89",
-        "games": 18,
-        "mean_p_favorite": 0.8448,
-        "wins": 16
+        "games": 19,
+        "mean_p_favorite": 0.8435,
+        "wins": 17
       },
       {
         "band": "90+",
-        "games": 5,
-        "mean_p_favorite": 0.9093,
-        "wins": 5
+        "games": 6,
+        "mean_p_favorite": 0.9099,
+        "wins": 6
       }
     ],
     "biggest_upsets": [
@@ -910,20 +932,20 @@
         "p_favorite": 0.7787
       }
     ],
-    "brier": 0.2091,
+    "brier": 0.2049,
     "brier_against_market": {
-      "difference": 0.0165,
-      "games": 138,
+      "difference": 0.0158,
+      "games": 142,
       "interval": [
-        0.0023,
-        0.0307
+        0.0022,
+        0.0299
       ]
     },
-    "games": 133,
+    "games": 137,
     "late": 0,
-    "log_loss": 0.6006,
+    "log_loss": 0.591,
     "losses": 45,
-    "not_graded": 50,
+    "not_graded": 55,
     "picks_against_market": {
       "differ": 10,
       "latest": [
@@ -1042,8 +1064,8 @@
       "model_right": 3
     },
     "toss_ups": 5,
-    "wins": 88,
-    "with_line": 138
+    "wins": 92,
+    "with_line": 142
   },
   "schema": 1,
   "since": "2026-10-20",
