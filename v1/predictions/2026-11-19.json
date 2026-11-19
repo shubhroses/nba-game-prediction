@@ -1,0 +1,43 @@
+{
+  "code_commit": "8bb93f94ff80aed01f76833a5cd9feaed0ff2550",
+  "day": "2026-11-19",
+  "games": [
+    {
+      "away": "LAC",
+      "commence_time": "2026-11-20T01:10:00Z",
+      "elo": {
+        "away_rating": 1449,
+        "home_court": 40,
+        "home_rating": 1714,
+        "p_home": 0.8527
+      },
+      "home": "SAS",
+      "id": "20fa5e2d73cec494c113790161a89aec",
+      "market": {
+        "at": "2026-11-19T02:19:37Z",
+        "hi": 0.8882,
+        "lo": 0.8873,
+        "n": 2,
+        "p_home": 0.8877
+      },
+      "neutral": false,
+      "points_rest": {
+        "home_court": 1.14,
+        "margin": 11.26,
+        "p_home": 0.8333,
+        "rating_edge": 10.12,
+        "rest_edge": 0.0
+      }
+    }
+  ],
+  "parameters": {
+    "elo": "6b406fa7bf2c09456b3cdb348baa1370b1a6b094dc8c1e1a98471d4e36333b59",
+    "points_rest": "35aa82ba31018cb334985b17912f3bac189f153f501bf773e254a3164c84d146"
+  },
+  "published_at": "2026-11-19T10:15:15Z",
+  "reasons": [],
+  "results_through": "2026-11-18",
+  "schema": 1,
+  "sport": "basketball_nba",
+  "status": "ok"
+}
