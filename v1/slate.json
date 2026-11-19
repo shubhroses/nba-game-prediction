@@ -20,11 +20,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-19T14:16:16Z",
-        "hi": 0.2315,
-        "lo": 0.2114,
+        "captured_at": "2026-11-19T17:13:07Z",
+        "hi": 0.2171,
+        "lo": 0.2047,
         "n": 9,
-        "p_home": 0.2173
+        "p_home": 0.2114
       },
       "open": {
         "at": "2026-11-19T10:15:15Z",
@@ -52,9 +52,9 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-19T14:16:16Z",
+        "captured_at": "2026-11-19T17:13:07Z",
         "hi": 0.8811,
-        "lo": 0.8701,
+        "lo": 0.869,
         "n": 9,
         "p_home": 0.875
       },
@@ -90,11 +90,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-19T14:16:16Z",
-        "hi": 0.6818,
-        "lo": 0.6728,
+        "captured_at": "2026-11-19T17:13:07Z",
+        "hi": 0.6854,
+        "lo": 0.6787,
         "n": 9,
-        "p_home": 0.6802
+        "p_home": 0.6809
       },
       "open": {
         "at": "2026-11-19T10:15:15Z",
@@ -122,11 +122,11 @@
           "LowVig.ag",
           "MyBookie.ag"
         ],
-        "captured_at": "2026-11-19T14:16:16Z",
+        "captured_at": "2026-11-19T17:13:07Z",
         "hi": 0.4896,
-        "lo": 0.474,
+        "lo": 0.4856,
         "n": 9,
-        "p_home": 0.4883
+        "p_home": 0.4895
       },
       "open": {
         "at": "2026-11-19T10:15:15Z",
@@ -135,13 +135,13 @@
       "points_rest": null
     }
   ],
-  "generated_at": "2026-11-19T14:16:16Z",
+  "generated_at": "2026-11-19T17:13:07Z",
   "models": {
     "predictions_day": "2026-11-19",
     "results_through": "2026-11-18",
     "status": "ok"
   },
-  "next_due": "2026-11-19T12:10-05:00",
+  "next_due": "2026-11-19T15:10-05:00",
   "recent_results": [
     {
       "away": "WAS",
@@ -1727,6 +1727,6 @@
     }
   },
   "schema": 1,
-  "slot": "2026-11-19T09:10-05:00",
+  "slot": "2026-11-19T12:10-05:00",
   "sport": "basketball_nba"
 }
