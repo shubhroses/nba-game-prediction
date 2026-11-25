@@ -1,6 +1,6 @@
 {
   "baseline_home": {
-    "games": 258,
+    "games": 261,
     "wins": 134
   },
   "by_day": [
@@ -751,13 +751,35 @@
         "toss_ups": 0,
         "wins": 7
       }
+    },
+    {
+      "day": "2026-11-24",
+      "elo": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 2
+      },
+      "games": 3,
+      "market": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 2
+      },
+      "points_rest": {
+        "losses": 1,
+        "not_graded": 0,
+        "toss_ups": 0,
+        "wins": 2
+      }
     }
   ],
   "elo": {
-    "accuracy": 0.6461,
+    "accuracy": 0.6464,
     "accuracy_interval": [
-      0.5734,
-      0.7126
+      0.5744,
+      0.7124
     ],
     "bands": [
       {
@@ -768,15 +790,15 @@
       },
       {
         "band": "60-69",
-        "games": 53,
-        "mean_p_favorite": 0.6527,
-        "wins": 30
+        "games": 54,
+        "mean_p_favorite": 0.6522,
+        "wins": 31
       },
       {
         "band": "70-79",
-        "games": 53,
-        "mean_p_favorite": 0.749,
-        "wins": 34
+        "games": 55,
+        "mean_p_favorite": 0.7493,
+        "wins": 35
       },
       {
         "band": "80-89",
@@ -823,19 +845,19 @@
         "p_favorite": 0.7965
       }
     ],
-    "brier": 0.214,
+    "brier": 0.2143,
     "brier_against_market": {
-      "difference": 0.0167,
-      "games": 187,
+      "difference": 0.0161,
+      "games": 190,
       "interval": [
-        0.0042,
-        0.0296
+        0.0039,
+        0.0288
       ]
     },
-    "games": 178,
+    "games": 181,
     "late": 0,
-    "log_loss": 0.6105,
-    "losses": 63,
+    "log_loss": 0.6113,
+    "losses": 64,
     "not_graded": 71,
     "picks_against_market": {
       "differ": 15,
@@ -955,22 +977,22 @@
       "model_right": 4
     },
     "toss_ups": 9,
-    "wins": 115,
-    "with_line": 187
+    "wins": 117,
+    "with_line": 190
   },
-  "games": 258,
+  "games": 261,
   "market": {
-    "accuracy": 0.709,
+    "accuracy": 0.7085,
     "accuracy_interval": [
-      0.6491,
-      0.7624
+      0.649,
+      0.7616
     ],
     "bands": [
       {
         "band": "52-59",
-        "games": 63,
-        "mean_p_favorite": 0.5585,
-        "wins": 39
+        "games": 64,
+        "mean_p_favorite": 0.5583,
+        "wins": 40
       },
       {
         "band": "60-69",
@@ -980,9 +1002,9 @@
       },
       {
         "band": "70-79",
-        "games": 64,
-        "mean_p_favorite": 0.7445,
-        "wins": 48
+        "games": 66,
+        "mean_p_favorite": 0.7446,
+        "wins": 49
       },
       {
         "band": "80-89",
@@ -1029,20 +1051,20 @@
         "p_favorite": 0.8162
       }
     ],
-    "brier": 0.1967,
-    "games": 244,
-    "log_loss": 0.5759,
-    "losses": 71,
+    "brier": 0.1973,
+    "games": 247,
+    "log_loss": 0.5774,
+    "losses": 72,
     "not_graded": 0,
     "toss_ups": 14,
-    "wins": 173,
-    "with_line": 258
+    "wins": 175,
+    "with_line": 261
   },
   "points_rest": {
-    "accuracy": 0.6611,
+    "accuracy": 0.6612,
     "accuracy_interval": [
-      0.5892,
-      0.7262
+      0.5899,
+      0.7258
     ],
     "bands": [
       {
@@ -1053,15 +1075,15 @@
       },
       {
         "band": "60-69",
-        "games": 59,
-        "mean_p_favorite": 0.6497,
-        "wins": 32
+        "games": 60,
+        "mean_p_favorite": 0.6501,
+        "wins": 33
       },
       {
         "band": "70-79",
-        "games": 46,
+        "games": 48,
         "mean_p_favorite": 0.7487,
-        "wins": 31
+        "wins": 32
       },
       {
         "band": "80-89",
@@ -1108,19 +1130,19 @@
         "p_favorite": 0.7787
       }
     ],
-    "brier": 0.2101,
+    "brier": 0.2102,
     "brier_against_market": {
-      "difference": 0.0128,
-      "games": 187,
+      "difference": 0.012,
+      "games": 190,
       "interval": [
-        0.001,
-        0.0249
+        0.0004,
+        0.0238
       ]
     },
-    "games": 180,
+    "games": 183,
     "late": 0,
-    "log_loss": 0.6015,
-    "losses": 61,
+    "log_loss": 0.6018,
+    "losses": 62,
     "not_graded": 71,
     "picks_against_market": {
       "differ": 13,
@@ -1240,8 +1262,8 @@
       "model_right": 4
     },
     "toss_ups": 7,
-    "wins": 119,
-    "with_line": 187
+    "wins": 121,
+    "with_line": 190
   },
   "schema": 1,
   "since": "2026-10-20",
